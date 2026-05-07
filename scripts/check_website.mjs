@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, relative } from 'node:path'
 
 const root = process.cwd()
 const websiteRoot = join(root, 'website')
@@ -57,7 +57,8 @@ for (const path of walk(join(websiteRoot, 'public'))) {
 }
 
 for (const path of walk(websiteRoot)) {
-  if (path.includes(`${join('website', 'dist')}${'/'.replace('/', '')}`)) continue
+  const rel = relative(websiteRoot, path)
+  if (rel === 'dist' || rel.startsWith(`dist/`)) continue
   const stat = statSync(path)
   if (stat.size > 1024 * 1024 && path.includes(`${join('website', 'public')}`)) {
     fail(`large static public file should not be committed: ${path}`)

@@ -1,8 +1,42 @@
 # Changelog
 
-All notable changes to GoMentor will be documented here.
+All notable changes to GoAgent will be documented here.
 
 This project follows semantic versioning once public releases begin.
+
+## 0.3.15 - GoAgent Brand Identity
+
+### Changed
+
+- Renamed the product, package metadata, app id, preload API, data directory, release assets, documentation, and workflow references to GoAgent / goagent.
+- Updated the public README set to present GoAgent as an agentic AI teacher for Go / Weiqi / Baduk and the Chinese product name as 围棋智能体.
+- Added a brand contract test so old product identity strings cannot reappear in current source, docs, scripts, or tests.
+
+### Maintained
+
+- Preserved the v0.3.14 interactive teacher review surface: clickable move references, clickable board coordinates, and polished coordinate flash.
+- Kept the existing teacher-quality, release-quality, Real Eval, persistent KataGo engine pool, multilingual UI, and release artifact checks.
+
+## 0.3.14-dev.2 - Real Eval Prompt Grounding Hotfix
+
+### Fixed
+
+- Tightened the real teaching eval prompt so strict runs only allow coordinates already present in the KataGo evidence coordinate set.
+- Verified strict real eval locally with bundled KataGo v1.16.4 Metal, b18 recommended model, CLIProxyAPI, and `gpt-5.5`.
+
+## 0.3.14-dev.1 - Real Teaching Eval and Persistent KataGo Engine
+
+### Added
+
+- Added real local teaching evaluation that can run true KataGo analysis plus a true LLM teacher response when `GOAGENT_REAL_EVAL=1` and local credentials/assets are configured.
+- Added opt-in persistent KataGo analysis engine reuse through `GOAGENT_KATAGO_ENGINE_POOL=1`, while keeping the existing spawn-per-batch fallback as the default.
+- Added a deep teacher-quality command that includes strict real teaching evaluation without forcing it into default CI.
+
+### Notes
+
+- `pnpm eval:real-teaching` skips cleanly when real KataGo or LLM configuration is missing.
+- `pnpm eval:real-teaching:strict` is intended for local/release machines with real KataGo and LLM credentials.
+- Development releases are marked as prerelease and are not promoted over the latest stable GitHub release.
 
 ## 0.3.10 - Windows OpenCL Runtime Bundle Hotfix
 
@@ -14,7 +48,7 @@ This project follows semantic versioning once public releases begin.
 
 ### Notes
 
-- GPU vendor OpenCL drivers still come from the user's graphics driver. GoMentor bundles the KataGo OpenCL runtime files, not a replacement for NVIDIA/AMD/Intel display drivers.
+- GPU vendor OpenCL drivers still come from the user's graphics driver. GoAgent bundles the KataGo OpenCL runtime files, not a replacement for NVIDIA/AMD/Intel display drivers.
 
 ## 0.3.9 - Real Eval Gates and Teacher Sessions
 
@@ -34,7 +68,7 @@ This project follows semantic versioning once public releases begin.
 
 ### Thanks
 
-- Thanks to layiku for PR #6's move-range progression and board text rendering ideas, now aligned with GoMentor's evidence and quality-gate system.
+- Thanks to layiku for PR #6's move-range progression and board text rendering ideas, now aligned with GoAgent's evidence and quality-gate system.
 - Thanks to layiku for PR #5, PR #4, and PR #3, and thanks to wimi321 for PR #1 / PR #2.
 
 ## 0.3.8 - NVIDIA Edition Runtime Detection Hotfix
@@ -54,7 +88,7 @@ This project follows semantic versioning once public releases begin.
 ### Added
 
 - Dedicated Windows NVIDIA release pipeline that restores a real NVIDIA KataGo runtime directory and bundled model from `wimi321/lizzieyzy-next` assets.
-- NVIDIA-specific release artifacts: `GoMentor-0.3.7-win-x64-nvidia.exe` and `GoMentor-0.3.7-win-x64-nvidia-portable.zip`.
+- NVIDIA-specific release artifacts: `GoAgent-0.3.7-win-x64-nvidia.exe` and `GoAgent-0.3.7-win-x64-nvidia-portable.zip`.
 - Multilingual release notes in Chinese, Traditional Chinese, English, Japanese, Korean, Thai, and Vietnamese.
 - Release checks for NVIDIA asset wiring and multilingual release-note completeness.
 - KataGo asset preparation can now scan extracted archives, copy a full runtime directory, preserve model names, and write package edition metadata.
@@ -114,7 +148,7 @@ This project follows semantic versioning once public releases begin.
 
 ### Improved
 
-- Reworked the desktop settings header into the light GoMentor visual system with compact KataGo/LLM readiness badges.
+- Reworked the desktop settings header into the light GoAgent visual system with compact KataGo/LLM readiness badges.
 - LLM settings inputs now disable browser-style autocorrect/autocapitalization and use monospace text for easier API configuration checks.
 - API Key helper copy was removed from the settings row so the expected workflow is clear: paste from the provider dashboard, optionally reveal to verify, then save.
 

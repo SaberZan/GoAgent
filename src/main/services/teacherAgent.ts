@@ -294,10 +294,22 @@ function themesFromProfile(profile: StudentProfile): string[] {
   })
 }
 
+function teacherLanguageName(locale: unknown): string {
+  if (locale === 'zh-CN') return '简体中文'
+  if (locale === 'zh-TW') return '繁體中文'
+  if (locale === 'en-US') return 'English'
+  if (locale === 'ja-JP') return '日本語'
+  if (locale === 'ko-KR') return '한국어'
+  if (locale === 'th-TH') return 'ไทย'
+  if (locale === 'vi-VN') return 'Tiếng Việt'
+  return '简体中文'
+}
+
 function systemPrompt(level: CoachUserLevel): string {
   const settings = getSettings()
   return [
-    '你是 GoMentor 的围棋老师。',
+    '你是 GoAgent 的围棋老师。',
+    `请默认使用${teacherLanguageName(settings.reviewLanguage)}回答；只有用户明确要求其它语言时才切换。`,
     '帮助学生理解棋局，并提升下一次判断。',
     '需要信息时调用工具；不要靠印象猜局面。',
     '分析当前手时必须先看棋盘图片，再调用 KataGo 工具核对当前手、一选、胜率差、目差、搜索数和 PV，然后调用知识库工具匹配棋形、定式、死活、手筋或常见错误类型。',
@@ -598,6 +610,7 @@ function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
     teacherStyle: state.request.teacherStyle ?? getSettings().teacherStyle,
     studentRank: getSettings().defaultStudentRank,
     studentAge: getSettings().defaultStudentAge,
+    responseLanguage: teacherLanguageName(getSettings().reviewLanguage),
     terminologyDensity: getSettings().teacherTerminologyDensity,
     explanationPace: getSettings().teacherExplanationPace,
     variationDetail: getSettings().teacherVariationDetail,
@@ -606,7 +619,7 @@ function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
     moveRange: state.request.moveRange,
     moveRangeSummary: state.request.moveRangeSummary,
     prefetchedAnalysisAvailable: Boolean(state.request.prefetchedAnalysis),
-    note: '请按需要调用工具取得事实；没有工具证据时不要猜坐标、胜率、PV、定式名或来源。'
+    note: '请按需要调用工具取得事实；没有工具证据时不要猜坐标、胜率、PV、定式名或来源；默认使用 responseLanguage 回答。'
   }
   const text = [
     '任务说明：请根据 intent 完成用户请求。',
@@ -991,22 +1004,48 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
           ? getGames().filter((game) => game.id === gameId)
           : findGamesForStudent(studentName, count)
         const issues: BatchIssue[] = []
-        const maxVisits = numberInput(input, 'maxVisits', 220, 40, 2000)
+        const failedGames: Array<{ gameId: string; title: string; error: string }> = []
+        const requestedVisits = numberInput(input, 'maxVisits', 4, 1, 600)
+        const sweepVisits = Math.min(16, Math.max(4, requestedVisits))
+        const refineVisits = Math.max(120, Math.min(420, requestedVisits * 16))
+        const refineTopN = count > 1 ? 2 : 4
         const minWinrateDrop = numberInput(input, 'minWinrateDrop', 6, 1, 40)
+        cancelKataGoAnalysis({ group: 'quick' })
         for (const game of games) {
           assertTeacherRunActive(state.context)
-          const analyses = await analyzeGameQuick(game.id, maxVisits, undefined, {
-            refineVisits: Math.max(maxVisits, 420),
-            refineTopN: 8,
-            runId: `${state.id}-batch-${game.id}`,
-            group: 'teacher'
-          })
+          let analyses: Awaited<ReturnType<typeof analyzeGameQuick>>
+          try {
+            analyses = await analyzeGameQuick(game.id, sweepVisits, undefined, {
+              refineVisits,
+              refineTopN,
+              runId: `${state.id}-batch-${game.id}`,
+              group: 'teacher'
+            })
+          } catch (error) {
+            if (/KataGo 分析超时|timed out|timeout/i.test(String(error))) {
+              failedGames.push({
+                gameId: game.id,
+                title: game.title,
+                error: 'KataGo 整盘快扫超时，已跳过这盘。'
+              })
+              continue
+            }
+            throw error
+          }
           assertTeacherRunActive(state.context)
           issues.push(...extractIssuesFromAnalyses(analyses, game, minWinrateDrop))
         }
         return {
           studentName,
+          analysisMode: 'fast-sweep-plus-key-move-refine',
+          visits: {
+            sweep: sweepVisits,
+            refine: refineVisits,
+            refineTopN
+          },
+          status: failedGames.length === 0 ? 'complete' : issues.length > 0 ? 'partial' : 'failed',
           games: summarizeGames(games),
+          failedGames,
           issues: issues.filter((issue) => issue.loss > 0).sort((a, b) => b.loss - a.loss).slice(0, 30)
         }
       }
@@ -1322,7 +1361,7 @@ async function runTeacherAgentSession(
     initialAgentUserMessage(state)
   ]
 
-  emitProgress(context, { stage: 'assistant-start', message: 'GoMentor agent 开始推理。', toolLogs: cloneToolLogs(logs) })
+  emitProgress(context, { stage: 'assistant-start', message: 'GoAgent agent 开始推理。', toolLogs: cloneToolLogs(logs) })
   let finalText = ''
   let emittedText = ''
   for (;;) {

@@ -48,6 +48,35 @@ export interface TtsSynthesisResult {
   createdAt: string
 }
 
+export type VisionEvidenceImageRole = 'current-board' | 'range-key-move' | 'variation' | 'unknown'
+export type VisionEvidenceDetail = 'high' | 'auto' | 'low'
+
+export interface VisionEvidenceImage {
+  id: string
+  index: number
+  role: VisionEvidenceImageRole
+  moveNumber?: number
+  mimeType: 'image/png' | 'image/jpeg' | 'unknown'
+  bytes: number
+  width?: number
+  height?: number
+  detail: VisionEvidenceDetail
+  caption: string
+  valid: boolean
+  warnings: string[]
+}
+
+export interface VisionEvidenceReport {
+  required: boolean
+  attached: boolean
+  imageCount: number
+  providerSupportsVision: boolean | 'unknown'
+  images: VisionEvidenceImage[]
+  warnings: string[]
+  blockingIssues: string[]
+  createdAt: string
+}
+
 export interface AppSettings {
   katagoBin: string
   katagoConfig: string
@@ -621,6 +650,7 @@ export interface TeacherRunRequest {
   teacherSessionId?: string
   boardImageDataUrl?: string
   boardImageDataUrls?: string[]
+  visionEvidence?: VisionEvidenceReport
   moveRange?: { start: number; end: number }
   moveRangeSummary?: MoveRangeReviewSummary
   prefetchedAnalysis?: KataGoMoveAnalysis
@@ -700,6 +730,7 @@ export interface TeacherRunResult {
   teachingEvidence?: unknown
   teachingPacing?: TeachingPacingAdvice
   verification?: unknown
+  visionEvidence?: VisionEvidenceReport
   knowledge: KnowledgePacket[]
   knowledgeMatches?: KnowledgeMatch[]
   recommendedProblems?: RecommendedProblem[]

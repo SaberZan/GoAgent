@@ -46,6 +46,13 @@ import {
   normalizeTerminologyDensity,
   normalizeVariationDetail
 } from './teacher/teacherPersona'
+import {
+  buildVisionEvidenceReport,
+  buildVisionImageContentParts,
+  formatVisionEvidenceForPrompt,
+  validateVisionEvidenceForIntent
+} from './teacher/visionEvidence'
+import { buildVisionEvidenceRepairNote, verifyVisionEvidenceMarkdown } from './teacher/visionEvidenceVerifier'
 import { streamOpenAICompatibleToolTurn } from './llm/openaiCompatibleProvider'
 
 type TeacherProgressEmitter = (progress: TeacherRunProgress) => void
@@ -599,6 +606,11 @@ function taskTypeForIntent(intent: TeacherIntent): StructuredTeacherResult['task
 }
 
 function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
+  const visionEvidence = state.request.visionEvidence ?? buildVisionEvidenceReport(state.request, state.intent)
+  const visionValidation = validateVisionEvidenceForIntent(visionEvidence, state.intent)
+  if (!visionValidation.ok) {
+    throw new Error(`棋盘图证据不完整：${visionValidation.blockingIssues.join('；')}`)
+  }
   const context = {
     userPrompt: state.request.prompt,
     intent: state.intent,
@@ -614,8 +626,11 @@ function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
     terminologyDensity: getSettings().teacherTerminologyDensity,
     explanationPace: getSettings().teacherExplanationPace,
     variationDetail: getSettings().teacherVariationDetail,
-    boardImageAttached: Boolean(state.request.boardImageDataUrl) || (state.request.boardImageDataUrls?.length ?? 0) > 0,
-    boardImagesAttached: state.request.boardImageDataUrls?.length ?? 0,
+    visionEvidence,
+    visionWarnings: visionValidation.warnings,
+    boardImageAttached: visionEvidence.attached,
+    boardImagesAttached: visionEvidence.imageCount,
+    boardImageRequired: visionEvidence.required,
     moveRange: state.request.moveRange,
     moveRangeSummary: state.request.moveRangeSummary,
     prefetchedAnalysisAvailable: Boolean(state.request.prefetchedAnalysis),
@@ -627,6 +642,9 @@ function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
     '如果 intent 是 move-range，请依次观察附带的区间关键手棋盘图片，先概括区间胜率/目差走势，再重点讲解 top-loss 关键手。',
     '当前手讲解要按工具返回的 teachingDensity 掌握详略：常规定式少讲；定式分支或相似型列关键变化；中盘战、攻杀、转换要讲目的、对方应手、后续变化和实战评价。',
     'boardImageAttached=true 表示本轮用户消息已附棋盘图，请把图片中的棋形、厚薄、急所和全局方向作为局面判断依据。',
+    '如果 visionEvidence.attached=true，本轮已经提供棋盘图，严禁说“没有棋盘图”“看不到棋盘”“未提供图片”。',
+    '如果 visionEvidence.required=true 但证据不完整，程序会阻止任务执行；你不需要猜测缺失图片。',
+    formatVisionEvidenceForPrompt(visionEvidence),
     'moveRangeSummary 是 renderer/cache 预先提取的区间关键手摘要；如证据不足，可调用 katago.analyzeMoveRangeKeyMoves 精读这些关键手。',
     '区间摘要：',
     formatMoveRangeSummaryForPrompt(state.request.moveRangeSummary),
@@ -634,22 +652,11 @@ function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
     '上下文JSON：',
     JSON.stringify(context)
   ].join('\n')
-  if (state.request.boardImageDataUrls?.length) {
+  const visionParts = buildVisionImageContentParts(state.request, visionEvidence)
+  if (visionParts.length > 0) {
     return {
       role: 'user',
-      content: [
-        { type: 'text', text },
-        ...state.request.boardImageDataUrls.map((url) => ({ type: 'image_url' as const, image_url: { url } }))
-      ]
-    }
-  }
-  if (state.request.boardImageDataUrl) {
-    return {
-      role: 'user',
-      content: [
-        { type: 'text', text },
-        { type: 'image_url', image_url: { url: state.request.boardImageDataUrl } }
-      ]
+      content: [{ type: 'text', text }, ...visionParts]
     }
   }
   return { role: 'user', content: text }
@@ -1330,13 +1337,18 @@ async function runTeacherAgentSession(
   intent: TeacherIntent,
   context?: TeacherRunContext
 ): Promise<TeacherRunResult> {
+  const visionEvidence = request.visionEvidence ?? buildVisionEvidenceReport(request, intent)
+  const visionValidation = validateVisionEvidenceForIntent(visionEvidence, intent)
+  if (!visionValidation.ok) {
+    throw new Error(`棋盘图证据不完整：${visionValidation.blockingIssues.join('；')}`)
+  }
   const indexedGame = request.gameId ? getGames().find((item) => item.id === request.gameId) : undefined
   const boundProfile = request.gameId ? readStudentForGame(request.gameId) : null
   const studentName = boundProfile?.displayName ?? detectStudentName(request, indexedGame)
   const profile = boundProfile ?? getStudentProfile(studentName)
   const state: TeacherAgentSessionState = {
     id,
-    request,
+    request: { ...request, visionEvidence },
     intent,
     logs,
     context,
@@ -1403,6 +1415,25 @@ async function runTeacherAgentSession(
   if (!finalText) {
     throw new Error('LLM 未生成最终回答。')
   }
+  const visionIssues = verifyVisionEvidenceMarkdown(finalText, visionEvidence)
+  if (visionIssues.some((issue) => issue.severity === 'error')) {
+    messages.push({ role: 'assistant', content: finalText })
+    messages.push({ role: 'user', content: `${buildVisionEvidenceRepairNote(visionIssues)}\n\n${formatVisionEvidenceForPrompt(visionEvidence)}` })
+    const repair = await streamOpenAICompatibleToolTurn(settings, messages, tools, 2048, (delta) => {
+      emitAssistantDelta(context, delta)
+    }, context?.signal)
+    if (repair.toolCalls.length > 0) {
+      throw new Error('LLM 在棋盘图证据修正阶段继续请求工具，请重新发起本次分析。')
+    }
+    if (!repair.text.trim()) {
+      throw new Error('LLM 在棋盘图证据修正阶段没有返回可展示文本。')
+    }
+    finalText = repair.text.trim()
+    const repairedIssues = verifyVisionEvidenceMarkdown(finalText, visionEvidence)
+    if (repairedIssues.some((issue) => issue.severity === 'error')) {
+      throw new Error(`棋盘图证据校验失败：${repairedIssues.map((issue) => issue.message).join('；')}`)
+    }
+  }
   state.finalMarkdown = finalText
   const taskType = taskTypeForIntent(intent)
   const structured = structuredFromTeacherText(finalText, taskType, state.knowledge, state.knowledgeMatches, state.recommendedProblems)
@@ -1425,6 +1456,7 @@ async function runTeacherAgentSession(
     knowledgeMatches: state.knowledgeMatches,
     recommendedProblems: state.recommendedProblems,
     teachingPacing: state.teachingPacing,
+    visionEvidence,
     studentProfile: state.profile,
     structured
   })
@@ -1439,6 +1471,7 @@ async function runTeacherAgentSession(
     knowledgeMatches: state.knowledgeMatches,
     recommendedProblems: state.recommendedProblems,
     teachingPacing: state.teachingPacing,
+    visionEvidence,
     studentProfile: state.profile,
     structured,
     structuredResult: structured,

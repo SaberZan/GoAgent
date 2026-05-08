@@ -671,7 +671,7 @@ export async function probeOpenAICompatibleProvider(settings: ProviderSettings):
         role: 'user',
         content: [
           { type: 'text', text: '请读取这张测试图片，并在最终答案中只输出 OK。' },
-          { type: 'image_url', image_url: { url: tinyPng } }
+          { type: 'image_url', image_url: { url: tinyPng, detail: 'high' } }
         ]
       }
     ], 2048)

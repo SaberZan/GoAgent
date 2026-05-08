@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import fsPromises from 'node:fs/promises'
 import { basename } from 'node:path'
 import { createInterface } from 'node:readline'
+import { pathToFileURL } from 'node:url'
 
 console.log = (...args) => console.error(...args)
 
@@ -57,7 +58,7 @@ function assertUsableTokenization(inputIds) {
 async function importKokoro(appPackageJson) {
   if (appPackageJson) {
     const requireFromApp = createRequire(appPackageJson)
-    return import(requireFromApp.resolve('kokoro-js'))
+    return import(pathToFileURL(requireFromApp.resolve('kokoro-js')).href)
   }
   return import('kokoro-js')
 }

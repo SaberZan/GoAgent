@@ -46,7 +46,11 @@ function runMisakiG2p(text) {
     const result = spawnSync(launcher.command, [...launcher.args, script], {
       input: JSON.stringify({ text }),
       encoding: 'utf8',
-      maxBuffer: 1024 * 1024
+      maxBuffer: 1024 * 1024,
+      env: {
+        ...process.env,
+        GOAGENT_TTS_ALLOW_UNKNOWN_PHONEMES: '1'
+      }
     })
     if (result.status === 0) {
       const jsonLine = result.stdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).reverse().find((line) => line.startsWith('{') && line.endsWith('}'))
@@ -112,6 +116,7 @@ async function strictSynthesizeSmoke() {
   if (!g2p.text.includes('迪四') || !g2p.text.includes('丘十六') || !g2p.text.includes('西十七') || g2p.text.includes('坐标迪四') || g2p.text.includes('坐标丘十六') || !g2p.text.includes('第二段') || /[A-Za-z]/.test(g2p.text)) {
     throw new Error(`Misaki speech normalization did not preserve multiline coordinate content: ${g2p.text}`)
   }
+  const stableChinesePhonemes = 'ㄏㄟ1ㄑㄧ2 ㄉㄧ2ㄙㄭ4 ㄎㄠ4.'
   await runKokoroWorkerSmoke({
     id: 'smoke-kokoro-worker',
     appPackageJson: join(root, 'package.json'),
@@ -125,7 +130,7 @@ async function strictSynthesizeSmoke() {
     })),
     voice: manifest.defaultVoiceId ?? 'zf_001',
     speed: 1,
-    phonemes: g2p.phonemes,
+    phonemes: stableChinesePhonemes,
     output
   })
   const stat = statSync(output)

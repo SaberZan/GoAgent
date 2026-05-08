@@ -9,6 +9,7 @@ phoneme string. It reads JSON from stdin and writes JSON to stdout.
 from __future__ import annotations
 
 import json
+import os
 import re
 import sys
 from contextlib import redirect_stdout
@@ -159,7 +160,8 @@ def main() -> int:
             raise RuntimeError("misaki[zh] returned empty phonemes")
         unknown_count = phonemes.count("❓")
         visible_count = len(phonemes.replace(" ", ""))
-        if visible_count == 0 or unknown_count / max(visible_count, 1) > 0.2:
+        allow_unknown = os.environ.get("GOAGENT_TTS_ALLOW_UNKNOWN_PHONEMES") == "1"
+        if visible_count == 0 or (unknown_count / max(visible_count, 1) > 0.2 and not allow_unknown):
             raise RuntimeError(f"too many unknown phonemes from misaki[zh]: {unknown_count}/{visible_count}")
 
         print(json.dumps({

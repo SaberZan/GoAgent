@@ -126,6 +126,11 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Setup Python for Kokoro zh G2P
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
       - name: Install Linux package dependencies
         if: runner.os == 'Linux'
         run: |
@@ -135,6 +140,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install Kokoro zh G2P Python dependencies
+        run: python -m pip install -r scripts/requirements-tts.txt
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -143,6 +151,7 @@ jobs:
         env:
           GOAGENT_TTS_ASSETS_STRICT: "1"
           GOAGENT_TTS_SMOKE_STRICT: "1"
+          GOAGENT_TTS_PYTHON: python
         run: |
           pnpm prepare:tts-assets
           pnpm check:tts-assets
@@ -337,8 +346,16 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Setup Python for Kokoro zh G2P
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Install Kokoro zh G2P Python dependencies
+        run: python -m pip install -r scripts/requirements-tts.txt
 
       - name: Typecheck
         run: pnpm typecheck
@@ -348,6 +365,7 @@ jobs:
         env:
           GOAGENT_TTS_ASSETS_STRICT: "1"
           GOAGENT_TTS_SMOKE_STRICT: "1"
+          GOAGENT_TTS_PYTHON: python
         run: |
           pnpm prepare:tts-assets
           pnpm check:tts-assets

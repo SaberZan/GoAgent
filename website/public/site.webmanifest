@@ -1,7 +1,7 @@
 {
   "name": "goagent",
   "short_name": "goagent",
-  "description": "本地优先的围棋智能体",
+  "description": "开源免费的专业围棋智能体",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f7f8f5",

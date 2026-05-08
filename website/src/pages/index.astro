@@ -5,20 +5,47 @@ const releasesUrl = 'https://github.com/wimi321/GoAgent/releases'
 const githubUrl = 'https://github.com/wimi321/GoAgent'
 const issuesUrl = 'https://github.com/wimi321/GoAgent/issues'
 
+const boardMargin = 48
+const boardSpan = 664
+const step = boardSpan / 18
+const lines = Array.from({ length: 19 }, (_, index) => boardMargin + index * step)
+const starPoints = [3, 9, 15].flatMap((x) => [3, 9, 15].map((y) => ({ x, y })))
+const stones = [
+  { x: 3, y: 3, color: 'black' },
+  { x: 15, y: 3, color: 'white' },
+  { x: 15, y: 15, color: 'black' },
+  { x: 3, y: 15, color: 'white' },
+  { x: 9, y: 10, color: 'black', last: true },
+  { x: 10, y: 9, color: 'white' },
+  { x: 11, y: 11, color: 'black' }
+]
+const candidates = [
+  { x: 12, y: 9, rank: 1, winrate: '58%', visits: '12k', score: '+3.1' },
+  { x: 8, y: 11, rank: 2, winrate: '55%', visits: '8k', score: '+1.7' },
+  { x: 11, y: 8, rank: 3, winrate: '53%', visits: '4k', score: '+0.9' }
+]
+const toPoint = (value: number) => boardMargin + value * step
+
+const valueCards = [
+  ['开源', '代码公开在 GitHub，路线透明，欢迎一起改进。'],
+  ['免费', '安装包免费下载，普通棋友也能直接试用。'],
+  ['专业', 'KataGo 给证据，AI 老师把关键手讲清楚。']
+]
+
 const features = [
-  ['当前手讲解', '棋盘图、KataGo 候选点、PV、目差和知识库证据一起进入老师会话，讲清这一手的目的、变化和损失。', 'accent-teal'],
-  ['区间复盘', '选择一段手数聚焦复盘，把中盘战、转换、官子和胜负手从整盘噪音里拎出来。', 'accent-blue'],
-  ['棋形识别', '本地定式、死活、手筋和棋形匹配引擎给出证据边界，强匹配才明确命名。', 'accent-gold'],
-  ['学生适配', '按水平、年龄和老师风格调节讲解深度，让低段、小朋友和高段棋手听到不同的解释。', 'accent-teal'],
-  ['质量门禁', '坐标、定式名、胜率差、PV 和知识来源都要接受检查，减少 AI 自信乱讲。', 'accent-blue'],
-  ['本地优先隐私', '棋谱、画像、会话和缓存默认留在本机。LLM 和自定义 TTS 只在用户配置并发起任务时调用。', 'accent-gold']
+  ['当前手讲解', '点击一手棋，看到候选点、胜率差、PV 和老师解释。'],
+  ['区间复盘', '只看一段关键手，快速找出中盘战和转折点。'],
+  ['棋形识别', '识别常见定式、死活、手筋和形状，不硬套名字。'],
+  ['学生适配', '按水平、年龄和老师风格调整讲解深度。'],
+  ['开源透明', '项目在 GitHub 公开，问题和路线都可追踪。'],
+  ['桌面应用', 'Windows 和 macOS 优先，适合长期复盘学习。']
 ]
 
 const downloads = [
-  ['Windows x64 标准版', '普通 Windows 用户首选', 'OpenCL 推荐包'],
-  ['Windows x64 NVIDIA 版', 'NVIDIA 显卡用户', 'CUDA 专用包'],
-  ['macOS Apple Silicon', 'M 系列 Mac', 'arm64'],
-  ['macOS Intel', 'Intel Mac', 'x64']
+  ['Windows x64 标准版', '普通 Windows 用户首选'],
+  ['Windows x64 NVIDIA 版', 'NVIDIA 显卡用户'],
+  ['macOS Apple Silicon', 'M 系列 Mac'],
+  ['macOS Intel', 'Intel Mac']
 ]
 
 const jsonLd = {
@@ -28,116 +55,169 @@ const jsonLd = {
   alternateName: '围棋智能体',
   applicationCategory: 'EducationalApplication',
   operatingSystem: 'Windows, macOS',
-  description: '本地优先的围棋智能体：KataGo 负责事实，多模态 LLM 负责讲解，质量门禁负责防止编造。',
+  description: 'goagent 是开源免费的专业围棋 AI 老师，结合 KataGo 和多模态 LLM 帮助用户看懂关键手。',
   url: 'https://goagent.top/',
   codeRepository: githubUrl,
   license: `${githubUrl}/blob/main/LICENSE`,
-  downloadUrl: releasesUrl
+  downloadUrl: releasesUrl,
+  offers: {
+    '@type': 'Offer',
+    price: '0',
+    priceCurrency: 'USD'
+  }
 }
 ---
-<BaseLayout jsonLd={jsonLd}>
-  <section class="hero">
-    <div>
-      <p class="eyebrow">Go / Weiqi / Baduk AI Agent</p>
-      <h1>goagent</h1>
-      <p class="subtitle">本地优先的围棋 AI 老师</p>
+<BaseLayout
+  title="goagent - 开源免费的专业围棋 AI 老师"
+  description="goagent 是开源免费的专业围棋 AI 老师：导入棋谱，结合 KataGo 和多模态 LLM，把关键手讲成普通用户听得懂的话。"
+  jsonLd={jsonLd}
+>
+  <section class="hero hero-premium">
+    <div class="hero-copy">
+      <p class="eyebrow">开源 · 免费 · 专业</p>
+      <h1><span>让 AI 老师</span><span>把棋讲明白</span></h1>
+      <p class="subtitle">导入棋谱，看懂关键手。</p>
       <p class="lead">
-        goagent 把 KataGo、棋谱库、知识库、多模态 LLM、质量门禁和学生画像放进一个桌面工作台。它不是把棋谱丢给聊天机器人，而是让 AI 老师带着证据讲棋。
+        goagent 是一款免费的围棋智能体。它会看棋盘、看候选点、看变化，把“这手为什么亏”“好点好在哪里”“下一次该先看哪里”讲成人能听懂的话。
       </p>
-      <div class="trust-row" aria-label="核心能力">
-        <span>KataGo 结构化分析</span>
-        <span>多模态 LLM 老师</span>
-        <span>棋形识别</span>
-        <span>区间复盘</span>
-        <span>学生画像</span>
-        <span>本地离线 TTS 规划</span>
-      </div>
       <div class="button-row">
-        <a class="button primary" href={releasesUrl}>下载最新版</a>
-        <a class="button" href={githubUrl}>查看 GitHub</a>
-        <a class="button subtle" href="/docs">阅读文档</a>
+        <a class="button primary" href={releasesUrl}>免费下载</a>
+        <a class="button" href={githubUrl}>查看开源代码</a>
+        <a class="button subtle" href="/docs">快速开始</a>
       </div>
-      <div class="status-row" aria-label="发布状态">
-        <span class="status-pill ready">Windows / macOS</span>
-        <span class="status-pill ready">MIT License</span>
-        <span class="status-pill experimental">Kokoro TTS 规划中</span>
-        <span class="status-pill">QQ 1030632742</span>
+      <div class="hero-note">
+        <span>Windows / macOS</span>
+        <span>MIT License</span>
+        <span>QQ 1030632742</span>
       </div>
     </div>
 
-    <aside class="hero-visual" aria-label="goagent product preview">
-      <div class="window-preview">
-        <div class="window-bar">
-          <div class="traffic" aria-hidden="true"><span></span><span></span><span></span></div>
-          <span>Current move analysis</span>
-        </div>
-        <div class="preview-body">
-          <div>
-            <div class="preview-board" aria-hidden="true">
-              <span class="stone black"></span>
-              <span class="stone white"></span>
-              <span class="candidate one">1<br />58%</span>
-              <span class="candidate two">2<br />54%</span>
-              <svg class="spark" viewBox="0 0 80 80" aria-hidden="true">
-                <path d="M40 4C45 26 54 35 76 40C54 45 45 54 40 76C35 54 26 45 4 40C26 35 35 26 40 4Z" fill="currentColor" />
-                <circle cx="40" cy="40" r="7" fill="white" />
-              </svg>
-            </div>
-            <div class="mini-chart" aria-hidden="true">
-              <svg viewBox="0 0 320 80" preserveAspectRatio="none">
-                <path d="M0 42 C38 34 58 38 84 30 C122 18 145 60 178 48 C212 36 238 30 267 46 C292 59 304 42 320 36" fill="none" stroke="#0b766e" stroke-width="3" />
-                <path d="M0 55 C46 52 78 62 116 44 C154 25 178 26 208 34 C244 43 272 49 320 30" fill="none" stroke="#275b8f" stroke-width="2" opacity="0.78" />
-              </svg>
-            </div>
-          </div>
-          <div class="preview-chat">
-            <span class="tool-chip">KataGo 当前局面</span>
-            <span class="tool-chip">知识库棋形匹配</span>
-            <div class="chat-line">
-              <strong>AI 老师</strong>
-              <p>这手方向能理解：你想压住上边。但一选更先手，因为它同时看住白棋断点和右上角实地。</p>
-            </div>
-            <div class="chat-line">
-              <strong>训练建议</strong>
-              <p>下次遇到这种局部，先问自己：对方最强反击点在哪里。</p>
-            </div>
-          </div>
-        </div>
+    <aside class="hero-visual hero-device" aria-label="goagent product preview">
+      <div class="device-chrome">
+        <div class="traffic" aria-hidden="true"><span></span><span></span><span></span></div>
+        <span>goagent · current move</span>
       </div>
-      <div class="metric-strip">
-        <div><strong>KataGo</strong><span>事实证据</span></div>
-        <div><strong>LLM</strong><span>人类讲解</span></div>
-        <div><strong>QA</strong><span>防止编造</span></div>
+      <div class="device-body">
+        <div class="board-panel">
+          <svg class="go-board-svg" viewBox="0 0 760 760" role="img" aria-label="标准 19 路围棋棋盘预览">
+            <defs>
+              <linearGradient id="boardGlow" x1="0" x2="1" y1="0" y2="1">
+                <stop offset="0%" stop-color="#f3cc86" />
+                <stop offset="55%" stop-color="#e0a85d" />
+                <stop offset="100%" stop-color="#c98b45" />
+              </linearGradient>
+              <radialGradient id="blackStone" cx="32%" cy="26%" r="74%">
+                <stop offset="0%" stop-color="#86837b" />
+                <stop offset="40%" stop-color="#262521" />
+                <stop offset="100%" stop-color="#060605" />
+              </radialGradient>
+              <radialGradient id="whiteStone" cx="32%" cy="24%" r="78%">
+                <stop offset="0%" stop-color="#ffffff" />
+                <stop offset="58%" stop-color="#eee8dc" />
+                <stop offset="100%" stop-color="#b9ac98" />
+              </radialGradient>
+              <filter id="stoneShadow" x="-30%" y="-20%" width="160%" height="170%">
+                <feDropShadow dx="0" dy="9" stdDeviation="8" flood-color="#5d3b16" flood-opacity="0.28" />
+              </filter>
+              <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#644217" flood-opacity="0.18" />
+              </filter>
+            </defs>
+            <rect x="18" y="18" width="724" height="724" rx="54" fill="url(#boardGlow)" filter="url(#softShadow)" />
+            <rect x="18" y="18" width="724" height="724" rx="54" fill="none" stroke="rgba(89, 58, 24, .18)" />
+            {lines.map((pos) => (
+              <>
+                <line x1={boardMargin} y1={pos} x2={boardMargin + boardSpan} y2={pos} class="board-line" />
+                <line x1={pos} y1={boardMargin} x2={pos} y2={boardMargin + boardSpan} class="board-line" />
+              </>
+            ))}
+            {starPoints.map((point) => (
+              <circle cx={toPoint(point.x)} cy={toPoint(point.y)} r="5.6" class="star-point" />
+            ))}
+            {stones.map((stone) => (
+              <g class={`stone-svg ${stone.color}`} filter="url(#stoneShadow)">
+                <circle cx={toPoint(stone.x)} cy={toPoint(stone.y)} r="17.8" fill={stone.color === 'black' ? 'url(#blackStone)' : 'url(#whiteStone)'} />
+                {stone.last && <circle cx={toPoint(stone.x)} cy={toPoint(stone.y)} r="6.5" class="last-mark" />}
+              </g>
+            ))}
+            {candidates.map((candidate) => (
+              <g class={`candidate-svg rank-${candidate.rank}`} transform={`translate(${toPoint(candidate.x)} ${toPoint(candidate.y)})`}>
+                <circle r="22.5" />
+                <text class="candidate-rank" y="-7">{candidate.rank}</text>
+                <text class="candidate-main" y="7">{candidate.winrate}</text>
+                <text class="candidate-sub" y="18">{candidate.visits} · {candidate.score}</text>
+              </g>
+            ))}
+          </svg>
+          <div class="board-caption">
+            <strong>第 128 手</strong>
+            <span>黑棋候选点 · 胜率差 6.2%</span>
+          </div>
+        </div>
+
+        <div class="teacher-panel">
+          <div class="tool-trace">
+            <span>读取棋谱</span>
+            <span>KataGo 分析</span>
+            <span>知识匹配</span>
+          </div>
+          <div class="teacher-message">
+            <p>这手的想法是对的：黑棋想压住上边。</p>
+            <p>但一选更专业，因为它先看住白棋反击点，同时保留右边的后续。实战亏的不只是这一下，而是让白棋把节奏拿回去了。</p>
+          </div>
+          <div class="composer-preview">
+            <span>问问 AI 老师：这手为什么不是一选？</span>
+            <strong>↵</strong>
+          </div>
+        </div>
       </div>
     </aside>
   </section>
 
+  <section class="value-section">
+    <div class="grid three">
+      {valueCards.map(([title, text]) => (
+        <article class="value-card">
+          <h2>{title}</h2>
+          <p>{text}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+
   <section>
-    <div class="feature-panel">
-      <div>
-        <p class="eyebrow">Why it matters</p>
-        <h2>像专业老师一样控制讲解火候</h2>
-        <p>
-          常规定式少讲，出现分支再列关键变化；中盘战、攻杀、转换和明显损失才展开讲目的、应手和后续。goagent 的目标是让学生下一盘棋真的多看一步。
-        </p>
-      </div>
-      <ul class="feature-list">
-        <li>事实判断交给 KataGo，不让 LLM 猜胜率、坐标和 PV。</li>
-        <li>强匹配才明确说定式、死活型或手筋；相似局面只说“像”。</li>
-        <li>老师回答可引用棋盘手数和坐标，帮助用户快速回到局面。</li>
-        <li>学生画像记录高频问题，让后续复盘越来越贴近个人弱点。</li>
-      </ul>
+    <div class="section-head centered">
+      <p class="eyebrow">How it works</p>
+      <h2>三步看懂一盘棋</h2>
+      <p>KataGo 负责事实，AI 老师负责讲解，质量检查负责减少乱讲。</p>
+    </div>
+    <div class="grid three workflow">
+      <article class="card">
+        <h3>导入棋谱</h3>
+        <p>导入 SGF 或选择棋谱，定位当前手、关键区间和双方信息。</p>
+      </article>
+      <article class="card">
+        <h3>找出关键手</h3>
+        <p>胜率曲线、候选点、目差、PV 和问题手列表一起帮你缩小复盘范围。</p>
+      </article>
+      <article class="card">
+        <h3>听懂讲解</h3>
+        <p>AI 老师结合棋盘、KataGo 和知识库，说人话，不把复盘写成机器报告。</p>
+      </article>
     </div>
   </section>
 
   <section>
     <div class="section-head">
-      <h2>功能亮点</h2>
-      <p>不是普通 AI 聊天，也不是单纯胜率图。goagent 把引擎证据、知识库和老师表达连接起来。</p>
+      <div>
+        <p class="eyebrow">Product</p>
+        <h2>做给普通棋友用，也给认真学棋的人用。</h2>
+      </div>
+      <p>不用被一整盘胜率图淹没。goagent 会把关键手、候选点和老师解释放在同一个工作台里。</p>
     </div>
     <div class="grid three">
-      {features.map(([title, text, accent]) => (
-        <article class={`card ${accent}`}>
+      {features.map(([title, text]) => (
+        <article class="card">
           <h3>{title}</h3>
           <p>{text}</p>
         </article>
@@ -146,102 +226,51 @@ const jsonLd = {
   </section>
 
   <section>
-    <div class="section-head">
-      <h2>工作方式</h2>
-      <p><strong>KataGo 负责事实，LLM 负责讲解，质量门禁负责防止编造。</strong></p>
-    </div>
-    <div class="grid three workflow">
-      <article class="card">
-        <h3>读取棋谱和棋盘</h3>
-        <p>导入 SGF 或同步棋谱列表，定位当前手、区间和棋盘上下文。</p>
-      </article>
-      <article class="card">
-        <h3>KataGo 生成证据</h3>
-        <p>生成候选点、胜率、目差、PV 和搜索数据，作为老师讲解的事实基础。</p>
-      </article>
-      <article class="card">
-        <h3>老师讲解并训练</h3>
-        <p>结合知识库、学生画像和证据，讲清思路并给出可执行训练建议。</p>
-      </article>
+    <div class="feature-panel premium-panel">
+      <div>
+        <p class="eyebrow">Teacher style</p>
+        <h2>常规定式少讲，中盘战多讲。</h2>
+        <p>
+          真正的老师不会每手都长篇大论。正常定式简单点到；出现分支就讲选择条件；进入中盘战、攻杀和转换，才展开说目的、应手、变化和实战损失。
+        </p>
+      </div>
+      <ul class="feature-list">
+        <li>常见定式正常进行时，只讲一句方向。</li>
+        <li>局部分支出现时，列关键变化，不硬套名称。</li>
+        <li>明显亏损时，解释实战想法为什么能理解、又亏在哪里。</li>
+        <li>输出里提到手数和坐标时，可以回到棋盘查看。</li>
+      </ul>
     </div>
   </section>
 
   <section>
     <div class="section-head">
-      <h2>产品截图</h2>
-      <p>官网先用轻量产品 mock 展示核心体验，不提交大型截图。正式截图可后续放入 `website/public/screenshots/`。</p>
+      <div>
+        <p class="eyebrow">Download</p>
+        <h2>免费下载桌面版</h2>
+      </div>
+      <p>安装包放在 GitHub Releases。官网保持轻量，下载前可查看 SHA256SUMS.txt。</p>
     </div>
     <div class="grid four">
-      <article class="product-shot">
-        <div class="shot-toolbar"><span>Board</span><span>候选点</span></div>
-        <div class="shot-content"><div class="shot-board"></div></div>
-      </article>
-      <article class="product-shot">
-        <div class="shot-toolbar"><span>Teacher</span><span>tool trace</span></div>
-        <div class="shot-content shot-chat">
-          <div class="shot-bubble">读取棋谱</div>
-          <div class="shot-bubble">KataGo 当前局面</div>
-          <div class="shot-bubble">这手的问题不是形状，而是先后手。</div>
-        </div>
-      </article>
-      <article class="product-shot">
-        <div class="shot-toolbar"><span>Range Review</span><span>12-48 手</span></div>
-        <div class="shot-content"><div class="shot-timeline"></div><div class="shot-bubble">转折点：第 37 手</div></div>
-      </article>
-      <article class="product-shot">
-        <div class="shot-toolbar"><span>Evidence</span><span>shape</span></div>
-        <div class="shot-content evidence-stack">
-          <span>定式相似：小目低挂</span>
-          <span>死活特征：眼位不足</span>
-          <span>训练题：倒扑 / 接不归</span>
-        </div>
-      </article>
-    </div>
-  </section>
-
-  <section>
-    <div class="section-head">
-      <h2>下载</h2>
-      <p>安装包不放在 Cloudflare Pages。请从 GitHub Releases 下载，并使用 SHA256SUMS.txt 校验。</p>
-    </div>
-    <div class="grid four">
-      {downloads.map(([title, audience, badge]) => (
+      {downloads.map(([title, audience]) => (
         <article class="download-card">
           <h3>{title}</h3>
           <p>{audience}</p>
-          <div class="download-meta"><span>{badge}</span><span>GitHub Releases</span></div>
-          <a class="button" href={releasesUrl}>查看下载</a>
+          <a class="button" href={releasesUrl}>前往下载</a>
         </article>
       ))}
     </div>
   </section>
 
-  <section>
-    <div class="privacy-panel">
-      <p class="eyebrow">Privacy by default</p>
-      <h2>隐私默认站在用户这边</h2>
-      <p>
-        棋谱、学生画像、老师会话和分析缓存默认保存在本机，KataGo 在本机运行。只有当用户配置 LLM 或自定义 TTS API，并主动发起老师任务或朗读任务时，相关文本才会发送到用户配置的服务。
-      </p>
-      <div class="button-row">
-        <a class="button" href="/privacy">阅读隐私说明</a>
-        <a class="button" href={issuesUrl}>反馈问题</a>
-      </div>
-    </div>
-  </section>
-
-  <section>
-    <div class="section-head">
-      <h2>路线图</h2>
-      <p>先把桌面复盘体验做扎实，再逐步扩展更强的自动化评测和发布质量系统。</p>
-    </div>
-    <div class="grid three">
-      {['真实教学评测', '常驻 KataGo Engine Pool', '老师会话与反馈闭环', '本地 Kokoro TTS', '发布包 smoke test', '自动更新'].map((item) => (
-        <article class="card">
-          <h3>{item}</h3>
-          <p>持续完善中。</p>
-        </article>
-      ))}
+  <section class="privacy-panel">
+    <p class="eyebrow">Trust</p>
+    <h2>默认不把你的棋谱上传到项目服务器。</h2>
+    <p>
+      棋谱、学生画像、老师会话和分析缓存默认保存在用户电脑里。只有当你配置 LLM 或自定义 TTS API，并主动发起任务时，相关内容才会发送到你选择的服务。
+    </p>
+    <div class="button-row">
+      <a class="button" href="/privacy">阅读隐私说明</a>
+      <a class="button" href={issuesUrl}>反馈问题</a>
     </div>
   </section>
 </BaseLayout>

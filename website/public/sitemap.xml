@@ -6,10 +6,40 @@
   <url><loc>https://goagent.top/privacy</loc><priority>0.7</priority></url>
   <url><loc>https://goagent.top/faq</loc><priority>0.7</priority></url>
   <url><loc>https://goagent.top/changelog</loc><priority>0.6</priority></url>
-  <url><loc>https://goagent.top/zh-hant</loc><priority>0.5</priority></url>
-  <url><loc>https://goagent.top/en</loc><priority>0.5</priority></url>
-  <url><loc>https://goagent.top/ja</loc><priority>0.5</priority></url>
-  <url><loc>https://goagent.top/ko</loc><priority>0.5</priority></url>
-  <url><loc>https://goagent.top/th</loc><priority>0.5</priority></url>
-  <url><loc>https://goagent.top/vi</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/zh-hant</loc><priority>0.6</priority></url>
+  <url><loc>https://goagent.top/zh-hant/download</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/zh-hant/docs</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/zh-hant/privacy</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/zh-hant/faq</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/zh-hant/changelog</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/en</loc><priority>0.6</priority></url>
+  <url><loc>https://goagent.top/en/download</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/en/docs</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/en/privacy</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/en/faq</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/en/changelog</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/ja</loc><priority>0.6</priority></url>
+  <url><loc>https://goagent.top/ja/download</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/ja/docs</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/ja/privacy</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/ja/faq</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/ja/changelog</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/ko</loc><priority>0.6</priority></url>
+  <url><loc>https://goagent.top/ko/download</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/ko/docs</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/ko/privacy</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/ko/faq</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/ko/changelog</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/th</loc><priority>0.6</priority></url>
+  <url><loc>https://goagent.top/th/download</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/th/docs</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/th/privacy</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/th/faq</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/th/changelog</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/vi</loc><priority>0.6</priority></url>
+  <url><loc>https://goagent.top/vi/download</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/vi/docs</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/vi/privacy</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/vi/faq</loc><priority>0.5</priority></url>
+  <url><loc>https://goagent.top/vi/changelog</loc><priority>0.5</priority></url>
 </urlset>

@@ -38,6 +38,7 @@ requireFile('website/src/pages/index.astro')
 requireFile('website/src/pages/download.astro')
 requireFile('website/src/pages/privacy.astro')
 requireFile('website/src/pages/[locale].astro')
+requireFile('website/src/pages/[locale]/[page].astro')
 requireFile('website/DEPLOYMENT.md')
 requireFile('website/public/sitemap.xml')
 requireFile('website/public/site.webmanifest')
@@ -59,7 +60,17 @@ for (const keyword of ['本地', 'LLM', 'TTS']) {
 for (const keyword of ['Cloudflare Pages', 'Spaceship', 'goagent.top']) {
   if (!deployment.includes(keyword)) fail(`DEPLOYMENT.md must contain ${keyword}`)
 }
-for (const keyword of ['https://goagent.top/', 'https://goagent.top/en', 'https://goagent.top/zh-hant']) {
+for (const keyword of [
+  'https://goagent.top/',
+  'https://goagent.top/en',
+  'https://goagent.top/zh-hant',
+  'https://goagent.top/en/download',
+  'https://goagent.top/en/faq',
+  'https://goagent.top/ja/download',
+  'https://goagent.top/ko/privacy',
+  'https://goagent.top/th/docs',
+  'https://goagent.top/vi/changelog'
+]) {
   if (!sitemap.includes(keyword)) fail(`sitemap.xml must contain ${keyword}`)
 }
 if (!manifest.includes('"name": "GoAgent"')) fail('site.webmanifest must name GoAgent')

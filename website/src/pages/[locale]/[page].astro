@@ -1,0 +1,393 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+
+const releasesUrl = 'https://github.com/wimi321/GoAgent/releases'
+const githubUrl = 'https://github.com/wimi321/GoAgent'
+const issuesUrl = 'https://github.com/wimi321/GoAgent/issues'
+
+const localeKeys = ['zh-hant', 'en', 'ja', 'ko', 'th', 'vi'] as const
+const pageKeys = ['download', 'docs', 'privacy', 'faq', 'changelog'] as const
+type LocaleKey = (typeof localeKeys)[number]
+type PageKey = (typeof pageKeys)[number]
+
+const localeMeta = {
+  'zh-hant': { lang: 'zh-Hant', name: '繁體中文' },
+  en: { lang: 'en', name: 'English' },
+  ja: { lang: 'ja', name: '日本語' },
+  ko: { lang: 'ko', name: '한국어' },
+  th: { lang: 'th', name: 'ไทย' },
+  vi: { lang: 'vi', name: 'Tiếng Việt' }
+} as const
+
+const localized = {
+  'zh-hant': {
+    download: {
+      title: '下載 GoAgent - GitHub Releases',
+      description: '從 GitHub Releases 下載 GoAgent 的 Windows 和 macOS 安裝包。',
+      eyebrow: '下載',
+      h1: '下載 GoAgent',
+      lead: '官網不托管大型安裝包。所有桌面安裝包統一從 GitHub Releases 下載，便於校驗、回滾和版本追蹤。',
+      primary: '打開 GitHub Releases',
+      secondary: '安裝文檔',
+      options: [
+        ['Windows 普通用戶', 'Windows x64 標準版', '適合大多數 Windows 電腦，優先選擇 OpenCL 推薦包。', '推薦'],
+        ['NVIDIA 顯卡用戶', 'Windows x64 NVIDIA 版', '適合 NVIDIA 顯卡和 CUDA 運行環境。', 'GPU'],
+        ['macOS M 系列', 'macOS Apple Silicon', '適合 Apple Silicon / M 系列芯片。', 'arm64'],
+        ['Intel Mac', 'macOS Intel', '適合 Intel 架構 Mac。', 'x64']
+      ],
+      checkTitle: '校驗下載文件',
+      checkText: '每個 release 會提供 SHA256SUMS.txt。下載後建議對照校驗，尤其是從鏡像或第三方下載時。',
+      checkItems: ['Windows 可使用 PowerShell 的 Get-FileHash。', 'macOS 可使用 shasum -a 256。', '如果文件名、版本號或校驗值不一致，請重新從 GitHub Releases 下載。'],
+      whyTitle: '為什麼不把安裝包放在官網？',
+      whyText: 'Cloudflare Pages 適合靜態官網，不適合作為大型安裝包倉庫。GoAgent 安裝包會先放在 GitHub Releases。'
+    },
+    docs: {
+      title: 'GoAgent 文檔 - 快速開始',
+      description: 'GoAgent 安裝、KataGo、LLM、SGF、當前手講解、區間復盤和 TTS 使用文檔。',
+      eyebrow: '文檔',
+      h1: '快速開始',
+      lead: '這份短文檔幫你把 GoAgent 跑起來，並理解它如何把 KataGo、LLM、知識庫和隱私策略組合起來。',
+      steps: [
+        ['安裝 GoAgent', '從 GitHub Releases 下載適合系統的安裝包。Windows 普通用戶選標準版，NVIDIA 用戶可選 NVIDIA 版，Mac 用戶按芯片選 Apple Silicon 或 Intel。'],
+        ['配置 KataGo', 'GoAgent 以 KataGo 作為事實裁判。應用會提供官方權重選擇、下載狀態、資源診斷和速度測試。'],
+        ['配置 LLM', '在設定中填寫自己的 LLM Base URL、API Key 和模型。老師任務會把必要棋盤上下文、KataGo 證據和知識庫結果發給配置的服務。'],
+        ['導入 SGF', '可以導入本地 SGF，也可以使用棋譜庫能力管理棋局。'],
+        ['使用當前手講解', '在棋盤當前手處讓老師分析。老師會參考棋盤、KataGo 候選點、PV、知識匹配和學生設定。'],
+        ['使用區間復盤', '選中一段手數後聚焦復盤，適合中盤戰、轉換、定式分支、死活攻防和官子。'],
+        ['設定學生和老師風格', '可配置學生水平、年齡範圍、老師講解風格和術語密度。'],
+        ['TTS 規劃說明', '默認規劃使用 Kokoro 中文 ONNX 離線語音。其它語言作為可選下載包；自定義 TTS API 需要明確選擇。']
+      ],
+      qualityTitle: '講解質量原則',
+      qualityItems: ['KataGo 是事實依據，LLM 不應編造坐標、勝率、PV 或定式名。', '常規定式少講，定式分支講變化，中盤戰和明顯損失才詳細展開。', '知識庫負責解釋和訓練遷移，不代替當前局面的引擎判斷。']
+    },
+    privacy: {
+      title: 'GoAgent 隱私說明',
+      description: 'GoAgent 默認本地保存棋譜、學生畫像、老師會話、分析緩存和設定。',
+      eyebrow: '隱私',
+      h1: '隱私說明',
+      lead: 'GoAgent 的產品原則是默認把棋譜留在用戶電腦裡。官網不提供棋譜上傳 API，也不自帶項目服務器收集棋譜。',
+      sections: [
+        ['本地資料', ['棋譜庫', '學生畫像', '老師會話', '分析緩存', '應用設定']],
+        ['第三方服務', ['如果用戶配置 LLM API，發送內容取決於用戶發起的老師任務。', '如果用戶配置自定義 TTS API，朗讀文本會發送到用戶配置的 TTS 服務。', '默認 Kokoro TTS 是本地離線，不上傳文本。']],
+        ['官網資料', ['goagent.top 是靜態官網，不部署數據庫，也不提供棋譜上傳 API。']],
+        ['刪除資料', ['後續版本會提供更完整的本地清理入口；當前可透過應用資料目錄管理。']]
+      ]
+    },
+    faq: {
+      title: 'GoAgent FAQ',
+      description: 'GoAgent 常見問題：聯網、本地 KataGo、LLM、Windows NVIDIA、TTS 隱私和反饋方式。',
+      eyebrow: 'FAQ',
+      h1: '常見問題',
+      lead: '這裡回答下載、隱私、KataGo、LLM 和 TTS 的基礎問題。',
+      items: [
+        ['GoAgent 是什麼？', 'GoAgent 是開源免費的專業圍棋智能體，目標是把 KataGo、知識庫、多模態 LLM 和質量門禁整合成可驗證的 AI 圍棋老師。'],
+        ['它和普通 AI 聊天有什麼區別？', '普通聊天容易憑空講棋。GoAgent 會圍繞棋盤、KataGo 證據、PV、目差、知識匹配和學生設定組織講解。'],
+        ['是否需要聯網？', 'KataGo 和本地資料可以在本機運行。使用 LLM、自定義 TTS API、下載權重或同步遠程棋譜時需要聯網。'],
+        ['KataGo 是否本地運行？', '是。GoAgent 設計為讓 KataGo 在本機運行，作為候選點、勝率、目差和 PV 的事實來源。'],
+        ['LLM 是否必須？', '如果要使用 AI 老師自然語言講解，需要配置 LLM。棋盤和 KataGo 分析能力可以獨立存在。'],
+        ['如何反饋問題？', '可以在 GitHub Issues 反饋，也歡迎加入 QQ 群 1030632742。']
+      ]
+    },
+    changelog: {
+      title: 'GoAgent 更新',
+      description: 'GoAgent 近期版本摘要和後續路線。',
+      eyebrow: '更新',
+      h1: '版本摘要',
+      lead: '完整記錄請查看 GitHub Releases 和倉庫 CHANGELOG。',
+      entries: [['0.3.x', '棋形識別、區間復盤、老師會話、學生設定、知識庫來源策略、質量評測、KataGo engine telemetry 和多語言 UI。'], ['官網', '新增 Cloudflare Pages 靜態官網、多語言頁面、下載頁、隱私頁、FAQ 和網站質量檢查。'], ['後續版本', 'TTS、真實教學評測、常駐 KataGo Engine Pool、自動更新和更完整的視覺 QA。']]
+    }
+  },
+  en: {
+    download: {
+      title: 'Download GoAgent - GitHub Releases',
+      description: 'Download GoAgent installers for Windows and macOS from GitHub Releases.',
+      eyebrow: 'Download',
+      h1: 'Download GoAgent',
+      lead: 'The website does not host large installers. Desktop builds are distributed through GitHub Releases for verification, rollback, and version tracking.',
+      primary: 'Open GitHub Releases',
+      secondary: 'Installation guide',
+      options: [
+        ['Most Windows users', 'Windows x64 Standard', 'Best for most Windows machines. Prefer the OpenCL recommended build.', 'Recommended'],
+        ['NVIDIA GPU users', 'Windows x64 NVIDIA', 'For NVIDIA GPUs and CUDA runtime environments.', 'GPU'],
+        ['Mac with Apple Silicon', 'macOS Apple Silicon', 'For Apple Silicon / M-series Macs.', 'arm64'],
+        ['Intel Mac', 'macOS Intel', 'For Intel-based Macs.', 'x64']
+      ],
+      checkTitle: 'Verify downloads',
+      checkText: 'Each release provides SHA256SUMS.txt. Check it after downloading, especially if you use a mirror or third-party link.',
+      checkItems: ['Windows: use PowerShell Get-FileHash.', 'macOS: use shasum -a 256.', 'If the filename, version, or hash does not match, download again from GitHub Releases.'],
+      whyTitle: 'Why not host installers on the website?',
+      whyText: 'Cloudflare Pages is good for static websites, not large binary distribution. GoAgent installers are distributed through GitHub Releases.'
+    },
+    docs: {
+      title: 'GoAgent Guide - Quick Start',
+      description: 'Install GoAgent, configure KataGo and LLM, import SGF, review current moves, range reviews, and TTS.',
+      eyebrow: 'Guide',
+      h1: 'Quick Start',
+      lead: 'This short guide helps you get GoAgent running and understand how it combines KataGo, LLMs, the knowledge base, and privacy controls.',
+      steps: [
+        ['Install GoAgent', 'Download the right installer from GitHub Releases. Most Windows users should choose Standard; NVIDIA users can choose the NVIDIA build; Mac users should choose Apple Silicon or Intel.'],
+        ['Configure KataGo', 'GoAgent uses KataGo as the evidence engine. The app provides model selection, download status, diagnostics, and benchmark tools.'],
+        ['Configure an LLM', 'Enter your LLM Base URL, API key, and model in Settings. Teacher tasks send only the needed board context, KataGo evidence, and knowledge matches to the configured service.'],
+        ['Import SGF', 'Import local SGF files or manage games from the game library.'],
+        ['Use current-move explanation', 'Ask the teacher to analyze the current move with board context, KataGo candidates, PV, knowledge matches, and student settings.'],
+        ['Use range review', 'Select a move range for focused review, useful for fights, transitions, joseki branches, life-and-death, and endgame.'],
+        ['Set student and teacher style', 'Adjust student level, age range, teacher style, and terminology density.'],
+        ['TTS plan', 'The default plan is Kokoro Chinese ONNX offline TTS. Other languages are optional packs; custom TTS APIs are used only when explicitly selected.']
+      ],
+      qualityTitle: 'Teaching quality principles',
+      qualityItems: ['KataGo is the evidence source; the LLM should not invent coordinates, winrates, PVs, or joseki names.', 'Keep normal joseki short, explain branches when they appear, and go deeper in fights or big losses.', 'The knowledge base explains and transfers training ideas; it does not replace engine judgment.']
+    },
+    privacy: {
+      title: 'GoAgent Privacy',
+      description: 'GoAgent stores game records, student profiles, teacher sessions, analysis cache, and settings locally by default.',
+      eyebrow: 'Privacy',
+      h1: 'Privacy',
+      lead: 'GoAgent is designed to keep your game records on your computer by default. The website does not provide a game-upload API or a project server that collects your games.',
+      sections: [
+        ['Local data', ['Game library', 'Student profiles', 'Teacher sessions', 'Analysis cache', 'App settings']],
+        ['Third-party services', ['If you configure an LLM API, the data sent depends on the teacher task you start.', 'If you configure a custom TTS API, the spoken text is sent to your configured TTS service.', 'Default Kokoro TTS is offline and does not upload text.']],
+        ['Website data', ['goagent.top is a static website. It does not deploy a database or game-upload API.']],
+        ['Deleting data', ['A fuller local cleanup UI is planned. For now, users can manage data through the app data directory.']]
+      ]
+    },
+    faq: {
+      title: 'GoAgent FAQ',
+      description: 'Frequently asked questions about GoAgent downloads, KataGo, LLM, NVIDIA builds, TTS, and privacy.',
+      eyebrow: 'FAQ',
+      h1: 'Frequently Asked Questions',
+      lead: 'Answers about download, privacy, KataGo, LLM, and TTS basics.',
+      items: [
+        ['What is GoAgent?', 'GoAgent is an open-source, free, professional Go AI agent that combines KataGo, a knowledge base, multimodal LLMs, and quality gates into a verifiable AI Go teacher.'],
+        ['How is it different from normal AI chat?', 'Normal chat can invent Go analysis. GoAgent organizes explanations around the board, KataGo evidence, PVs, score, knowledge matches, and student settings.'],
+        ['Does it need internet access?', 'KataGo and local data can run on your computer. LLM, custom TTS, model downloads, and remote game sync need internet access.'],
+        ['Does KataGo run locally?', 'Yes. KataGo runs on the user machine and provides candidates, winrate, score, and PV evidence.'],
+        ['Is an LLM required?', 'An LLM is required for natural-language teacher explanations. Board and KataGo analysis can exist independently.'],
+        ['How can I report issues?', 'Use GitHub Issues or join the QQ group 1030632742.']
+      ]
+    },
+    changelog: {
+      title: 'GoAgent Updates',
+      description: 'Recent GoAgent version summary and roadmap.',
+      eyebrow: 'Updates',
+      h1: 'Version Summary',
+      lead: 'For complete records, see GitHub Releases and the repository changelog.',
+      entries: [['0.3.x', 'Shape recognition, range review, teacher sessions, student settings, source policy, quality evaluation, KataGo engine telemetry, and multilingual UI.'], ['Website', 'Added Cloudflare Pages static website, multilingual pages, download page, privacy page, FAQ, and website quality checks.'], ['Next', 'TTS, real teaching evaluation, persistent KataGo Engine Pool, auto update, and deeper visual QA.']]
+    }
+  },
+  ja: {
+    download: {
+      title: 'GoAgent ダウンロード - GitHub Releases',
+      description: 'Windows と macOS 用の GoAgent インストーラを GitHub Releases からダウンロードします。',
+      eyebrow: 'ダウンロード',
+      h1: 'GoAgent をダウンロード',
+      lead: '公式サイトでは大きなインストーラを配布しません。検証とバージョン管理のため、デスクトップ版は GitHub Releases で配布します。',
+      primary: 'GitHub Releases を開く',
+      secondary: 'インストールガイド',
+      options: [['一般的な Windows ユーザー', 'Windows x64 標準版', '多くの Windows 環境向け。OpenCL 推奨版を優先してください。', '推奨'], ['NVIDIA GPU ユーザー', 'Windows x64 NVIDIA 版', 'NVIDIA GPU と CUDA ランタイム向けです。', 'GPU'], ['Apple Silicon Mac', 'macOS Apple Silicon', 'M シリーズ Mac 向けです。', 'arm64'], ['Intel Mac', 'macOS Intel', 'Intel Mac 向けです。', 'x64']],
+      checkTitle: 'ダウンロードの確認',
+      checkText: '各 release には SHA256SUMS.txt があります。特にミラーや第三者リンクから入手した場合は確認してください。',
+      checkItems: ['Windows では PowerShell の Get-FileHash を使えます。', 'macOS では shasum -a 256 を使えます。', 'ファイル名、バージョン、ハッシュが違う場合は GitHub Releases から再ダウンロードしてください。'],
+      whyTitle: 'なぜ公式サイトに置かないのか',
+      whyText: 'Cloudflare Pages は静的サイト向けで、大きなバイナリ配布には向いていません。GoAgent は GitHub Releases で配布します。'
+    },
+    docs: {
+      title: 'GoAgent ガイド - クイックスタート',
+      description: 'GoAgent のインストール、KataGo、LLM、SGF、現在手解説、区間復盤、TTS の使い方。',
+      eyebrow: 'ガイド',
+      h1: 'クイックスタート',
+      lead: 'GoAgent を動かし、KataGo、LLM、知識ベース、プライバシー設定がどう組み合わさるかを理解するための短いガイドです。',
+      steps: [['GoAgent をインストール', 'GitHub Releases から環境に合うインストーラを選びます。'], ['KataGo を設定', 'GoAgent は KataGo を根拠エンジンとして使います。モデル選択、診断、速度測定を提供します。'], ['LLM を設定', '設定画面で Base URL、API Key、モデルを入力します。'], ['SGF を読み込む', 'ローカル SGF を読み込み、棋譜ライブラリで管理できます。'], ['現在手を解説', '盤面、候補手、PV、知識マッチ、学生設定を使って説明します。'], ['区間復盤', '一部の手順に絞って戦い、変化、死活、官子を確認します。'], ['学生と先生のスタイル', 'レベル、年齢、説明スタイル、用語密度を調整できます。'], ['TTS 予定', '既定では Kokoro 中国語 ONNX オフライン音声を予定しています。']],
+      qualityTitle: '解説品質の原則',
+      qualityItems: ['KataGo が根拠です。LLM は座標、勝率、PV、定石名を作ってはいけません。', '普通の定石は短く、分岐や戦いは必要に応じて詳しく説明します。', '知識ベースは説明と練習への橋渡しであり、エンジン判断の代わりではありません。']
+    },
+    privacy: {
+      title: 'GoAgent プライバシー',
+      description: 'GoAgent は棋譜、学習記録、会話、分析キャッシュ、設定を既定でローカルに保存します。',
+      eyebrow: 'プライバシー',
+      h1: 'プライバシー',
+      lead: 'GoAgent は棋譜をユーザーのコンピュータに残す設計です。公式サイトには棋譜アップロード API や収集サーバーはありません。',
+      sections: [['ローカルデータ', ['棋譜ライブラリ', '学生プロフィール', '先生との会話', '分析キャッシュ', 'アプリ設定']], ['第三者サービス', ['LLM API を設定した場合、送信内容はユーザーが開始した教師タスクに依存します。', 'カスタム TTS API を設定した場合、読み上げテキストがそのサービスに送信されます。', '既定の Kokoro TTS はオフラインです。']], ['公式サイト', ['goagent.top は静的サイトで、データベースや棋譜アップロード API はありません。']], ['削除', ['今後ローカル削除 UI を整備予定です。現時点ではアプリデータディレクトリを管理してください。']]]
+    },
+    faq: {
+      title: 'GoAgent FAQ',
+      description: 'GoAgent のダウンロード、KataGo、LLM、NVIDIA 版、TTS、プライバシーに関する FAQ。',
+      eyebrow: 'FAQ',
+      h1: 'よくある質問',
+      lead: 'ダウンロード、プライバシー、KataGo、LLM、TTS の基本をまとめました。',
+      items: [['GoAgent とは？', 'KataGo、知識ベース、マルチモーダル LLM、品質チェックを組み合わせた、オープンソースで無料の囲碁 AI エージェントです。'], ['普通の AI チャットと何が違う？', '盤面、KataGo の根拠、PV、目差、知識マッチ、学生設定を中心に説明します。'], ['インターネットは必要？', 'KataGo とローカルデータは本機で動作します。LLM、TTS、モデルダウンロード、同期には通信が必要です。'], ['KataGo はローカルで動く？', 'はい。候補手、勝率、目差、PV の根拠を本機で生成します。'], ['LLM は必須？', '自然言語の先生解説には必要です。KataGo 分析は独立して使えます。'], ['問題を報告するには？', 'GitHub Issues または QQ 群 1030632742 で連絡できます。']]
+    },
+    changelog: {
+      title: 'GoAgent 更新',
+      description: 'GoAgent の最近のバージョン概要とロードマップ。',
+      eyebrow: '更新',
+      h1: 'バージョン概要',
+      lead: '完全な記録は GitHub Releases と CHANGELOG を確認してください。',
+      entries: [['0.3.x', '形認識、区間復盤、先生会話、学生設定、知識ソース方針、品質評価、多言語 UI。'], ['公式サイト', 'Cloudflare Pages 静的サイト、多言語ページ、ダウンロード、プライバシー、FAQ、品質チェックを追加。'], ['今後', 'TTS、実教学評価、常駐 KataGo Engine Pool、自動更新、視覚 QA。']]
+    }
+  },
+  ko: {
+    download: { title: 'GoAgent 다운로드 - GitHub Releases', description: 'Windows 및 macOS용 GoAgent 설치 파일을 GitHub Releases에서 다운로드합니다.', eyebrow: '다운로드', h1: 'GoAgent 다운로드', lead: '공식 사이트는 큰 설치 파일을 호스팅하지 않습니다. 데스크톱 빌드는 검증과 버전 추적을 위해 GitHub Releases에서 제공합니다.', primary: 'GitHub Releases 열기', secondary: '설치 가이드', options: [['일반 Windows 사용자', 'Windows x64 Standard', '대부분의 Windows 환경에 적합합니다. OpenCL 권장 빌드를 우선 선택하세요.', '추천'], ['NVIDIA GPU 사용자', 'Windows x64 NVIDIA', 'NVIDIA GPU와 CUDA 런타임 환경용입니다.', 'GPU'], ['Apple Silicon Mac', 'macOS Apple Silicon', 'M 시리즈 Mac용입니다.', 'arm64'], ['Intel Mac', 'macOS Intel', 'Intel Mac용입니다.', 'x64']], checkTitle: '다운로드 검증', checkText: '각 release에는 SHA256SUMS.txt가 포함됩니다. 다운로드 후 확인하세요.', checkItems: ['Windows: PowerShell Get-FileHash 사용.', 'macOS: shasum -a 256 사용.', '파일명, 버전, 해시가 다르면 GitHub Releases에서 다시 받으세요.'], whyTitle: '왜 공식 사이트에 설치 파일을 두지 않나요?', whyText: 'Cloudflare Pages는 정적 사이트에 적합하며 큰 바이너리 배포에는 적합하지 않습니다. GoAgent는 GitHub Releases에서 배포합니다.' },
+    docs: { title: 'GoAgent 가이드 - 빠른 시작', description: 'GoAgent 설치, KataGo, LLM, SGF, 현재 수 설명, 구간 복기, TTS 사용법.', eyebrow: '가이드', h1: '빠른 시작', lead: 'GoAgent를 실행하고 KataGo, LLM, 지식 베이스, 개인정보 제어가 어떻게 결합되는지 이해하는 짧은 가이드입니다.', steps: [['GoAgent 설치', 'GitHub Releases에서 운영체제에 맞는 설치 파일을 선택합니다.'], ['KataGo 설정', 'GoAgent는 KataGo를 근거 엔진으로 사용합니다. 모델 선택, 진단, 속도 측정을 제공합니다.'], ['LLM 설정', '설정에서 Base URL, API Key, 모델을 입력합니다.'], ['SGF 가져오기', '로컬 SGF를 가져오거나 기보 라이브러리에서 관리합니다.'], ['현재 수 설명', '바둑판, 후보수, PV, 지식 매칭, 학생 설정을 참고합니다.'], ['구간 복기', '특정 구간에 집중해 전투, 전환, 정석 분기, 사활, 끝내기를 봅니다.'], ['학생과 설명 스타일', '수준, 나이, 설명 스타일, 용어 밀도를 조정합니다.'], ['TTS 계획', '기본은 Kokoro 중국어 ONNX 오프라인 음성을 계획합니다.']], qualityTitle: '설명 품질 원칙', qualityItems: ['KataGo가 근거이며 LLM은 좌표, 승률, PV, 정석명을 지어내면 안 됩니다.', '일반 정석은 짧게, 분기와 전투는 필요한 만큼 설명합니다.', '지식 베이스는 설명과 훈련 연결을 돕고 엔진 판단을 대체하지 않습니다.'] },
+    privacy: { title: 'GoAgent 개인정보', description: 'GoAgent는 기보, 학생 프로필, 대화, 분석 캐시, 설정을 기본적으로 로컬에 저장합니다.', eyebrow: '개인정보', h1: '개인정보', lead: 'GoAgent는 기본적으로 기보를 사용자 컴퓨터에 보관하도록 설계되었습니다. 공식 사이트에는 기보 업로드 API나 수집 서버가 없습니다.', sections: [['로컬 데이터', ['기보 라이브러리', '학생 프로필', '선생님 대화', '분석 캐시', '앱 설정']], ['제3자 서비스', ['LLM API를 설정하면 사용자가 시작한 작업에 따라 데이터가 전송됩니다.', '사용자 지정 TTS API를 설정하면 읽을 텍스트가 해당 서비스로 전송됩니다.', '기본 Kokoro TTS는 오프라인입니다.']], ['웹사이트', ['goagent.top은 정적 사이트이며 데이터베이스나 기보 업로드 API가 없습니다.']], ['삭제', ['향후 로컬 정리 UI를 제공할 예정입니다. 현재는 앱 데이터 디렉터리를 관리하세요.']]] },
+    faq: { title: 'GoAgent FAQ', description: 'GoAgent 다운로드, KataGo, LLM, NVIDIA 빌드, TTS, 개인정보 관련 질문.', eyebrow: 'FAQ', h1: '자주 묻는 질문', lead: '다운로드, 개인정보, KataGo, LLM, TTS 기본 질문입니다.', items: [['GoAgent는 무엇인가요?', 'KataGo, 지식 베이스, 멀티모달 LLM, 품질 검사를 결합한 오픈소스 무료 바둑 AI 에이전트입니다.'], ['일반 AI 채팅과 무엇이 다른가요?', '바둑판, KataGo 근거, PV, 집 차이, 지식 매칭, 학생 설정을 중심으로 설명합니다.'], ['인터넷이 필요한가요?', 'KataGo와 로컬 데이터는 본기기에서 동작합니다. LLM, TTS, 모델 다운로드, 동기화에는 인터넷이 필요합니다.'], ['KataGo는 로컬에서 실행되나요?', '네. 후보수, 승률, 집 차이, PV 근거를 로컬에서 생성합니다.'], ['LLM은 필수인가요?', '자연어 선생님 설명에는 필요합니다. KataGo 분석은 독립적으로 사용할 수 있습니다.'], ['문제는 어디에 제보하나요?', 'GitHub Issues 또는 QQ 그룹 1030632742에서 제보할 수 있습니다.']] },
+    changelog: { title: 'GoAgent 업데이트', description: 'GoAgent 최근 버전 요약과 로드맵.', eyebrow: '업데이트', h1: '버전 요약', lead: '전체 기록은 GitHub Releases와 CHANGELOG를 확인하세요.', entries: [['0.3.x', '형태 인식, 구간 복기, 선생님 대화, 학생 설정, 지식 소스 정책, 품질 평가, 다국어 UI.'], ['웹사이트', 'Cloudflare Pages 정적 사이트, 다국어 페이지, 다운로드, 개인정보, FAQ, 품질 검사 추가.'], ['다음', 'TTS, 실제 교육 평가, 상주 KataGo Engine Pool, 자동 업데이트, 시각 QA.']] }
+  },
+  th: {
+    download: { title: 'ดาวน์โหลด GoAgent - GitHub Releases', description: 'ดาวน์โหลดตัวติดตั้ง GoAgent สำหรับ Windows และ macOS จาก GitHub Releases', eyebrow: 'ดาวน์โหลด', h1: 'ดาวน์โหลด GoAgent', lead: 'เว็บไซต์ไม่เก็บไฟล์ติดตั้งขนาดใหญ่ ไฟล์เดสก์ท็อปทั้งหมดอยู่บน GitHub Releases เพื่อให้ตรวจสอบและย้อนเวอร์ชันได้ง่าย', primary: 'เปิด GitHub Releases', secondary: 'คู่มือติดตั้ง', options: [['ผู้ใช้ Windows ทั่วไป', 'Windows x64 Standard', 'เหมาะกับเครื่อง Windows ส่วนใหญ่ ควรเลือกแพ็ก OpenCL ที่แนะนำ', 'แนะนำ'], ['ผู้ใช้ GPU NVIDIA', 'Windows x64 NVIDIA', 'เหมาะกับการ์ด NVIDIA และสภาพแวดล้อม CUDA', 'GPU'], ['Mac Apple Silicon', 'macOS Apple Silicon', 'สำหรับ Mac ชิป M', 'arm64'], ['Intel Mac', 'macOS Intel', 'สำหรับ Mac Intel', 'x64']], checkTitle: 'ตรวจสอบไฟล์ดาวน์โหลด', checkText: 'แต่ละ release มี SHA256SUMS.txt แนะนำให้ตรวจสอบหลังดาวน์โหลด', checkItems: ['Windows ใช้ PowerShell Get-FileHash', 'macOS ใช้ shasum -a 256', 'ถ้าชื่อไฟล์ เวอร์ชัน หรือ hash ไม่ตรง ให้ดาวน์โหลดใหม่จาก GitHub Releases'], whyTitle: 'ทำไมไม่เก็บไฟล์ติดตั้งบนเว็บไซต์?', whyText: 'Cloudflare Pages เหมาะกับเว็บสถิต ไม่เหมาะกับไฟล์ไบนารีขนาดใหญ่ GoAgent จึงแจกผ่าน GitHub Releases' },
+    docs: { title: 'คู่มือ GoAgent - เริ่มต้นเร็ว', description: 'การติดตั้ง GoAgent, KataGo, LLM, SGF, การอธิบายหมากปัจจุบัน, การทบทวนช่วงเกม และ TTS', eyebrow: 'คู่มือ', h1: 'เริ่มต้นเร็ว', lead: 'คู่มือนี้ช่วยให้เริ่มใช้ GoAgent และเข้าใจการทำงานร่วมกันของ KataGo, LLM, ฐานความรู้ และการตั้งค่าความเป็นส่วนตัว', steps: [['ติดตั้ง GoAgent', 'เลือกไฟล์ติดตั้งที่ตรงกับระบบจาก GitHub Releases'], ['ตั้งค่า KataGo', 'GoAgent ใช้ KataGo เป็นเครื่องมือให้หลักฐาน มีการเลือกโมเดล การวินิจฉัย และทดสอบความเร็ว'], ['ตั้งค่า LLM', 'กรอก Base URL, API Key และโมเดลใน Settings'], ['นำเข้า SGF', 'นำเข้า SGF ในเครื่องหรือจัดการจากคลังเกม'], ['อธิบายหมากปัจจุบัน', 'ใช้กระดาน ตัวเลือก PV การจับคู่ความรู้ และข้อมูลผู้เรียน'], ['ทบทวนช่วงเกม', 'เลือกช่วงเพื่อดูการต่อสู้ การเปลี่ยนรูป joseki สาขา สถานการณ์ชีวิตตาย และ endgame'], ['ตั้งค่าผู้เรียนและสไตล์ครู', 'ปรับระดับ อายุ สไตล์การอธิบาย และความหนาแน่นของศัพท์'], ['แผน TTS', 'ค่าเริ่มต้นวางแผนใช้ Kokoro Chinese ONNX แบบออฟไลน์']], qualityTitle: 'หลักการคุณภาพคำอธิบาย', qualityItems: ['KataGo เป็นหลักฐาน LLM ไม่ควรแต่งพิกัด อัตราชนะ PV หรือชื่อ joseki', 'joseki ปกติพูดสั้น สาขาและการต่อสู้ค่อยอธิบายละเอียด', 'ฐานความรู้ช่วยอธิบายและโยงไปสู่การฝึก ไม่แทนการตัดสินของ engine'] },
+    privacy: { title: 'ความเป็นส่วนตัวของ GoAgent', description: 'GoAgent เก็บคีฟู โปรไฟล์ผู้เรียน บทสนทนา cache การวิเคราะห์ และการตั้งค่าไว้ในเครื่องเป็นค่าเริ่มต้น', eyebrow: 'ความเป็นส่วนตัว', h1: 'ความเป็นส่วนตัว', lead: 'GoAgent ออกแบบให้คีฟูอยู่ในคอมพิวเตอร์ของผู้ใช้ เว็บไซต์ไม่มี API อัปโหลดคีฟูและไม่มีเซิร์ฟเวอร์รวบรวมคีฟู', sections: [['ข้อมูลในเครื่อง', ['คลังเกม', 'โปรไฟล์ผู้เรียน', 'บทสนทนาครู', 'cache การวิเคราะห์', 'การตั้งค่าแอป']], ['บริการภายนอก', ['ถ้าตั้งค่า LLM API ข้อมูลที่ส่งขึ้นอยู่กับงานที่ผู้ใช้เริ่ม', 'ถ้าตั้งค่า custom TTS API ข้อความอ่านออกเสียงจะถูกส่งไปยังบริการนั้น', 'Kokoro TTS ค่าเริ่มต้นเป็นออฟไลน์']], ['เว็บไซต์', ['goagent.top เป็นเว็บสถิต ไม่มีฐานข้อมูลหรือ API อัปโหลดคีฟู']], ['การลบข้อมูล', ['จะมี UI ล้างข้อมูลในเครื่องที่สมบูรณ์ขึ้น ในตอนนี้จัดการผ่านโฟลเดอร์ข้อมูลแอปได้']]] },
+    faq: { title: 'FAQ GoAgent', description: 'คำถามเกี่ยวกับการดาวน์โหลด KataGo, LLM, NVIDIA, TTS และความเป็นส่วนตัว', eyebrow: 'FAQ', h1: 'คำถามที่พบบ่อย', lead: 'คำตอบพื้นฐานเกี่ยวกับดาวน์โหลด ความเป็นส่วนตัว KataGo, LLM และ TTS', items: [['GoAgent คืออะไร?', 'GoAgent คือ AI agent หมากล้อมแบบโอเพนซอร์สและฟรี รวม KataGo ฐานความรู้ LLM หลายรูปแบบ และ quality gate'], ['ต่างจาก AI chat ทั่วไปอย่างไร?', 'GoAgent อธิบายโดยอิงกระดาน หลักฐานจาก KataGo, PV, คะแนน การจับคู่ความรู้ และการตั้งค่าผู้เรียน'], ['ต้องใช้อินเทอร์เน็ตไหม?', 'KataGo และข้อมูลในเครื่องทำงานได้ในเครื่อง แต่ LLM, TTS, ดาวน์โหลดโมเดล และซิงก์เกมต้องใช้อินเทอร์เน็ต'], ['KataGo ทำงานในเครื่องไหม?', 'ใช่ สร้างตัวเลือก อัตราชนะ คะแนน และ PV ในเครื่อง'], ['ต้องมี LLM ไหม?', 'ถ้าต้องการคำอธิบายแบบภาษาคนต้องมี LLM แต่การวิเคราะห์ KataGo ใช้แยกได้'], ['รายงานปัญหาอย่างไร?', 'ใช้ GitHub Issues หรือเข้ากลุ่ม QQ 1030632742']] },
+    changelog: { title: 'อัปเดต GoAgent', description: 'สรุปเวอร์ชันล่าสุดและโรดแมปของ GoAgent', eyebrow: 'อัปเดต', h1: 'สรุปเวอร์ชัน', lead: 'ดูบันทึกเต็มได้ที่ GitHub Releases และ CHANGELOG', entries: [['0.3.x', 'shape recognition, range review, teacher sessions, student settings, source policy, quality evaluation, KataGo telemetry และ UI หลายภาษา'], ['เว็บไซต์', 'เพิ่ม Cloudflare Pages static website, หน้า multilingual, download, privacy, FAQ และ quality checks'], ['ต่อไป', 'TTS, real teaching evaluation, persistent KataGo Engine Pool, auto update และ visual QA']] }
+  },
+  vi: {
+    download: { title: 'Tải GoAgent - GitHub Releases', description: 'Tải bộ cài GoAgent cho Windows và macOS từ GitHub Releases.', eyebrow: 'Tải xuống', h1: 'Tải GoAgent', lead: 'Trang web không lưu bộ cài dung lượng lớn. Các bản desktop được phát hành qua GitHub Releases để dễ kiểm tra, quay lại phiên bản và theo dõi.', primary: 'Mở GitHub Releases', secondary: 'Hướng dẫn cài đặt', options: [['Người dùng Windows phổ thông', 'Windows x64 Standard', 'Phù hợp với đa số máy Windows, ưu tiên bản OpenCL khuyến nghị.', 'Khuyến nghị'], ['Người dùng GPU NVIDIA', 'Windows x64 NVIDIA', 'Dành cho GPU NVIDIA và môi trường CUDA.', 'GPU'], ['Mac Apple Silicon', 'macOS Apple Silicon', 'Dành cho Mac chip M.', 'arm64'], ['Intel Mac', 'macOS Intel', 'Dành cho Intel Mac.', 'x64']], checkTitle: 'Kiểm tra tệp tải xuống', checkText: 'Mỗi release có SHA256SUMS.txt. Hãy kiểm tra sau khi tải, nhất là khi dùng mirror hoặc liên kết bên thứ ba.', checkItems: ['Windows: dùng PowerShell Get-FileHash.', 'macOS: dùng shasum -a 256.', 'Nếu tên tệp, phiên bản hoặc hash không khớp, hãy tải lại từ GitHub Releases.'], whyTitle: 'Vì sao không đặt bộ cài trên website?', whyText: 'Cloudflare Pages phù hợp với website tĩnh, không phù hợp để phân phối binary lớn. GoAgent phát hành qua GitHub Releases.' },
+    docs: { title: 'Hướng dẫn GoAgent - Bắt đầu nhanh', description: 'Cài đặt GoAgent, cấu hình KataGo và LLM, nhập SGF, giải thích nước hiện tại, ôn tập theo đoạn và TTS.', eyebrow: 'Hướng dẫn', h1: 'Bắt đầu nhanh', lead: 'Hướng dẫn ngắn này giúp chạy GoAgent và hiểu cách KataGo, LLM, kho tri thức và quyền riêng tư kết hợp với nhau.', steps: [['Cài GoAgent', 'Tải bộ cài phù hợp từ GitHub Releases.'], ['Cấu hình KataGo', 'GoAgent dùng KataGo làm engine bằng chứng, có chọn model, chẩn đoán và benchmark.'], ['Cấu hình LLM', 'Nhập Base URL, API Key và model trong Settings.'], ['Nhập SGF', 'Nhập SGF cục bộ hoặc quản lý trong thư viện ván cờ.'], ['Giải thích nước hiện tại', 'Dựa trên bàn cờ, nước gợi ý, PV, tri thức và thiết lập học viên.'], ['Ôn tập theo đoạn', 'Chọn một đoạn để xem chiến đấu, chuyển đổi, nhánh joseki, sống chết và quan tử.'], ['Thiết lập học viên và phong cách giáo viên', 'Điều chỉnh trình độ, độ tuổi, phong cách và mật độ thuật ngữ.'], ['Kế hoạch TTS', 'Mặc định dự kiến dùng Kokoro Chinese ONNX offline.']], qualityTitle: 'Nguyên tắc chất lượng giảng giải', qualityItems: ['KataGo là bằng chứng; LLM không được bịa tọa độ, tỉ lệ thắng, PV hoặc tên joseki.', 'Joseki bình thường nói ngắn; nhánh và chiến đấu thì giải thích kỹ hơn.', 'Kho tri thức giúp giải thích và gợi ý luyện tập, không thay thế phán đoán của engine.'] },
+    privacy: { title: 'Quyền riêng tư GoAgent', description: 'GoAgent mặc định lưu kỳ phổ, hồ sơ học viên, hội thoại, cache phân tích và cài đặt trên máy.', eyebrow: 'Riêng tư', h1: 'Quyền riêng tư', lead: 'GoAgent được thiết kế để giữ kỳ phổ trên máy người dùng. Website không có API tải kỳ phổ lên và không có server dự án để thu thập kỳ phổ.', sections: [['Dữ liệu cục bộ', ['Thư viện ván cờ', 'Hồ sơ học viên', 'Hội thoại giáo viên', 'Cache phân tích', 'Cài đặt ứng dụng']], ['Dịch vụ bên thứ ba', ['Nếu cấu hình LLM API, dữ liệu gửi đi phụ thuộc vào tác vụ giáo viên do người dùng khởi tạo.', 'Nếu cấu hình custom TTS API, văn bản đọc sẽ gửi tới dịch vụ đó.', 'Kokoro TTS mặc định là offline.']], ['Website', ['goagent.top là website tĩnh, không có database hoặc API tải kỳ phổ lên.']], ['Xóa dữ liệu', ['Sẽ có giao diện dọn dữ liệu cục bộ đầy đủ hơn; hiện có thể quản lý qua thư mục dữ liệu ứng dụng.']]] },
+    faq: { title: 'GoAgent FAQ', description: 'Câu hỏi về tải xuống, KataGo, LLM, NVIDIA, TTS và quyền riêng tư.', eyebrow: 'FAQ', h1: 'Câu hỏi thường gặp', lead: 'Các câu trả lời cơ bản về tải xuống, quyền riêng tư, KataGo, LLM và TTS.', items: [['GoAgent là gì?', 'GoAgent là AI agent cờ vây miễn phí, mã nguồn mở, kết hợp KataGo, kho tri thức, LLM đa phương thức và quality gate.'], ['Khác gì AI chat thông thường?', 'GoAgent giải thích dựa trên bàn cờ, bằng chứng KataGo, PV, điểm, tri thức khớp và thiết lập học viên.'], ['Có cần mạng không?', 'KataGo và dữ liệu cục bộ chạy trên máy. LLM, TTS, tải model và đồng bộ từ xa cần mạng.'], ['KataGo có chạy cục bộ không?', 'Có. Nó tạo nước gợi ý, tỉ lệ thắng, điểm và PV trên máy.'], ['LLM có bắt buộc không?', 'Cần LLM để có lời giải thích tự nhiên. Phân tích KataGo có thể dùng riêng.'], ['Góp ý ở đâu?', 'Dùng GitHub Issues hoặc nhóm QQ 1030632742.']] },
+    changelog: { title: 'Cập nhật GoAgent', description: 'Tóm tắt phiên bản gần đây và lộ trình GoAgent.', eyebrow: 'Cập nhật', h1: 'Tóm tắt phiên bản', lead: 'Xem đầy đủ tại GitHub Releases và CHANGELOG.', entries: [['0.3.x', 'Nhận diện shape, range review, teacher sessions, student settings, source policy, quality evaluation, KataGo telemetry và UI đa ngôn ngữ.'], ['Website', 'Thêm website tĩnh Cloudflare Pages, trang đa ngôn ngữ, download, privacy, FAQ và kiểm tra chất lượng website.'], ['Tiếp theo', 'TTS, real teaching evaluation, persistent KataGo Engine Pool, auto update và visual QA.']] }
+  }
+} as const
+
+export function getStaticPaths() {
+  const locales = ['zh-hant', 'en', 'ja', 'ko', 'th', 'vi'] as const
+  const pages = ['download', 'docs', 'privacy', 'faq', 'changelog'] as const
+  return locales.flatMap((locale) => pages.map((page) => ({ params: { locale, page } })))
+}
+
+const locale = Astro.params.locale as LocaleKey
+const page = Astro.params.page as PageKey
+const data = localized[locale][page]
+const meta = localeMeta[locale]
+const canonical = `https://goagent.top/${locale}/${page}`
+const jsonLd = page === 'faq'
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: localized[locale].faq.items.map(([question, answer]) => ({
+        '@type': 'Question',
+        name: question,
+        acceptedAnswer: { '@type': 'Answer', text: answer }
+      }))
+    }
+  : undefined
+---
+<BaseLayout title={data.title} description={data.description} lang={meta.lang} canonical={canonical} pageKey={page} jsonLd={jsonLd}>
+  {page === 'download' && (
+    <>
+      <section class="page-hero">
+        <p class="eyebrow">{data.eyebrow}</p>
+        <h1>{data.h1}</h1>
+        <p class="lead">{data.lead}</p>
+        <div class="button-row">
+          <a class="button primary" href={releasesUrl}>{data.primary}</a>
+          <a class="button" href={`/${locale}/docs`}>{data.secondary}</a>
+        </div>
+      </section>
+      <section class="content-stack">
+        <div class="grid two">
+          {data.options.map(([audience, title, text, badge]) => (
+            <article class="download-card">
+              <p class="eyebrow">{audience}</p>
+              <h3>{title}</h3>
+              <p>{text}</p>
+              <div class="download-meta">
+                <span>{badge}</span>
+                <span>GitHub Releases</span>
+                <span>SHA256</span>
+              </div>
+              <a class="button" href={releasesUrl}>{data.primary}</a>
+            </article>
+          ))}
+        </div>
+        <article class="notice">
+          <h2>{data.checkTitle}</h2>
+          <p>{data.checkText}</p>
+          <ul>{data.checkItems.map((item) => <li>{item}</li>)}</ul>
+        </article>
+        <article class="notice">
+          <h2>{data.whyTitle}</h2>
+          <p>{data.whyText}</p>
+        </article>
+      </section>
+    </>
+  )}
+
+  {page === 'docs' && (
+    <>
+      <section class="page-hero">
+        <p class="eyebrow">{data.eyebrow}</p>
+        <h1>{data.h1}</h1>
+        <p class="lead">{data.lead}</p>
+      </section>
+      <section class="content-stack">
+        {data.steps.map(([title, text], index) => (
+          <article class="doc-card step-card">
+            <span class="step-index">{index + 1}</span>
+            <div>
+              <h2>{title}</h2>
+              <p>{text}</p>
+            </div>
+          </article>
+        ))}
+        <article class="notice">
+          <h2>{data.qualityTitle}</h2>
+          <ul>{data.qualityItems.map((item) => <li>{item}</li>)}</ul>
+        </article>
+      </section>
+    </>
+  )}
+
+  {page === 'privacy' && (
+    <>
+      <section class="page-hero">
+        <p class="eyebrow">{data.eyebrow}</p>
+        <h1>{data.h1}</h1>
+        <p class="lead">{data.lead}</p>
+      </section>
+      <section class="content-stack">
+        {data.sections.map(([title, items]) => (
+          <article class="privacy-panel">
+            <h2>{title}</h2>
+            <ul>{items.map((item) => <li>{item}</li>)}</ul>
+          </article>
+        ))}
+      </section>
+    </>
+  )}
+
+  {page === 'faq' && (
+    <>
+      <section class="page-hero">
+        <p class="eyebrow">{data.eyebrow}</p>
+        <h1>{data.h1}</h1>
+        <p class="lead">{data.lead}</p>
+      </section>
+      <section class="content-stack faq-list">
+        {data.items.map(([question, answer]) => (
+          <details>
+            <summary>{question}</summary>
+            <p>{answer}</p>
+          </details>
+        ))}
+      </section>
+    </>
+  )}
+
+  {page === 'changelog' && (
+    <>
+      <section class="page-hero">
+        <p class="eyebrow">{data.eyebrow}</p>
+        <h1>{data.h1}</h1>
+        <p class="lead">{data.lead}</p>
+      </section>
+      <section class="content-stack">
+        {data.entries.map(([title, text]) => (
+          <article class="doc-card">
+            <h2>{title}</h2>
+            <p>{text}</p>
+          </article>
+        ))}
+      </section>
+    </>
+  )}
+</BaseLayout>

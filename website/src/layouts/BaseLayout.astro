@@ -6,6 +6,7 @@ interface Props {
   description?: string
   canonical?: string
   lang?: string
+  pageKey?: 'home' | 'download' | 'docs' | 'privacy' | 'faq' | 'changelog'
   jsonLd?: Record<string, unknown>
 }
 
@@ -14,6 +15,7 @@ const {
   description = 'GoAgent 是开源免费的专业围棋智能体：KataGo 负责事实，多模态 LLM 负责讲解，帮助棋友看懂关键手。',
   canonical = new URL(Astro.url.pathname, 'https://goagent.top').toString(),
   lang = 'zh-CN',
+  pageKey = 'home',
   jsonLd
 } = Astro.props
 
@@ -30,6 +32,24 @@ const homeByLang = {
   th: '/th',
   vi: '/vi'
 } as const
+
+const localeSlugs = {
+  'zh-CN': '',
+  'zh-Hant': 'zh-hant',
+  en: 'en',
+  ja: 'ja',
+  ko: 'ko',
+  th: 'th',
+  vi: 'vi'
+} as const
+
+function localizedPath(locale: keyof typeof localeSlugs, key: NonNullable<Props['pageKey']>) {
+  const localePrefix = localeSlugs[locale]
+  const pageSegment = key === 'home' ? '' : key
+  if (!localePrefix && !pageSegment) return '/'
+  if (!localePrefix) return `/${pageSegment}`
+  return pageSegment ? `/${localePrefix}/${pageSegment}` : `/${localePrefix}`
+}
 
 const copyByLang = {
   'zh-CN': {
@@ -157,34 +177,35 @@ type SiteLang = keyof typeof copyByLang
 const siteLang = (lang in copyByLang ? lang : 'zh-CN') as SiteLang
 const copy = copyByLang[siteLang]
 const homeHref = homeByLang[siteLang]
-const isChineseMain = siteLang === 'zh-CN'
 
-const navItems = isChineseMain
-  ? [
-      { href: '/', label: copy.nav.home },
-      { href: '/download', label: copy.nav.download },
-      { href: '/docs', label: copy.nav.docs },
-      { href: '/privacy', label: copy.nav.privacy },
-      { href: '/faq', label: copy.nav.faq },
-      { href: '/changelog', label: copy.nav.changelog }
-    ]
-  : [
-      { href: homeHref, label: copy.nav.home },
-      { href: `${homeHref}#download`, label: copy.nav.download },
-      { href: `${homeHref}#how`, label: copy.nav.docs },
-      { href: '/privacy', label: copy.nav.privacy },
-      { href: '/faq', label: copy.nav.faq },
-      { href: '/changelog', label: copy.nav.changelog }
-    ]
+const navItems = [
+  { href: localizedPath(siteLang, 'home'), label: copy.nav.home },
+  { href: localizedPath(siteLang, 'download'), label: copy.nav.download },
+  { href: localizedPath(siteLang, 'docs'), label: copy.nav.docs },
+  { href: localizedPath(siteLang, 'privacy'), label: copy.nav.privacy },
+  { href: localizedPath(siteLang, 'faq'), label: copy.nav.faq },
+  { href: localizedPath(siteLang, 'changelog'), label: copy.nav.changelog }
+]
 
 const languageItems = [
-  { href: '/', label: '简' },
-  { href: '/zh-hant', label: '繁' },
-  { href: '/en', label: 'EN' },
-  { href: '/ja', label: '日' },
-  { href: '/ko', label: '한' },
-  { href: '/th', label: 'TH' },
-  { href: '/vi', label: 'VI' }
+  { href: localizedPath('zh-CN', pageKey), label: '简' },
+  { href: localizedPath('zh-Hant', pageKey), label: '繁' },
+  { href: localizedPath('en', pageKey), label: 'EN' },
+  { href: localizedPath('ja', pageKey), label: '日' },
+  { href: localizedPath('ko', pageKey), label: '한' },
+  { href: localizedPath('th', pageKey), label: 'TH' },
+  { href: localizedPath('vi', pageKey), label: 'VI' }
+]
+
+const alternateItems = [
+  { lang: 'zh-CN', href: `https://goagent.top${localizedPath('zh-CN', pageKey)}` },
+  { lang: 'zh-Hant', href: `https://goagent.top${localizedPath('zh-Hant', pageKey)}` },
+  { lang: 'en', href: `https://goagent.top${localizedPath('en', pageKey)}` },
+  { lang: 'ja', href: `https://goagent.top${localizedPath('ja', pageKey)}` },
+  { lang: 'ko', href: `https://goagent.top${localizedPath('ko', pageKey)}` },
+  { lang: 'th', href: `https://goagent.top${localizedPath('th', pageKey)}` },
+  { lang: 'vi', href: `https://goagent.top${localizedPath('vi', pageKey)}` },
+  { lang: 'x-default', href: `https://goagent.top${localizedPath('zh-CN', pageKey)}` }
 ]
 ---
 <!doctype html>
@@ -205,14 +226,7 @@ const languageItems = [
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#f7f8f5" />
     <meta name="color-scheme" content="light" />
-    <link rel="alternate" hreflang="zh-CN" href="https://goagent.top/" />
-    <link rel="alternate" hreflang="zh-Hant" href="https://goagent.top/zh-hant" />
-    <link rel="alternate" hreflang="en" href="https://goagent.top/en" />
-    <link rel="alternate" hreflang="ja" href="https://goagent.top/ja" />
-    <link rel="alternate" hreflang="ko" href="https://goagent.top/ko" />
-    <link rel="alternate" hreflang="th" href="https://goagent.top/th" />
-    <link rel="alternate" hreflang="vi" href="https://goagent.top/vi" />
-    <link rel="alternate" hreflang="x-default" href="https://goagent.top/" />
+    {alternateItems.map((item) => <link rel="alternate" hreflang={item.lang} href={item.href} />)}
     <link rel="icon" href="/logo.svg" type="image/svg+xml" />
     <link rel="manifest" href="/site.webmanifest" />
     {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
@@ -249,7 +263,7 @@ const languageItems = [
           <a href={githubUrl}>GitHub</a>
           <a href={releasesUrl}>Releases</a>
           <a href={issuesUrl}>Issues</a>
-          <a href="/privacy">{copy.privacy}</a>
+          <a href={localizedPath(siteLang, 'privacy')}>{copy.privacy}</a>
           <a href={`${githubUrl}/blob/main/LICENSE`}>License MIT</a>
         </div>
         <p class="copyright">Copyright © {new Date().getFullYear()} {copy.copyright}.</p>

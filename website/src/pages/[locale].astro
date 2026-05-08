@@ -254,7 +254,7 @@ export function getStaticPaths() {
 const locale = Astro.params.locale as keyof typeof locales
 const page = locales[locale] ?? locales.en
 ---
-<BaseLayout title={page.title} description={page.description} lang={page.lang} canonical={`https://goagent.top/${locale}`}>
+<BaseLayout title={page.title} description={page.description} lang={page.lang} canonical={`https://goagent.top/${locale}`} pageKey="home">
   <section class="page-hero localized-hero">
     <p class="eyebrow">{page.eyebrow}</p>
     <h1>GoAgent</h1>

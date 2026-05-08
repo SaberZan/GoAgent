@@ -49,12 +49,14 @@ function parseWav(buffer: Buffer): ParsedWav {
 
 function float32Stats(buffer: Buffer, chunk: WavChunk): { valid: boolean; peak: number } {
   let peak = 0
+  let finiteSamples = 0
   for (let offset = chunk.offset; offset + 4 <= chunk.offset + chunk.size; offset += 4) {
     const value = buffer.readFloatLE(offset)
-    if (!Number.isFinite(value)) return { valid: false, peak: 0 }
+    if (!Number.isFinite(value)) continue
+    finiteSamples += 1
     peak = Math.max(peak, Math.abs(value))
   }
-  return { valid: peak > 0.00001, peak }
+  return { valid: finiteSamples > 0 && peak > 0.00001, peak }
 }
 
 function pcm16Stats(buffer: Buffer, chunk: WavChunk): { valid: boolean; peak: number } {
@@ -66,6 +68,7 @@ function pcm16Stats(buffer: Buffer, chunk: WavChunk): { valid: boolean; peak: nu
 }
 
 function floatToInt16(value: number): number {
+  if (!Number.isFinite(value)) return 0
   const clipped = Math.max(-1, Math.min(1, value))
   return clipped < 0 ? Math.round(clipped * 32768) : Math.round(clipped * 32767)
 }

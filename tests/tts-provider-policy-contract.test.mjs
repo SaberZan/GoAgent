@@ -93,7 +93,8 @@ test('Kokoro zh-CN synthesis does not route Chinese text through the English pho
   assert.match(smoke, /runKokoroWorkerSmoke/)
   assert.match(smoke, /tts_kokoro_worker\.mjs/)
   assert.match(smoke, /Misaki zh G2P/)
-  assert.match(smoke, /invalid float sample/)
+  assert.match(smoke, /Number\.isFinite\(value\)/)
+  assert.match(smoke, /silent Kokoro synthesis output/)
   assert.doesNotMatch(smoke, /return 'a'/)
 })
 

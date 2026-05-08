@@ -129,7 +129,7 @@ jobs:
       - name: Setup Python for Kokoro zh G2P
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.12"
 
       - name: Install Linux package dependencies
         if: runner.os == 'Linux'
@@ -349,7 +349,7 @@ jobs:
       - name: Setup Python for Kokoro zh G2P
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

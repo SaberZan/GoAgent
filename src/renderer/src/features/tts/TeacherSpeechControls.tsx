@@ -186,6 +186,7 @@ export function TeacherSpeechControls({ markdown, result, readMode = 'full', aut
     synthLockRef.current = false
     disposeAudio()
     setState('idle')
+    setMessage(lastAudio ? '语音播放已停止' : '')
   }
 
   function pauseAudio(): void {

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, Menu, shell, type ContextMenuParams, type IpcMainInvokeEvent, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell, type ContextMenuParams, type IpcMainInvokeEvent, type MenuItemConstructorOptions } from 'electron'
 import { isAbsolute, relative, resolve, join } from 'node:path'
 import { appHome, findGame, getGames, getSettings, getTtsCustomApiKey, hasLlmApiKey, hasTtsCustomApiKey, replaceSettings, setSettings, upsertGames } from './lib/store'
 import { BRAND_NAME } from '@shared/brand'
@@ -412,6 +412,11 @@ app.whenReady().then(() => {
   }))
   ipcMain.handle('release:readiness', async () => inspectReleaseReadiness())
   ipcMain.handle('path:open', async (_event, filePath: string) => shell.showItemInFolder(assertManagedPath(filePath)))
+  ipcMain.handle('clipboard:write-text', async (_event, text: string) => {
+    const value = String(text ?? '').slice(0, 1_000_000)
+    clipboard.writeText(value)
+    return { ok: true, length: value.length }
+  })
 
   createWindow().catch((error) => {
     console.error(error)

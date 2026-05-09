@@ -618,6 +618,100 @@ export interface StructuredTeacherResult {
   }
 }
 
+export type TeacherArtifactKind = 'current-move-review' | 'move-range-review' | 'game-review' | 'training-plan' | 'freeform'
+
+export interface TeacherArtifactBoardSnapshot {
+  boardSize: number
+  moveNumber?: number
+  currentColor?: StoneColor
+  playedMove?: string
+  bestMove?: string
+  judgement?: KataGoMoveAnalysis['judgement']
+  winrateBefore?: number
+  winrateAfter?: number
+  playerWinrateAfter?: number
+  winrateLoss?: number
+  scoreLeadBefore?: number
+  scoreLeadAfter?: number
+  playerScoreLeadAfter?: number
+  scoreLoss?: number
+}
+
+export interface TeacherArtifactCandidate {
+  rank: number
+  move: string
+  winrate?: number
+  scoreLead?: number
+  visits?: number
+  pv: string[]
+  note?: string
+}
+
+export interface TeacherArtifactVariation {
+  label: string
+  purpose: string
+  pv: string[]
+  result: string
+  confidence?: VariationTeachingHint['confidence']
+}
+
+export interface TeacherArtifactKeyMove {
+  moveNumber: number
+  color?: StoneColor
+  played?: string
+  recommended?: string
+  severity?: string
+  errorType?: string
+  summary: string
+}
+
+export interface TeacherArtifactTrainingItem {
+  id: string
+  title: string
+  kind: 'life_death' | 'tesuji' | 'concept'
+  difficulty?: string
+  objective: string
+  firstHint?: string
+}
+
+export interface TeacherArtifactEvidenceSummary {
+  katagoReady: boolean
+  boardImageReady: boolean
+  knowledgeMatchCount: number
+  recommendedProblemCount: number
+  sourceNote: string
+}
+
+export type TeacherArtifactSource = 'agent-json' | 'runtime-derived'
+export type TeacherArtifactSandboxScriptPolicy = 'disabled' | 'sandbox-iframe-only'
+
+export interface TeacherArtifactSandboxHtml {
+  html: string
+  enabled: boolean
+  scriptPolicy: TeacherArtifactSandboxScriptPolicy
+  iframeSandbox: string
+  warnings: string[]
+}
+
+export interface TeacherArtifact {
+  id: string
+  kind: TeacherArtifactKind
+  source?: TeacherArtifactSource
+  title: string
+  createdAt: string
+  summary: string
+  boardSnapshot?: TeacherArtifactBoardSnapshot
+  candidates: TeacherArtifactCandidate[]
+  variations: TeacherArtifactVariation[]
+  keyMoves: TeacherArtifactKeyMove[]
+  knowledgeMatches: KnowledgeMatch[]
+  trainingItems: TeacherArtifactTrainingItem[]
+  evidence: TeacherArtifactEvidenceSummary
+  sandboxHtml?: TeacherArtifactSandboxHtml
+  exportHtml: string
+  exportFileName: string
+}
+
 export interface MoveRangeKeyMoveSummary {
   moveNumber: number
   playedMove?: string
@@ -737,6 +831,7 @@ export interface TeacherRunResult {
   studentProfile?: StudentProfile
   structured?: StructuredTeacherResult
   structuredResult?: StructuredTeacherResult
+  artifact?: TeacherArtifact
   reportPath?: string
 }
 

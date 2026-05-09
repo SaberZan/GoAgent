@@ -312,6 +312,137 @@ export const galleryTeacherResult: TeacherRunResult = {
       patterns: ['优势时继续补小棋'],
       trainingFocus: ['全局方向', '大场优先级']
     }
+  },
+  artifact: {
+    id: 'teacher-gallery-artifact',
+    kind: 'current-move-review',
+    title: '第 24 手交互复盘',
+    createdAt: now,
+    summary: '白棋 J17 偏小，GoAgent 把首选点、实战点、知识匹配和训练题整理成一张可导出的复盘产物。',
+    boardSnapshot: {
+      boardSize: 19,
+      moveNumber: 24,
+      currentColor: 'W',
+      playedMove: 'J17',
+      bestMove: 'Q10',
+      judgement: 'mistake',
+      winrateBefore: 56,
+      winrateAfter: 43,
+      playerWinrateAfter: 43,
+      winrateLoss: 13,
+      scoreLeadBefore: 3.1,
+      scoreLeadAfter: -1.8,
+      playerScoreLeadAfter: -1.8,
+      scoreLoss: 4.9
+    },
+    candidates: [
+      { rank: 1, move: 'Q10', winrate: 61, scoreLead: 4.8, visits: 1824, pv: ['Q10', 'Q8', 'O10', 'O8', 'R12', 'R11'], note: 'KataGo 首选' },
+      { rank: 2, move: 'K16', winrate: 57, scoreLead: 3.6, visits: 1096, pv: ['K16', 'N17', 'J14', 'Q10'], note: '第 2 选' },
+      { rank: 3, move: 'C10', winrate: 53, scoreLead: 1.5, visits: 684, pv: ['C10', 'D8', 'Q10', 'Q8'], note: '第 3 选' }
+    ],
+    variations: [
+      {
+        label: 'Q10',
+        purpose: '抢右边全局最大点',
+        pv: ['Q10', 'Q8', 'O10', 'O8', 'R12', 'R11'],
+        result: '白棋保持主动，右边大场不被黑棋先占。',
+        confidence: 'high'
+      }
+    ],
+    keyMoves: [
+      {
+        moveNumber: 24,
+        color: 'W',
+        played: 'J17',
+        recommended: 'Q10',
+        severity: 'mistake',
+        errorType: '大场判断',
+        summary: '白棋角部已经够稳，继续补角效率偏低。'
+      }
+    ],
+    knowledgeMatches: [
+      {
+        id: 'joseki_star_33_tenuki_timing',
+        matchType: 'joseki',
+        title: '星位点三三：脱先时机',
+        confidence: 'strong',
+        score: 28,
+        reason: ['gallery'],
+        applicability: '相似型参考。',
+        teachingPayload: {
+          summary: '局部基本安定后，要看全局最大点。',
+          recognition: '星位角定式后的脱先判断。',
+          correctIdea: '方向优先于背手顺。',
+          keyVariations: [],
+          memoryCue: '先方向，再先手。',
+          commonMistakes: [],
+          drills: [],
+          boundary: '只作为相似型。',
+          sourceKind: 'common-pattern'
+        },
+        relatedProblems: []
+      }
+    ],
+    trainingItems: [
+      {
+        id: 'life_death_true_false_eye_vital_point',
+        title: '真眼假眼：急所第一感',
+        kind: 'life_death',
+        difficulty: 'basic',
+        objective: '判断能否做出两个真眼',
+        firstHint: '第一感先找眼形中心点。'
+      }
+    ],
+    evidence: {
+      katagoReady: true,
+      boardImageReady: true,
+      knowledgeMatchCount: 1,
+      recommendedProblemCount: 1,
+      sourceNote: 'UI Gallery mock artifact'
+    },
+    sandboxHtml: {
+      enabled: true,
+      scriptPolicy: 'sandbox-iframe-only',
+      iframeSandbox: 'allow-scripts',
+      warnings: [],
+      html: `<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GoAgent Sandbox Artifact</title>
+  <style>
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; color: #17231f; background: #f7f1e7; }
+    main { display: grid; gap: 14px; padding: 18px; }
+    h1 { margin: 0; font-size: 22px; }
+    p { margin: 0; color: #53615b; line-height: 1.6; }
+    button { width: max-content; padding: 8px 12px; border: 1px solid #8fb8b0; border-radius: 8px; background: #ffffff; color: #116c65; font-weight: 800; }
+    .line { display: grid; gap: 6px; padding: 12px; border: 1px solid rgb(42 104 96 / 0.16); border-radius: 12px; background: rgb(255 255 255 / 0.68); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>实验性沙盒讲解</h1>
+    <p>这段 HTML 只在 iframe sandbox/srcDoc 中运行，用来验证将来更丰富的交互复盘。</p>
+    <section class="line">
+      <strong>第 24 手：J17 偏小</strong>
+      <span id="variation">变化：Q10 → Q8 → O10，白棋保持主动。</span>
+      <button id="next" type="button">切换变化</button>
+    </section>
+  </main>
+  <script>
+    const lines = ['变化：Q10 → Q8 → O10，白棋保持主动。', '变化：K16 → N17，黑棋仍有转身机会。']
+    let index = 0
+    document.getElementById('next').addEventListener('click', () => {
+      index = (index + 1) % lines.length
+      document.getElementById('variation').textContent = lines[index]
+    })
+  </script>
+</body>
+</html>`
+    },
+    exportHtml: '<!doctype html><html lang="zh-CN"><title>GoAgent Artifact</title><body><h1>第 24 手交互复盘</h1></body></html>',
+    exportFileName: 'goagent-gallery-artifact.html'
   }
 }
 

@@ -37,7 +37,7 @@ export function visionRequiredForMode(mode: TeacherRunMode | string | undefined)
 }
 
 export function visionRequiredForIntent(intent: string | undefined): boolean {
-  return intent === 'current-move' || intent === 'move-range'
+  return intent === 'current-move' || intent === 'move-range' || intent === 'game-review'
 }
 
 function normalizeMime(value: string | undefined): VisionEvidenceImage['mimeType'] {

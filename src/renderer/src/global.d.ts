@@ -105,6 +105,7 @@ declare global {
       testTtsSettings: (payload: Partial<AppSettings>) => Promise<TtsSynthesisResult>
       getSavedTtsApiKey: () => Promise<{ hasKey: boolean; apiKey: string }>
       getReleaseReadiness: () => Promise<ReleaseReadinessResult>
+      writeClipboardText: (text: string) => Promise<{ ok: boolean; length: number }>
       openPath: (filePath: string) => Promise<void>
       onDesktopCommand?: (handler: (command: DesktopCommand) => void) => () => void
     }

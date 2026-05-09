@@ -2116,6 +2116,18 @@ export function App(): ReactElement {
     await runMoveAnalysisAt(moveNumber)
   }
 
+  function isCurrentMoveReviewPrompt(value: string): boolean {
+    return /当前手|這手|目前這手|这一手|這一手|本手|current move|this move|この手|현재 수|น้ำนี้|nước này/i.test(value)
+  }
+
+  function isRecentGamesReviewPrompt(value: string): boolean {
+    return /最近|近\s*\d+\s*盘|最近\s*\d+\s*局|近\s*\d+\s*局|recent\s+games?|last\s+\d+\s+games?|batch|批量|多盘|多局|画像|弱点/i.test(value)
+  }
+
+  function isWholeGameReviewPrompt(value: string): boolean {
+    return /整盘|全盘|整局|本局|这盘|這盤|全局|复盘|覆盤|帮我看|看看|分析一下|讲一下|review\s+(?:this\s+)?game|whole\s+game|full\s+review|analy[sz]e\s+(?:this\s+)?game|この対局|一局全体|이번\s*대국/i.test(value)
+  }
+
   async function runTeacherQuickTask(text: string): Promise<void> {
     if (busy !== '') {
       return
@@ -2125,13 +2137,22 @@ export function App(): ReactElement {
     setError('')
     appendMessage({ role: 'student', content: text })
     const assistantMessageId = appendMessage({ role: 'teacher', content: '', status: 'running', toolLogs: [] })
+    const quickNeedsBoardImage = !isRecentGamesReviewPrompt(text) && (isCurrentMoveReviewPrompt(text) || isWholeGameReviewPrompt(text))
+    const shouldSendBoardImage = Boolean(record && selectedGame && quickNeedsBoardImage)
     try {
+      if (quickNeedsBoardImage && (!record || !selectedGame)) {
+        throw new Error('请先加载棋谱，再做这项复盘。')
+      }
+      const boardImageDataUrl = shouldSendBoardImage && record
+        ? await renderBoardPng(record, moveNumber, analysisForMove(moveNumber) ?? analysis)
+        : undefined
       const result = await runTeacherTaskWithStream({
         mode: 'freeform',
         prompt: text,
         gameId: selectedGame?.id,
         moveNumber,
-        playerName
+        playerName,
+        boardImageDataUrl
       }, assistantMessageId)
       if (result.analysis) {
         setAnalysis((current) => preferAnalysis(current, result.analysis))
@@ -2191,12 +2212,17 @@ export function App(): ReactElement {
     activeTeacherRunRef.current = { runId, messageId: assistantMessageId }
     setBusy('teacher')
     try {
-      const wantsCurrentMove = /当前手|這手|目前這手|这一手|這一手|本手|current move|this move|この手|현재 수|น้ำนี้|nước này/i.test(text)
+      const wantsCurrentMove = isCurrentMoveReviewPrompt(text)
+      const wantsRecentGames = isRecentGamesReviewPrompt(text)
+      const wantsGameReview = !wantsRecentGames && isWholeGameReviewPrompt(text)
       const parsedRange = parseMoveRangeFromPrompt(text, record?.moves.length)
       const selectedRangeText = moveRange ? `分析${describeMoveRange(moveRange)}` : ''
       const range = parsedRange ?? (text === selectedRangeText ? moveRange : null)
       const wantsMoveRange = range !== null
-      if (wantsCurrentMove && record && selectedGame) {
+      if (wantsCurrentMove) {
+        if (!record || !selectedGame) {
+          throw new Error('请先加载棋谱，再分析当前手。')
+        }
         const nextAnalysis = await window.goagent.analyzePosition({
           gameId: selectedGame.id,
           moveNumber,
@@ -2272,6 +2298,19 @@ export function App(): ReactElement {
             rememberEvaluation(result.analysis)
           }
         }
+      } else if (wantsGameReview) {
+        if (!record || !selectedGame) {
+          throw new Error('请先加载棋谱，再做整盘复盘。')
+        }
+        const boardImageDataUrl = await renderBoardPng(record, moveNumber, analysisForMove(moveNumber) ?? analysis)
+        await runTeacherTaskWithStream({
+          mode: 'freeform',
+          prompt: text,
+          gameId: selectedGame.id,
+          moveNumber,
+          playerName,
+          boardImageDataUrl
+        }, assistantMessageId, runId)
       } else {
         await runTeacherTaskWithStream({
           mode: 'freeform',
@@ -2990,30 +3029,80 @@ function renderReferenceText(text: string, options: TeacherReferenceRenderOption
 }
 
 function renderInlineMarkdown(text: string, options: TeacherReferenceRenderOptions, keyPrefix: string): ReactNode[] {
-  return text.split(/(\*\*[^*]+\*\*)/g).flatMap((part, index) => {
+  return text.split(/(\*\*[^*]+\*\*|__[^_]+__|`[^`]+`|\[[^\]]+\]\([^)]+\))/g).flatMap((part, index) => {
     const key = `${keyPrefix}-${index}`
     if (part.startsWith('**') && part.endsWith('**')) {
       return <strong key={key}>{renderReferenceText(part.slice(2, -2), options, key)}</strong>
+    }
+    if (part.startsWith('__') && part.endsWith('__')) {
+      return <strong key={key}>{renderReferenceText(part.slice(2, -2), options, key)}</strong>
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return <code key={key}>{renderReferenceText(part.slice(1, -1), options, key)}</code>
+    }
+    const link = part.match(/^\[([^\]]+)\]\([^)]+\)$/)
+    if (link) {
+      return renderReferenceText(link[1], options, key)
     }
     return renderReferenceText(part, options, key)
   })
 }
 
 function ChatMarkdown({ text, boardSize, totalMoves, t, onJumpToMove, onFlashPoint }: { text: string; boardSize: number; totalMoves: number; t: UiTranslator; onJumpToMove: (moveNumber: number) => void; onFlashPoint: (point: string) => void }): ReactElement {
-  const lines = text.split(/\n+/).map((line) => line.trim()).filter(Boolean)
+  const lines = text.replace(/\r\n/g, '\n').split('\n')
   const nodes: ReactElement[] = []
   let list: ReactElement[] = []
+  let listKind: 'ol' | 'ul' | null = null
   const inlineOptions: TeacherReferenceRenderOptions = { boardSize, totalMoves, t, onJumpToMove, onFlashPoint }
   function flushList(): void {
     if (list.length > 0) {
-      nodes.push(<ol key={`ol-${nodes.length}`}>{list}</ol>)
+      const ListTag = listKind === 'ul' ? 'ul' : 'ol'
+      nodes.push(<ListTag key={`list-${nodes.length}`}>{list}</ListTag>)
       list = []
+      listKind = null
     }
   }
-  for (const line of lines) {
+  for (const rawLine of lines) {
+    const line = rawLine.trim()
+    if (!line) {
+      flushList()
+      continue
+    }
+    if (/^(```|~~~)/.test(line)) {
+      flushList()
+      continue
+    }
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {
+      flushList()
+      nodes.push(<hr key={`hr-${nodes.length}`} />)
+      continue
+    }
+    const heading = line.match(/^(#{1,6})\s+(.+)$/)
+    if (heading) {
+      flushList()
+      const level = Math.min(heading[1].length, 4)
+      const HeadingTag = level <= 2 ? 'h3' : 'h4'
+      nodes.push(<HeadingTag key={`h-${nodes.length}`}>{renderInlineMarkdown(heading[2], inlineOptions, `h-${nodes.length}`)}</HeadingTag>)
+      continue
+    }
+    const quote = line.match(/^>\s?(.+)$/)
+    if (quote) {
+      flushList()
+      nodes.push(<blockquote key={`q-${nodes.length}`}>{renderInlineMarkdown(quote[1], inlineOptions, `q-${nodes.length}`)}</blockquote>)
+      continue
+    }
     const numbered = line.match(/^(\d+)[.、]\s*(.+)$/)
     if (numbered) {
+      if (listKind && listKind !== 'ol') flushList()
+      listKind = 'ol'
       list.push(<li key={`${nodes.length}-${list.length}`}>{renderInlineMarkdown(numbered[2], inlineOptions, `li-${nodes.length}-${list.length}`)}</li>)
+      continue
+    }
+    const bullet = line.match(/^[-*•]\s+(.+)$/)
+    if (bullet) {
+      if (listKind && listKind !== 'ul') flushList()
+      listKind = 'ul'
+      list.push(<li key={`${nodes.length}-${list.length}`}>{renderInlineMarkdown(bullet[1], inlineOptions, `li-${nodes.length}-${list.length}`)}</li>)
       continue
     }
     flushList()
@@ -3100,7 +3189,12 @@ async function copyTextToClipboard(text: string): Promise<void> {
   if (!value) {
     return
   }
-  if (navigator.clipboard?.writeText) {
+  const desktopClipboard = window.goagent?.writeClipboardText
+  if (typeof desktopClipboard === 'function') {
+    await desktopClipboard(value)
+    return
+  }
+  if (window.isSecureContext && navigator.clipboard?.writeText) {
     await navigator.clipboard.writeText(value)
     return
   }
@@ -3112,7 +3206,9 @@ async function copyTextToClipboard(text: string): Promise<void> {
   textarea.style.left = '-9999px'
   textarea.style.top = '0'
   document.body.appendChild(textarea)
+  textarea.focus()
   textarea.select()
+  textarea.setSelectionRange(0, textarea.value.length)
   const copied = document.execCommand('copy')
   document.body.removeChild(textarea)
   if (!copied) {

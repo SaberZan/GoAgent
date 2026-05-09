@@ -32,6 +32,12 @@ The script writes screenshots to:
 release-evidence/ui-gallery/
 ```
 
+It captures `.teacher-artifact-card` separately as:
+
+```text
+release-evidence/ui-gallery/teaching-artifact-card.png
+```
+
 Do not commit local screenshot evidence by default. Attach it to the PR or release evidence bundle when doing manual QA.
 
 ## Required Evidence
@@ -43,6 +49,7 @@ Do not commit local screenshot evidence by default. Attach it to the PR or relea
 - KeyMoveNavigator strip
 - BoardInsightPanel
 - TeacherRunCardPro structured result
+- Teaching Artifact coaching card, including copy action and key move links
 - TeacherComposerPro focus and busy states
 - StudentRailCard
 - SGF StudentBindingDialog

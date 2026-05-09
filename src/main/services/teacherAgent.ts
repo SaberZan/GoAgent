@@ -15,6 +15,8 @@ import type {
   MoveRangeReviewSummary,
   StudentProfile,
   TeachingPacingAdvice,
+  TeacherArtifact,
+  TeacherArtifactKind,
   TeacherRunRequest,
   TeacherRunProgress,
   TeacherRunResult,
@@ -35,6 +37,7 @@ import { applyDetectedDefaults, detectSystemProfile } from './systemProfile'
 import { parseStructuredTeacherResult } from './teacher/structuredResultParser'
 import { classifyTeacherIntent, type TeacherIntent } from './teacher/intentClassifier'
 import { buildTeachingPacingAdvice } from './teacher/teachingEvidence'
+import { buildTeacherArtifact, validateTeachingArtifact } from './teacher/teachingArtifact'
 import {
   buildTeacherPersonaInstruction,
   normalizeCoachLevel,
@@ -319,7 +322,7 @@ function systemPrompt(level: CoachUserLevel): string {
     `请默认使用${teacherLanguageName(settings.reviewLanguage)}回答；只有用户明确要求其它语言时才切换。`,
     '帮助学生理解棋局，并提升下一次判断。',
     '需要信息时调用工具；不要靠印象猜局面。',
-    '分析当前手时必须先看棋盘图片，再调用 KataGo 工具核对当前手、一选、胜率差、目差、搜索数和 PV，然后调用知识库工具匹配棋形、定式、死活、手筋或常见错误类型。',
+    '分析当前手或整盘复盘时必须先看棋盘图片，再调用 KataGo 工具核对当前手、一选、胜率差、目差、搜索数和 PV，然后调用知识库工具匹配棋形、定式、死活、手筋或常见错误类型。',
     '工具结果和 KataGo 是事实依据。',
     '不要编造坐标、胜率、PV、定式名或来源。',
     '每个关键结论都应能回指到工具证据；数字、坐标、PV、定式名、死活结论和先后手判断没有证据时必须降级成假设。',
@@ -328,6 +331,7 @@ function systemPrompt(level: CoachUserLevel): string {
     '把握讲解火候：常规定式少讲，分支列变化，中盘战详细讲目的和后续。',
     '如果工具结果给出 teachingDensity，就按它控制详略：minimal 很短，branch 讲 1-2 个关键变化，detailed 讲目的、应手、后续变化和实战评价，caution 只说倾向。',
     '像老师讲棋：先帮学生看懂棋形和判断方法，再自然引用必要证据；不要按固定栏目或机器报告口吻堆字段。',
+    '当你已经有足够证据时，可以调用 artifact.createTeachingArtifact 输出结构化 TeachingArtifact JSON；不要把 HTML、脚本、远程图片、base64 图片、本地路径或 API key 放进 artifact。',
     '区间复盘要先讲区间走势，再聚焦 3-5 个关键手；不要逐手流水账；每个关键手必须引用 KataGo、analysisQuality、棋形识别或战术信号。',
     '区间过长或证据不足时要建议缩小范围或只做抽样总结，不能把低 visits 区间分析说成最终结论。',
     `学生水平：${level}。`,
@@ -349,8 +353,8 @@ function saveReport(id: string, title: string, markdown: string, extra: Record<s
   mkdirSync(dir, { recursive: true })
   const markdownPath = join(dir, 'report.md')
   const jsonPath = join(dir, 'report.json')
-  writeFileSync(markdownPath, markdown, 'utf8')
-  writeFileSync(jsonPath, JSON.stringify({ title, ...extra }, null, 2), 'utf8')
+  writeFileSync(markdownPath, redactSensitiveText(markdown), 'utf8')
+  writeFileSync(jsonPath, JSON.stringify(redactSensitiveValue({ title, ...extra }), null, 2), 'utf8')
   return markdownPath
 }
 
@@ -419,10 +423,12 @@ interface TeacherAgentSessionState {
   game?: LibraryGame
   record?: ReturnType<typeof readGameRecord>
   lastAnalysis?: KataGoMoveAnalysis
+  rangeAnalyses?: KataGoMoveAnalysis[]
   knowledge: KnowledgePacket[]
   knowledgeMatches: KnowledgeMatch[]
   recommendedProblems: RecommendedProblem[]
   teachingPacing?: TeachingPacingAdvice
+  agentArtifact?: TeacherArtifact
   finalMarkdown: string
 }
 
@@ -523,10 +529,31 @@ function arrayInput(input: JsonObject, key: string): string[] {
 }
 
 function redactSensitiveText(text: string): string {
+  const secretKeyPattern = '(?:api[_-]?key|apikey|llmApiKey|ttsCustomApiKey|proxyApiKey|token|password|secret|authorization|github[_-]?token|gh[_-]?token|csc_link|apple_app_specific_password)'
   return text
-    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/g, 'Bearer [REDACTED]')
-    .replace(/\b(sk|ghp|github_pat|xoxb|xoxp|AKIA)[A-Za-z0-9_\-]{12,}\b/g, '[REDACTED_TOKEN]')
-    .replace(/((api[_-]?key|token|password|secret)\s*[=:]\s*)[^\s"'`]+/gi, '$1[REDACTED]')
+    .replace(/data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=_-]+/gi, '[REDACTED_IMAGE_DATA]')
+    .replace(/file:\/\/[^\s"'<>)]*/gi, '[REDACTED_LOCAL_PATH]')
+    .replace(/(^|[\s"'(])(?:\/Users|\/home|\/var|\/private|\/tmp|\/Volumes)\/[^\s"'<>)]*/g, '$1[REDACTED_LOCAL_PATH]')
+    .replace(/\b[A-Za-z]:\\[^\s"'<>)]*/g, '[REDACTED_LOCAL_PATH]')
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/gi, 'Bearer [REDACTED]')
+    .replace(/\b(sk-[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]{12,}|ghp_[A-Za-z0-9_]{12,}|xox[baprs]-[A-Za-z0-9-]{12,}|AKIA[A-Z0-9]{12,})\b/g, '[REDACTED_TOKEN]')
+    .replace(new RegExp(`["']?${secretKeyPattern}["']?\\s*[:=]\\s*["'][^"']+["']`, 'gi'), '[REDACTED_SECRET]')
+    .replace(new RegExp(`(["']?${secretKeyPattern}["']?\\s*[:=]\\s*["'])[^"']+(["'])`, 'gi'), '$1[REDACTED]$2')
+    .replace(new RegExp(`(["']?${secretKeyPattern}["']?\\s*[:=]\\s*)[^\\s"',}\\]]+`, 'gi'), '$1[REDACTED]')
+}
+
+function redactSensitiveValue(value: unknown, depth = 0): unknown {
+  if (depth > 8) return '[REDACTED_DEPTH]'
+  if (typeof value === 'string') return redactSensitiveText(value)
+  if (typeof value === 'number' || typeof value === 'boolean' || value === null || value === undefined) return value
+  if (Array.isArray(value)) return value.map((item) => redactSensitiveValue(item, depth + 1))
+  if (typeof value !== 'object') return String(value)
+  return Object.fromEntries(Object.entries(value as JsonObject).map(([key, item]) => {
+    if (/(api[_-]?key|apikey|token|password|secret|authorization|csc_link|apple_app_specific_password)/i.test(key)) {
+      return [key, item ? '[REDACTED]' : item]
+    }
+    return [key, redactSensitiveValue(item, depth + 1)]
+  }))
 }
 
 function compactToolResult(value: unknown, maxChars = MAX_TOOL_RESULT_CHARS): string {
@@ -564,6 +591,48 @@ function schema(properties: JsonObject, required: string[] = []): JsonObject {
     properties,
     required,
     additionalProperties: false
+  }
+}
+
+async function safeSystemProfileForAgent(): Promise<JsonObject> {
+  const profile: Awaited<ReturnType<typeof detectSystemProfile>> = await detectSystemProfile()
+  return {
+    katagoReady: profile.katagoReady,
+    katagoStatus: profile.katagoStatus,
+    katagoModelPreset: profile.katagoModelPreset,
+    katagoModelPresets: profile.katagoModelPresets.map((preset) => ({
+      id: preset.id,
+      label: preset.label,
+      badge: preset.badge,
+      group: preset.group,
+      blockSize: preset.blockSize,
+      speedTier: preset.speedTier,
+      sizeHint: preset.sizeHint,
+      recommended: preset.recommended
+    })),
+    katagoBinaryConfigured: Boolean(profile.katagoBin),
+    katagoConfigConfigured: Boolean(profile.katagoConfig),
+    katagoModelConfigured: Boolean(profile.katagoModel),
+    proxyBaseUrl: profile.proxyBaseUrl,
+    hasProxyApiKey: Boolean(profile.proxyApiKey || profile.hasLlmApiKey),
+    proxyModels: profile.proxyModels,
+    notes: profile.notes
+  }
+}
+
+function safeSettingsSummaryForAgent(settings: ReturnType<typeof getSettings>): JsonObject {
+  return {
+    katagoModelPreset: settings.katagoModelPreset,
+    katagoBinaryConfigured: Boolean(settings.katagoBin),
+    katagoConfigConfigured: Boolean(settings.katagoConfig),
+    katagoModelConfigured: Boolean(settings.katagoModel),
+    llmBaseUrl: settings.llmBaseUrl,
+    llmModel: settings.llmModel,
+    hasLlmApiKey: Boolean(settings.llmApiKey),
+    ttsProvider: settings.ttsProvider,
+    ttsLanguage: settings.ttsLanguage,
+    hasTtsCustomApiKey: Boolean(settings.ttsCustomApiKey),
+    reviewLanguage: settings.reviewLanguage
   }
 }
 
@@ -605,6 +674,27 @@ function taskTypeForIntent(intent: TeacherIntent): StructuredTeacherResult['task
   return 'freeform'
 }
 
+function artifactKindForIntent(intent: TeacherIntent): TeacherArtifactKind {
+  if (intent === 'current-move') return 'current-move-review'
+  if (intent === 'move-range') return 'move-range-review'
+  if (intent === 'game-review' || intent === 'batch-review') return 'game-review'
+  if (intent === 'training-plan') return 'training-plan'
+  return 'freeform'
+}
+
+function defaultArtifactTitleForState(state: TeacherAgentSessionState): string {
+  if (state.intent === 'current-move') {
+    return `第 ${state.request.moveNumber ?? state.lastAnalysis?.moveNumber ?? 0} 手分析`
+  }
+  if (state.intent === 'move-range') {
+    return `第 ${state.request.moveRange?.start ?? '?'}-${state.request.moveRange?.end ?? '?'} 手区间复盘`
+  }
+  if (state.intent === 'game-review') return '整盘复盘'
+  if (state.intent === 'batch-review') return `${state.studentName} 最近对局分析`
+  if (state.intent === 'training-plan') return `${state.studentName} 训练计划`
+  return `${state.studentName} 对话`
+}
+
 function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
   const visionEvidence = state.request.visionEvidence ?? buildVisionEvidenceReport(state.request, state.intent)
   const visionValidation = validateVisionEvidenceForIntent(visionEvidence, state.intent)
@@ -634,11 +724,12 @@ function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
     moveRange: state.request.moveRange,
     moveRangeSummary: state.request.moveRangeSummary,
     prefetchedAnalysisAvailable: Boolean(state.request.prefetchedAnalysis),
-    note: '请按需要调用工具取得事实；没有工具证据时不要猜坐标、胜率、PV、定式名或来源；默认使用 responseLanguage 回答。'
+    note: '请按需要调用工具取得事实；没有工具证据时不要猜坐标、胜率、PV、定式名或来源；默认使用 responseLanguage 回答。可在最后调用 artifact.createTeachingArtifact 提交结构化教学产物，GoAgent 会验证并渲染成讲解卡片。'
   }
   const text = [
     '任务说明：请根据 intent 完成用户请求。',
     '如果 intent 是 current-move，请先观察随消息附带的棋盘图片，再调用 KataGo 和知识库工具核对事实。',
+    '如果 intent 是 game-review，请先观察随消息附带的当前棋盘图片，确认本局全局格局，再调用 sgf.readGameRecord 和 katago.analyzeGameBatch 复盘关键问题手。',
     '如果 intent 是 move-range，请依次观察附带的区间关键手棋盘图片，先概括区间胜率/目差走势，再重点讲解 top-loss 关键手。',
     '当前手讲解要按工具返回的 teachingDensity 掌握详略：常规定式少讲；定式分支或相似型列关键变化；中盘战、攻杀、转换要讲目的、对方应手、后续变化和实战评价。',
     'boardImageAttached=true 表示本轮用户消息已附棋盘图，请把图片中的棋形、厚薄、急所和全局方向作为局面判断依据。',
@@ -702,6 +793,7 @@ function compactCandidateForColor(candidate: KataGoMoveAnalysis['before']['topMo
   return {
     ...candidate,
     rank,
+    order: rank,
     perspectiveColor: color,
     winrate: roundMetric(displayWinrateForColor(candidate.winrate, color), 2),
     scoreLead: roundMetric(displayScoreLeadForColor(candidate.scoreLead, color), 2),
@@ -889,7 +981,12 @@ function runShell(input: JsonObject): Promise<unknown> {
       SHELL_TASKS.set(taskId, { id: taskId, command, cwd, process: child, startedAt })
       clearTimeout(timer)
       settled = true
-      resolvePromise({ backgroundTaskId: taskId, command, cwd, startedAt })
+      resolvePromise({
+        backgroundTaskId: taskId,
+        command: redactSensitiveText(command),
+        cwd: redactSensitiveText(cwd),
+        startedAt
+      })
       return
     }
     child.on('close', (code, signal) => {
@@ -897,8 +994,8 @@ function runShell(input: JsonObject): Promise<unknown> {
       settled = true
       clearTimeout(timer)
       resolvePromise({
-        command,
-        cwd,
+        command: redactSensitiveText(command),
+        cwd: redactSensitiveText(cwd),
         exitCode: code,
         signal,
         stdout: redactSensitiveText(stdout),
@@ -1089,6 +1186,7 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
             group: 'teacher'
           }))
         }
+        state.rangeAnalyses = analyses
         return {
           moveRange: state.request.moveRange,
           refinedMoveCount: analyses.length,
@@ -1185,7 +1283,7 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
       label: '探测环境',
       description: '探测 KataGo、模型、配置和本机兼容代理。',
       parameters: schema({}),
-      execute: async () => detectSystemProfile()
+      execute: async () => safeSystemProfileForAgent()
     },
     {
       apiName: 'settings_writeAppConfig',
@@ -1193,7 +1291,13 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
       label: '写入配置',
       description: '应用自动探测到的 KataGo 和 LLM 配置。',
       parameters: schema({}),
-      execute: async () => replaceSettings(await applyDetectedDefaults(getSettings()))
+      execute: async () => {
+        const updated = replaceSettings(await applyDetectedDefaults(getSettings()))
+        return {
+          ok: true,
+          settings: safeSettingsSummaryForAgent(updated)
+        }
+      }
     },
     {
       apiName: 'katago_verifyAnalysis',
@@ -1240,7 +1344,7 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
         if (!existsSync(filePath)) throw new Error(`文件不存在: ${filePath}`)
         const maxBytes = numberInput(input, 'maxBytes', 16_000, 1, 80_000)
         return {
-          path: filePath,
+          path: redactSensitiveText(filePath),
           content: redactSensitiveText(readFileSync(filePath, 'utf8').slice(0, maxBytes))
         }
       }
@@ -1273,7 +1377,86 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
         if (!task) return { stopped: false, reason: 'background task not found' }
         task.process.kill('SIGTERM')
         SHELL_TASKS.delete(id)
-        return { stopped: true, backgroundTaskId: id, command: task.command, cwd: task.cwd }
+        return {
+          stopped: true,
+          backgroundTaskId: id,
+          command: redactSensitiveText(task.command),
+          cwd: redactSensitiveText(task.cwd)
+        }
+      }
+    },
+    {
+      apiName: 'artifact_createTeachingArtifact',
+      canonicalName: 'artifact.createTeachingArtifact',
+      label: '创建教学产物',
+      description: '提交结构化 TeachingArtifact JSON。只放棋局证据、候选点、关键手、知识点和训练建议；不要放 exportHtml、脚本、远程资源、base64 图片、本地路径或 API key。',
+      parameters: schema({
+        artifact: {
+          type: 'object',
+          description: '可选包装字段；也可以直接在顶层传 TeachingArtifact 字段。',
+          additionalProperties: true
+        },
+        id: { type: 'string' },
+        kind: { type: 'string', enum: ['current-move-review', 'move-range-review', 'game-review', 'training-plan', 'freeform'] },
+        title: { type: 'string' },
+        summary: { type: 'string' },
+        boardSnapshot: { type: 'object', additionalProperties: true },
+        candidates: { type: 'array', items: { type: 'object', additionalProperties: true } },
+        variations: { type: 'array', items: { type: 'object', additionalProperties: true } },
+        keyMoves: { type: 'array', items: { type: 'object', additionalProperties: true } },
+        knowledgeMatches: { type: 'array', items: { type: 'object', additionalProperties: true } },
+        trainingItems: { type: 'array', items: { type: 'object', additionalProperties: true } },
+        evidence: { type: 'object', additionalProperties: true },
+        sandboxHtml: {
+          type: 'object',
+          description: '未来 sandbox iframe 使用的独立 HTML 字段；默认禁用脚本，不能放进 exportHtml。',
+          additionalProperties: true
+        }
+      }),
+      execute: async (input) => {
+        const fallbackTitle = defaultArtifactTitleForState(state)
+        const validation = validateTeachingArtifact(input, {
+          id: `${state.id}-agent-artifact`,
+          title: fallbackTitle,
+          kind: artifactKindForIntent(state.intent),
+          source: 'agent-json',
+          allowSandboxScripts: false,
+          evidence: {
+            katagoReady: Boolean(state.lastAnalysis),
+            boardImageReady: Boolean(state.request.visionEvidence?.images.some((image) => image.valid)),
+            knowledgeMatchCount: state.knowledgeMatches.length,
+            recommendedProblemCount: state.recommendedProblems.length,
+            sourceNote: 'Agent JSON artifact 已由 GoAgent 运行时验证、裁剪、脱敏，并重新生成安全静态 HTML。'
+          }
+        })
+        if (!validation.ok || !validation.artifact) {
+          throw new Error(`TeachingArtifact 无效：${validation.errors.join('；')}`)
+        }
+        state.agentArtifact = validation.artifact
+        return {
+          accepted: true,
+          id: validation.artifact.id,
+          kind: validation.artifact.kind,
+          title: validation.artifact.title,
+          source: validation.artifact.source,
+          candidates: validation.artifact.candidates.length,
+          keyMoves: validation.artifact.keyMoves.length,
+          knowledgeMatches: validation.artifact.knowledgeMatches.length,
+          trainingItems: validation.artifact.trainingItems.length,
+          sandboxHtml: validation.artifact.sandboxHtml
+            ? {
+                enabled: validation.artifact.sandboxHtml.enabled,
+                scriptPolicy: validation.artifact.sandboxHtml.scriptPolicy,
+                iframeSandbox: validation.artifact.sandboxHtml.iframeSandbox,
+                warnings: validation.artifact.sandboxHtml.warnings
+              }
+            : undefined,
+          warnings: validation.warnings,
+          staticExport: {
+            fileName: validation.artifact.exportFileName,
+            bytes: validation.artifact.exportHtml.length
+          }
+        }
       }
     },
     {
@@ -1359,7 +1542,11 @@ async function runTeacherAgentSession(
     recommendedProblems: [],
     finalMarkdown: ''
   }
-  if (request.prefetchedAnalysis) {
+  if (
+    request.prefetchedAnalysis &&
+    (!request.gameId || request.prefetchedAnalysis.gameId === request.gameId) &&
+    (typeof request.moveNumber !== 'number' || request.prefetchedAnalysis.moveNumber === request.moveNumber)
+  ) {
     state.lastAnalysis = request.prefetchedAnalysis
     state.teachingPacing = buildTeachingPacingAdvice(request.prefetchedAnalysis)
   }
@@ -1434,31 +1621,41 @@ async function runTeacherAgentSession(
       throw new Error(`棋盘图证据校验失败：${repairedIssues.map((issue) => issue.message).join('；')}`)
     }
   }
+  finalText = redactSensitiveText(finalText)
   state.finalMarkdown = finalText
   const taskType = taskTypeForIntent(intent)
   const structured = structuredFromTeacherText(finalText, taskType, state.knowledge, state.knowledgeMatches, state.recommendedProblems)
-  const title = intent === 'current-move'
-    ? `第 ${request.moveNumber ?? state.lastAnalysis?.moveNumber ?? 0} 手分析`
-    : intent === 'move-range'
-      ? `第 ${request.moveRange?.start ?? '?'}-${request.moveRange?.end ?? '?'} 手区间复盘`
-    : intent === 'game-review'
-      ? '整盘复盘'
-      : intent === 'batch-review'
-        ? `${studentName} 最近对局分析`
-        : intent === 'training-plan'
-          ? `${studentName} 训练计划`
-          : `${studentName} 对话`
+  const title = defaultArtifactTitleForState(state)
+  const runtimeArtifact = buildTeacherArtifact({
+    id,
+    title,
+    intent,
+    request,
+    markdown: finalText,
+    analysis: state.lastAnalysis,
+    rangeAnalyses: state.rangeAnalyses,
+    structured,
+    knowledge: state.knowledge,
+    knowledgeMatches: state.knowledgeMatches,
+    recommendedProblems: state.recommendedProblems,
+    teachingPacing: state.teachingPacing,
+    visionEvidence,
+    studentProfile: state.profile
+  })
+  const artifact = state.agentArtifact ?? runtimeArtifact
   const reportPath = saveReport(id, title, finalText, {
     agent: true,
     intent,
     analysis: state.lastAnalysis,
+    rangeAnalyses: state.rangeAnalyses,
     knowledge: state.knowledge,
     knowledgeMatches: state.knowledgeMatches,
     recommendedProblems: state.recommendedProblems,
     teachingPacing: state.teachingPacing,
     visionEvidence,
     studentProfile: state.profile,
-    structured
+    structured,
+    artifact
   })
   return {
     id,
@@ -1475,6 +1672,7 @@ async function runTeacherAgentSession(
     studentProfile: state.profile,
     structured,
     structuredResult: structured,
+    artifact,
     reportPath
   }
 }

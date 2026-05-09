@@ -1,12 +1,20 @@
 #!/usr/bin/env node
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { spawn, spawnSync } from 'node:child_process'
+import { devNull } from 'node:os'
 
 const root = process.cwd()
 const strict = process.env.GOAGENT_TTS_SMOKE_STRICT === '1'
 const assetRoot = join(root, 'data', 'tts', 'kokoro', 'zh-CN')
-const cacheRoot = join(root, process.env.GOAGENT_APP_HOME || '.goagent-smoke', 'cache', 'tts', 'kokoro-bundled')
+const smokeHome = join(root, process.env.GOAGENT_APP_HOME || '.goagent-smoke')
+const cacheRoot = join(smokeHome, 'cache', 'tts', 'kokoro-bundled')
+const runtimeRoot = join(smokeHome, 'runtime', 'tts-python')
+const venvRoot = join(runtimeRoot, 'venv')
+const venvPython = join(venvRoot, process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python3')
+const requirementsPath = join(root, 'scripts', 'requirements-tts.txt')
+const requirementsStamp = join(runtimeRoot, 'requirements.sha256')
 const failures = []
 let strictSynthesisOk = false
 
@@ -29,38 +37,125 @@ function splitLauncher(commandLine) {
   return { command: commandLine, args: [] }
 }
 
-function runMisakiG2p(text) {
-  const script = join(root, 'scripts', 'tts_misaki_zh_g2p.py')
+function spawnChecked(command, args, options = {}) {
+  const result = spawnSync(command, args, {
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024,
+    ...options
+  })
+  if (result.status !== 0) {
+    const detail = result.stderr?.trim() || result.stdout?.trim() || `exit ${result.status}`
+    throw new Error(detail)
+  }
+  return result
+}
+
+function isSupportedPython(launcher) {
+  const result = spawnSync(launcher.command, [
+    ...launcher.args,
+    '-c',
+    'import sys; raise SystemExit(0 if sys.version_info.major == 3 and 10 <= sys.version_info.minor <= 13 else 1)'
+  ], { encoding: 'utf8' })
+  return result.status === 0
+}
+
+function hasMisakiZh(launcher) {
+  const result = spawnSync(launcher.command, [
+    ...launcher.args,
+    '-c',
+    'from misaki.zh import ZHG2P; ZHG2P(version="1.1"); print("ok")'
+  ], {
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024,
+    env: {
+      ...process.env,
+      PYTHONIOENCODING: 'utf-8'
+    }
+  })
+  return result.status === 0
+}
+
+function pipEnv() {
+  return {
+    ...process.env,
+    PIP_CONFIG_FILE: devNull,
+    PIP_INDEX_URL: 'https://pypi.org/simple',
+    PIP_DISABLE_PIP_VERSION_CHECK: '1',
+    PIP_NO_INPUT: '1'
+  }
+}
+
+function ensureSmokePythonRuntime(baseLauncher) {
+  mkdirSync(runtimeRoot, { recursive: true })
+  if (!existsSync(venvPython)) {
+    spawnChecked(baseLauncher.command, [...baseLauncher.args, '-m', 'venv', venvRoot], { timeout: 120_000 })
+  }
+  const venvLauncher = { command: venvPython, args: [] }
+  if (!isSupportedPython(venvLauncher)) {
+    throw new Error(`smoke TTS venv is not Python 3.10-3.13: ${venvPython}`)
+  }
+
+  const requirements = readFileSync(requirementsPath, 'utf8')
+  const digest = createHash('sha256').update(requirements).digest('hex')
+  const installedDigest = existsSync(requirementsStamp) ? readFileSync(requirementsStamp, 'utf8').trim() : ''
+  if (!hasMisakiZh(venvLauncher) || installedDigest !== digest) {
+    spawnChecked(venvPython, ['-m', 'ensurepip', '--upgrade'], { timeout: 120_000 })
+    try {
+      spawnChecked(venvPython, ['-m', 'pip', 'install', '-r', requirementsPath], { timeout: 360_000, env: pipEnv() })
+    } catch (firstError) {
+      spawnChecked(venvPython, ['-m', 'pip', 'install', '-r', requirementsPath], { timeout: 360_000 })
+    }
+    writeFileSync(requirementsStamp, `${digest}\n`, 'utf8')
+  }
+  if (!hasMisakiZh(venvLauncher)) {
+    throw new Error(`misaki[zh] is still unavailable after installing ${requirementsPath}`)
+  }
+  return venvLauncher
+}
+
+function resolveMisakiPython() {
   const errors = []
+  let firstSupported = null
   for (const candidate of pythonCandidates()) {
     const launcher = splitLauncher(candidate)
-    const probe = spawnSync(launcher.command, [
-      ...launcher.args,
-      '-c',
-      'import sys; raise SystemExit(0 if sys.version_info.major == 3 and 10 <= sys.version_info.minor <= 13 else 1)'
-    ], { encoding: 'utf8' })
-    if (probe.status !== 0) {
+    if (!isSupportedPython(launcher)) {
       errors.push(`${candidate}: not Python 3.10-3.13`)
       continue
     }
-    const result = spawnSync(launcher.command, [...launcher.args, script], {
-      input: JSON.stringify({ text }),
-      encoding: 'utf8',
-      maxBuffer: 1024 * 1024,
-      env: {
-        ...process.env,
-        PYTHONIOENCODING: 'utf-8',
-        GOAGENT_TTS_ALLOW_UNKNOWN_PHONEMES: '1'
-      }
-    })
-    if (result.status === 0) {
-      const jsonLine = result.stdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).reverse().find((line) => line.startsWith('{') && line.endsWith('}'))
-      if (!jsonLine) throw new Error(`Misaki zh G2P returned no JSON: ${result.stdout}`)
-      return JSON.parse(jsonLine)
-    }
-    errors.push(`${candidate}: ${result.stderr.trim() || result.stdout.trim() || `exit ${result.status}`}`)
+    firstSupported ??= { ...launcher, label: candidate }
+    if (hasMisakiZh(launcher)) return { ...launcher, label: candidate }
+    errors.push(`${candidate}: Python OK, misaki[zh] not installed`)
   }
-  throw new Error(`Misaki zh G2P unavailable. Tried ${errors.join('；')}`)
+  if (!firstSupported) {
+    throw new Error(`Misaki zh G2P unavailable. Tried ${errors.join('；')}`)
+  }
+  try {
+    return ensureSmokePythonRuntime(firstSupported)
+  } catch (error) {
+    errors.push(`managed smoke venv: ${error instanceof Error ? error.message : String(error)}`)
+    throw new Error(`Misaki zh G2P unavailable. Tried ${errors.join('；')}`)
+  }
+}
+
+function runMisakiG2p(text) {
+  const script = join(root, 'scripts', 'tts_misaki_zh_g2p.py')
+  const launcher = resolveMisakiPython()
+  const result = spawnSync(launcher.command, [...launcher.args, script], {
+    input: JSON.stringify({ text }),
+    encoding: 'utf8',
+    maxBuffer: 1024 * 1024,
+    env: {
+      ...process.env,
+      PYTHONIOENCODING: 'utf-8',
+      GOAGENT_TTS_ALLOW_UNKNOWN_PHONEMES: '1'
+    }
+  })
+  if (result.status === 0) {
+    const jsonLine = result.stdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean).reverse().find((line) => line.startsWith('{') && line.endsWith('}'))
+    if (!jsonLine) throw new Error(`Misaki zh G2P returned no JSON: ${result.stdout}`)
+    return JSON.parse(jsonLine)
+  }
+  throw new Error(`${launcher.label ?? launcher.command}: ${result.stderr.trim() || result.stdout.trim() || `exit ${result.status}`}`)
 }
 
 function inspectWavAudio(path) {

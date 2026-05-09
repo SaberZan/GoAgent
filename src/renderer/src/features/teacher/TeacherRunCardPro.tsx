@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { useState } from 'react'
 import './teacher-pro.css'
 
@@ -8,6 +8,7 @@ interface TeacherRunCardProProps {
   running?: boolean
   onJumpToMove?: (moveNumber: number) => void
   onAnalyzeMove?: (moveNumber: number) => void
+  onFlashPoint?: (point: string) => void
 }
 
 type AnyRecord = Record<string, unknown>
@@ -22,6 +23,88 @@ function stringValue(value: unknown): string {
 
 function arrayValue(value: unknown): unknown[] {
   return Array.isArray(value) ? value : []
+}
+
+function renderSimpleInlineMarkdown(text: string, keyPrefix: string): ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*|__[^_]+__|`[^`]+`|\[[^\]]+\]\([^)]+\))/g).map((part, index) => {
+    const key = `${keyPrefix}-${index}`
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={key}>{part.slice(2, -2)}</strong>
+    }
+    if (part.startsWith('__') && part.endsWith('__')) {
+      return <strong key={key}>{part.slice(2, -2)}</strong>
+    }
+    if (part.startsWith('`') && part.endsWith('`')) {
+      return <code key={key}>{part.slice(1, -1)}</code>
+    }
+    const link = part.match(/^\[([^\]]+)\]\([^)]+\)$/)
+    if (link) {
+      return <span key={key}>{link[1]}</span>
+    }
+    return part
+  })
+}
+
+function MarkdownText({ text }: { text: string }): ReactElement {
+  const lines = text.replace(/\r\n/g, '\n').split('\n')
+  const nodes: ReactElement[] = []
+  let list: ReactElement[] = []
+  let listKind: 'ol' | 'ul' | null = null
+  function flushList(): void {
+    if (list.length > 0) {
+      const ListTag = listKind === 'ul' ? 'ul' : 'ol'
+      nodes.push(<ListTag key={`list-${nodes.length}`}>{list}</ListTag>)
+      list = []
+      listKind = null
+    }
+  }
+  for (const rawLine of lines) {
+    const line = rawLine.trim()
+    if (!line) {
+      flushList()
+      continue
+    }
+    if (/^(```|~~~)/.test(line)) {
+      flushList()
+      continue
+    }
+    if (/^(-{3,}|\*{3,}|_{3,})$/.test(line)) {
+      flushList()
+      nodes.push(<hr key={`hr-${nodes.length}`} />)
+      continue
+    }
+    const heading = line.match(/^(#{1,6})\s+(.+)$/)
+    if (heading) {
+      flushList()
+      const HeadingTag = heading[1].length <= 2 ? 'h3' : 'h4'
+      nodes.push(<HeadingTag key={`h-${nodes.length}`}>{renderSimpleInlineMarkdown(heading[2], `h-${nodes.length}`)}</HeadingTag>)
+      continue
+    }
+    const quote = line.match(/^>\s?(.+)$/)
+    if (quote) {
+      flushList()
+      nodes.push(<blockquote key={`q-${nodes.length}`}>{renderSimpleInlineMarkdown(quote[1], `q-${nodes.length}`)}</blockquote>)
+      continue
+    }
+    const numbered = line.match(/^(\d+)[.、]\s*(.+)$/)
+    if (numbered) {
+      if (listKind && listKind !== 'ol') flushList()
+      listKind = 'ol'
+      list.push(<li key={`${nodes.length}-${list.length}`}>{renderSimpleInlineMarkdown(numbered[2], `li-${nodes.length}-${list.length}`)}</li>)
+      continue
+    }
+    const bullet = line.match(/^[-*•]\s+(.+)$/)
+    if (bullet) {
+      if (listKind && listKind !== 'ul') flushList()
+      listKind = 'ul'
+      list.push(<li key={`${nodes.length}-${list.length}`}>{renderSimpleInlineMarkdown(bullet[1], `li-${nodes.length}-${list.length}`)}</li>)
+      continue
+    }
+    flushList()
+    nodes.push(<p key={`p-${nodes.length}`}>{renderSimpleInlineMarkdown(line, `p-${nodes.length}`)}</p>)
+  }
+  flushList()
+  return <section className="ks-teacher-pro-markdown">{nodes}</section>
 }
 
 function pickToolLogs(result: unknown): AnyRecord[] {
@@ -114,7 +197,7 @@ export function TeacherRunCardPro({
       <header className="ks-teacher-pro-card__header">
         <div>
           <span className="ks-teacher-pro-card__eyebrow">GoAgent</span>
-          <h3>{running ? '正在思考…' : 'assistant response'}</h3>
+          <h3>{running ? '正在思考…' : 'GoAgent 回复'}</h3>
         </div>
         <span className="ks-teacher-pro-card__status">{running ? '执行中' : error ? '需处理' : '完成'}</span>
       </header>
@@ -130,9 +213,7 @@ export function TeacherRunCardPro({
       ) : null}
 
       {assistantText ? (
-        <section className="ks-teacher-pro-markdown">
-          {assistantText}
-        </section>
+        <MarkdownText text={assistantText} />
       ) : null}
 
       {toolLogs.length > 0 ? (

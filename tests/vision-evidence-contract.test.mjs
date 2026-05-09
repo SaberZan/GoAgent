@@ -21,11 +21,19 @@ test('vision evidence service validates image presence and sends high-detail ima
   assert.match(source, /VISION_EVIDENCE_MAX_IMAGE_BYTES = 8 \* 1024 \* 1024/)
   assert.match(source, /VISION_EVIDENCE_RECOMMENDED_IMAGE_BYTES = 2 \* 1024 \* 1024/)
   assert.match(source, /visionRequiredForMode/)
+  assert.match(source, /intent === 'game-review'/)
   assert.match(source, /buildVisionEvidenceReport/)
   assert.match(source, /validateVisionEvidenceForIntent/)
   assert.match(source, /buildVisionImageContentParts/)
   assert.match(source, /detail: image\.detail/)
   assert.match(source, /本轮已经提供棋盘图/)
+})
+
+test('selected-game freeform chat is not implicitly promoted to image-required review', () => {
+  const classifier = read('src/main/services/teacher/intentClassifier.ts')
+  assert.match(classifier, /intent: 'open-ended'[\s\S]*rationale: 'empty prompt'/)
+  assert.match(classifier, /rationale: 'no strong signal'/)
+  assert.doesNotMatch(classifier, /request\.gameId \? 'game-review' : 'open-ended'/)
 })
 
 test('teacher agent includes vision evidence instructions and refuses missing required images', () => {
@@ -34,6 +42,7 @@ test('teacher agent includes vision evidence instructions and refuses missing re
   assert.match(source, /validateVisionEvidenceForIntent/)
   assert.match(source, /棋盘图证据不完整/)
   assert.match(source, /formatVisionEvidenceForPrompt\(visionEvidence\)/)
+  assert.match(source, /intent 是 game-review/)
   assert.match(source, /严禁说“没有棋盘图”/)
   assert.match(source, /buildVisionImageContentParts\(state\.request, visionEvidence\)/)
   assert.match(source, /verifyVisionEvidenceMarkdown\(finalText, visionEvidence\)/)

@@ -63,6 +63,13 @@ function formatWinrateLoss(loss: number | undefined): string {
   return `${loss.toFixed(loss >= 10 ? 0 : 1)}%`
 }
 
+function formatBlackWinrate(winrate: number | undefined): string {
+  if (typeof winrate !== 'number' || !Number.isFinite(winrate)) {
+    return '—'
+  }
+  return `${(Math.max(0, Math.min(1, winrate)) * 100).toFixed(1)}%`
+}
+
 function extractScoreLead(item: unknown): number | undefined {
   const raw =
     valueOf(valueOf(item, 'after'), 'scoreLead') ??
@@ -114,8 +121,9 @@ export function WinrateTimelineV2({
       timelineAria: '胜率图，点击后可用左右方向键切换手数',
       timelineTitle: '胜率走势',
       timelineLoading: '分析中',
-      timelineSubtitle: '胜率 / 目差曲线',
-      timelineCurrentLoss: '当前胜率差',
+      timelineCurrentBlackWinrate: '当前黑胜率',
+      timelinePreviousMove: '上一手',
+      timelineNextMove: '下一手',
       timelineLegend: '曲线说明',
       timelineBlackWinrate: '黑胜率',
       timelineScoreLead: '目差',
@@ -165,7 +173,9 @@ export function WinrateTimelineV2({
       return Math.abs(point.moveNumber - hoveredMove) < Math.abs(nearest.moveNumber - hoveredMove) ? point : nearest
     }, null)
   const currentPoint = points.find((point) => point.moveNumber === currentMoveNumber)
-  const currentLossLabel = formatWinrateLoss(currentPoint?.loss)
+  const currentBlackWinrateLabel = formatBlackWinrate(currentPoint?.winrate)
+  const canMovePrevious = Boolean(onMove) && currentMoveNumber > 0
+  const canMoveNext = Boolean(onMove) && currentMoveNumber < totalMoves
   const hasActiveRange = activeRangeStart != null && activeRangeEnd != null
   const rangeLo = isRangeDragging
     ? Math.min(dragRangeStart ?? 0, dragRangeEnd ?? 0)
@@ -263,6 +273,11 @@ export function WinrateTimelineV2({
     onMove(Math.max(0, Math.min(totalMoves, currentMoveNumber + delta)))
   }
 
+  function stepMove(delta: number): void {
+    if (!onMove) return
+    onMove(Math.max(0, Math.min(totalMoves, currentMoveNumber + delta)))
+  }
+
   return (
     <div
       ref={containerRef}
@@ -274,18 +289,28 @@ export function WinrateTimelineV2({
       <div className="ks-timeline-head">
         <div className="ks-timeline-title">
           <span>{t('timelineTitle')}</span>
-          <small>{loading ? (loadingLabel || t('timelineLoading')) : t('timelineSubtitle')}</small>
+          {loading ? <small>{loadingLabel || t('timelineLoading')}</small> : null}
         </div>
-        <div className="ks-timeline-move-count">{currentMoveNumber} / {totalMoves}</div>
-        <div className={`ks-timeline-current-loss ks-timeline-current-loss--${currentPoint?.severity ?? 'quiet'}`}>
-          <span>{t('timelineCurrentLoss')}</span>
-          <strong>{currentLossLabel}</strong>
+        <div className="ks-timeline-control-strip ks-timeline-nav" aria-label={t('timelineAria')}>
+          <button type="button" onClick={() => stepMove(-1)} disabled={!canMovePrevious} aria-label={t('timelinePreviousMove')} title={t('timelinePreviousMove')}>
+            ‹
+          </button>
+          <div className="ks-timeline-move-count">{currentMoveNumber} / {totalMoves}</div>
+          <button type="button" onClick={() => stepMove(1)} disabled={!canMoveNext} aria-label={t('timelineNextMove')} title={t('timelineNextMove')}>
+            ›
+          </button>
         </div>
-        <div className="ks-timeline-legend" aria-label={t('timelineLegend')}>
-          <span><i className="ks-timeline-legend__swatch ks-timeline-legend__swatch--winrate" />{t('timelineBlackWinrate')}</span>
-          <span><i className="ks-timeline-legend__swatch ks-timeline-legend__swatch--score" />{t('timelineScoreLead')}</span>
+        <div className="ks-timeline-meta">
+          <div className="ks-timeline-current-black">
+            <span>{t('timelineCurrentBlackWinrate')}</span>
+            <strong>{currentBlackWinrateLabel}</strong>
+          </div>
+          <div className="ks-timeline-legend" aria-label={t('timelineLegend')}>
+            <span><i className="ks-timeline-legend__swatch ks-timeline-legend__swatch--winrate" />{t('timelineBlackWinrate')}</span>
+            <span><i className="ks-timeline-legend__swatch ks-timeline-legend__swatch--score" />{t('timelineScoreLead')}</span>
+          </div>
+          {summary ? <div className="ks-timeline-summary">{summary}</div> : null}
         </div>
-        {summary ? <div className="ks-timeline-summary">{summary}</div> : null}
       </div>
       <svg
         className={`ks-timeline-canvas ${dragging ? 'is-dragging' : ''}`}

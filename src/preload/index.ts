@@ -120,6 +120,7 @@ const api = {
   testTtsSettings: (payload: Partial<AppSettings>): Promise<TtsSynthesisResult> => ipcRenderer.invoke('tts:test', payload),
   getSavedTtsApiKey: (): Promise<{ hasKey: boolean; apiKey: string }> => ipcRenderer.invoke('tts:get-saved-api-key'),
   getReleaseReadiness: (): Promise<ReleaseReadinessResult> => ipcRenderer.invoke('release:readiness'),
+  writeClipboardText: (text: string): Promise<{ ok: boolean; length: number }> => ipcRenderer.invoke('clipboard:write-text', text),
   openPath: (filePath: string): Promise<void> => ipcRenderer.invoke('path:open', filePath),
   onDesktopCommand: (handler: (command: DesktopCommand) => void): (() => void) => {
     const listener = (_event: Electron.IpcRendererEvent, command: DesktopCommand): void => handler(command)

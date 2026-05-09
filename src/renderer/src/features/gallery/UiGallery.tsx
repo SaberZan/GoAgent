@@ -115,7 +115,7 @@ export function UiGallery(): ReactElement {
               <button className="teacher-commandbar__primary" type="button">分析当前手</button>
               <button type="button">分析整盘</button>
               <button type="button">分析近 10 局</button>
-              <span>Thread: 当前棋局复盘 · Items: KataGo / 截图 / 知识库 / 棋手画像</span>
+              <span>当前棋局复盘 · KataGo · 棋盘图 · 知识库 · 棋手画像</span>
             </div>
             <div className="message-list agent-thread">
               <article className="message message--student agent-turn agent-turn--student">
@@ -132,6 +132,7 @@ export function UiGallery(): ReactElement {
                     markdown={galleryTeacherResult.markdown}
                     onJumpToMove={setMoveNumber}
                     onAnalyzeMove={setMoveNumber}
+                    onFlashPoint={() => undefined}
                   />
                 </div>
               </article>

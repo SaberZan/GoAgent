@@ -127,7 +127,7 @@ export function classifyTeacherIntent(request: TeacherRunRequest): TeacherIntent
   const prompt = (request.prompt ?? '').trim()
   if (!prompt) {
     return {
-      intent: request.gameId ? 'game-review' : 'open-ended',
+      intent: 'open-ended',
       confidence: 'low',
       rationale: 'empty prompt',
       matchedSignals: []
@@ -177,9 +177,9 @@ export function classifyTeacherIntent(request: TeacherRunRequest): TeacherIntent
 
   if (score <= 0) {
     return {
-      intent: request.gameId ? 'game-review' : 'open-ended',
+      intent: 'open-ended',
       confidence: 'low',
-      rationale: request.gameId ? 'no strong signal; selected game is available' : 'no strong signal and no selected game',
+      rationale: 'no strong signal',
       matchedSignals: [],
       requestedGameCount: count
     }

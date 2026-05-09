@@ -317,9 +317,65 @@
 }
 
 .ks-teacher-pro-markdown {
+  display: grid;
+  gap: 10px;
   color: var(--ks-text-muted, #a9b2bb);
-  white-space: pre-wrap;
   line-height: 1.65;
+}
+
+.ks-teacher-pro-markdown p,
+.ks-teacher-pro-markdown ol,
+.ks-teacher-pro-markdown ul,
+.ks-teacher-pro-markdown blockquote,
+.ks-teacher-pro-markdown h3,
+.ks-teacher-pro-markdown h4 {
+  margin: 0;
+}
+
+.ks-teacher-pro-markdown h3,
+.ks-teacher-pro-markdown h4 {
+  color: var(--ks-text-main, #f4efe7);
+  line-height: 1.35;
+}
+
+.ks-teacher-pro-markdown h3 {
+  font-size: 15px;
+  font-weight: 880;
+}
+
+.ks-teacher-pro-markdown h4 {
+  font-size: 13.5px;
+  font-weight: 820;
+}
+
+.ks-teacher-pro-markdown ol,
+.ks-teacher-pro-markdown ul {
+  display: grid;
+  gap: 8px;
+  padding-left: 20px;
+}
+
+.ks-teacher-pro-markdown blockquote {
+  padding: 8px 10px;
+  border-left: 3px solid rgb(93 201 188 / 0.38);
+  border-radius: 8px;
+  background: rgb(93 201 188 / 0.08);
+  color: var(--ks-text-main, #f4efe7);
+}
+
+.ks-teacher-pro-markdown hr {
+  width: 100%;
+  height: 1px;
+  border: 0;
+  background: var(--ks-border-soft, rgba(255,255,255,.08));
+}
+
+.ks-teacher-pro-markdown code {
+  padding: 1px 4px;
+  border-radius: 5px;
+  background: rgb(255 255 255 / 0.08);
+  color: var(--ks-text-main, #f4efe7);
+  font: 0.92em/1.2 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .ks-teacher-pro-error {
@@ -910,4 +966,907 @@
 
 .ks-composer-pro__box .ks-composer-pro__send.is-stopping:hover:not(:disabled) {
   background: linear-gradient(180deg, #ff776a, #d9483e);
+}
+
+.teacher-artifact-card {
+  --artifact-ink: #17251f;
+  --artifact-muted: #596b62;
+  --artifact-soft: #eef6f2;
+  --artifact-line: rgb(42 94 86 / 0.16);
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--artifact-line);
+  border-radius: 12px;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 0.86), rgb(239 248 244 / 0.66) 58%, rgb(255 249 237 / 0.72)),
+    rgb(255 255 255 / 0.74);
+  color: var(--artifact-ink);
+  box-shadow:
+    0 18px 42px rgb(45 65 54 / 0.10),
+    inset 0 1px 0 rgb(255 255 255 / 0.88);
+}
+
+.teacher-artifact-card * {
+  min-width: 0;
+}
+
+.teacher-artifact-card--compact {
+  margin-top: 12px;
+  padding: 12px;
+}
+
+.teacher-artifact-card__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, auto);
+  align-items: start;
+  gap: 12px;
+}
+
+.teacher-artifact-card__head div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.teacher-artifact-card__head div:first-child > span,
+.teacher-artifact-section__head small {
+  color: #22746d;
+  font-size: 10.5px;
+  font-weight: 900;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.teacher-artifact-card__head strong {
+  color: var(--artifact-ink);
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 950;
+}
+
+.teacher-artifact-card__head div:first-child small {
+  color: #74847c;
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.teacher-artifact-card__actions {
+  display: grid;
+  grid-template-columns: max-content;
+  justify-content: end;
+  gap: 7px;
+}
+
+.teacher-artifact-card__actions small {
+  grid-column: 1 / -1;
+  max-width: 300px;
+  color: #6f7f77;
+  text-align: right;
+  font-size: 10.8px;
+  line-height: 1.45;
+}
+
+.teacher-artifact-card__actions button,
+.teacher-artifact-candidates button,
+.teacher-artifact-keymoves button,
+.teacher-artifact-sandbox__toggle {
+  border: 1px solid rgb(64 118 111 / 0.20);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.72);
+  color: #24504b;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 850;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.78);
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.teacher-artifact-card__actions button {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.teacher-artifact-card__actions button:hover:not(:disabled),
+.teacher-artifact-candidates button:hover,
+.teacher-artifact-keymoves button:hover,
+.teacher-artifact-sandbox__toggle:hover {
+  border-color: rgb(34 116 109 / 0.38);
+  background: rgb(255 255 255 / 0.94);
+  box-shadow: 0 8px 18px rgb(22 82 76 / 0.10), inset 0 1px 0 rgb(255 255 255 / 0.86);
+  transform: translateY(-1px);
+}
+
+.teacher-artifact-card__actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.teacher-artifact-card__manual-copy {
+  padding: 10px;
+  border: 1px solid rgb(194 143 52 / 0.22);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgb(255 249 235 / 0.82), rgb(255 255 255 / 0.62));
+}
+
+.teacher-artifact-card__manual-copy label {
+  display: grid;
+  gap: 7px;
+  color: #6c5a2a;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.teacher-artifact-card__manual-copy textarea {
+  width: 100%;
+  min-height: 112px;
+  resize: vertical;
+  border: 1px solid rgb(111 127 119 / 0.18);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.86);
+  color: #23352e;
+  font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.teacher-artifact-card__summary {
+  margin: 0;
+  color: #40524a;
+  font-size: 12.8px;
+  line-height: 1.68;
+}
+
+.teacher-artifact-card__facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+  gap: 7px;
+  margin: 0;
+}
+
+.teacher-artifact-card__facts div {
+  display: grid;
+  gap: 3px;
+  padding: 8px 9px;
+  border: 1px solid rgb(80 101 85 / 0.10);
+  border-radius: 9px;
+  background: rgb(255 255 255 / 0.50);
+}
+
+.teacher-artifact-card__facts dt {
+  color: #6c7a74;
+  font-size: 10.8px;
+  font-weight: 820;
+}
+
+.teacher-artifact-card__facts dd {
+  margin: 0;
+  overflow: hidden;
+  color: #1f332d;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.4px;
+  font-weight: 900;
+}
+
+.teacher-artifact-section,
+.teacher-artifact-evidence,
+.teacher-artifact-sandbox {
+  display: grid;
+  gap: 8px;
+}
+
+.teacher-artifact-section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.teacher-artifact-section__head h4,
+.teacher-artifact-grid h4 {
+  margin: 0;
+  color: #1d302a;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 950;
+}
+
+.teacher-artifact-section__head small {
+  overflow: hidden;
+  max-width: 58%;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.teacher-artifact-candidates__list,
+.teacher-artifact-variations__list,
+.teacher-artifact-keymoves__list {
+  display: grid;
+  gap: 8px;
+}
+
+.teacher-artifact-candidates__list {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+}
+
+.teacher-artifact-candidates button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 3px 10px;
+  min-height: 58px;
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.teacher-artifact-candidates button.is-primary {
+  border-color: rgb(24 122 111 / 0.32);
+  background: linear-gradient(135deg, rgb(230 251 247 / 0.86), rgb(255 255 255 / 0.76));
+}
+
+.teacher-artifact-candidates span {
+  color: #22746d;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.teacher-artifact-candidates strong {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: #172823;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.teacher-artifact-candidates small {
+  color: #50625b;
+  font-size: 11.5px;
+  font-weight: 760;
+  line-height: 1.35;
+}
+
+.teacher-artifact-candidates em {
+  grid-column: 1 / -1;
+  overflow: hidden;
+  color: #7b8882;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.teacher-artifact-variations__list {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+}
+
+.teacher-artifact-variations article,
+.teacher-artifact-keymoves article,
+.teacher-artifact-grid__panel,
+.teacher-artifact-evidence__grid span {
+  border: 1px solid rgb(66 99 90 / 0.11);
+  border-radius: 10px;
+  background: rgb(255 255 255 / 0.44);
+}
+
+.teacher-artifact-variations article,
+.teacher-artifact-keymoves article {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+}
+
+.teacher-artifact-variations article div,
+.teacher-artifact-grid article div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 9px;
+}
+
+.teacher-artifact-variations strong,
+.teacher-artifact-grid b {
+  color: #22362f;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.teacher-artifact-variations span,
+.teacher-artifact-grid span {
+  flex: 0 0 auto;
+  color: #22746d;
+  font-size: 10.8px;
+  font-weight: 850;
+}
+
+.teacher-artifact-variations p,
+.teacher-artifact-keymoves p,
+.teacher-artifact-grid p,
+.teacher-artifact-sandbox__frame p {
+  margin: 0;
+  color: #53645d;
+  font-size: 11.8px;
+  line-height: 1.58;
+}
+
+.teacher-artifact-variations small {
+  overflow: hidden;
+  color: #67786f;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.3px;
+  font-weight: 760;
+}
+
+.teacher-artifact-variations em {
+  color: #8a651f;
+  font-size: 11.3px;
+  font-style: normal;
+  font-weight: 850;
+}
+
+.teacher-artifact-keymoves__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+}
+
+.teacher-artifact-keymoves button {
+  min-height: 28px;
+  padding: 0 8px;
+  color: #204f4a;
+  font-size: 11.5px;
+}
+
+.teacher-artifact-keymoves span {
+  color: #a06316;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.teacher-artifact-keymoves strong {
+  color: #1d302a;
+  font-size: 11.5px;
+  font-weight: 900;
+}
+
+.teacher-artifact-keymoves .teacher-artifact-keymoves__analyze {
+  justify-self: start;
+  color: #0f7771;
+}
+
+.teacher-artifact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.teacher-artifact-grid__panel {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding: 10px;
+}
+
+.teacher-artifact-grid article {
+  display: grid;
+  gap: 4px;
+}
+
+.teacher-artifact-grid small {
+  color: #7a877f;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.teacher-artifact-evidence__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  gap: 7px;
+}
+
+.teacher-artifact-evidence__grid span {
+  display: grid;
+  gap: 2px;
+  padding: 8px 9px;
+  color: #64756d;
+  font-size: 10.8px;
+  font-weight: 820;
+}
+
+.teacher-artifact-evidence__grid b {
+  color: #1e352e;
+  font-size: 12.5px;
+  font-weight: 950;
+}
+
+.teacher-artifact-sandbox {
+  padding-top: 2px;
+}
+
+.teacher-artifact-sandbox__toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  min-height: 40px;
+  gap: 10px;
+  padding: 0 11px;
+  text-align: left;
+}
+
+.teacher-artifact-sandbox__toggle span {
+  color: #214d48;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.teacher-artifact-sandbox__toggle small {
+  color: #64756d;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.teacher-artifact-sandbox__frame {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed rgb(39 116 109 / 0.28);
+  border-radius: 10px;
+  background: rgb(244 250 247 / 0.72);
+}
+
+.teacher-artifact-sandbox__frame ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: #80622c;
+  font-size: 11.2px;
+  line-height: 1.45;
+}
+
+.teacher-artifact-sandbox__frame iframe {
+  width: 100%;
+  height: 260px;
+  border: 1px solid rgb(36 76 70 / 0.16);
+  border-radius: 8px;
+  background: #fffaf0;
+}
+
+/* Teaching Artifact card: simplified, reader-first coaching note. */
+.teacher-artifact-card {
+  --artifact-ink: #16231f;
+  --artifact-muted: #65736d;
+  --artifact-accent: #1f7a70;
+  --artifact-line: rgb(32 76 68 / 0.12);
+  gap: 10px;
+  padding: 14px;
+  border-color: var(--artifact-line);
+  border-radius: 10px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.92), rgb(248 251 249 / 0.84)),
+    rgb(255 255 255 / 0.78);
+  box-shadow:
+    0 16px 44px rgb(28 45 38 / 0.10),
+    0 1px 0 rgb(255 255 255 / 0.86) inset;
+}
+
+.teacher-artifact-card__head {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.teacher-artifact-card__head div:first-child > span,
+.teacher-artifact-section__head small {
+  color: var(--artifact-accent);
+  font-size: 10px;
+  font-weight: 820;
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.teacher-artifact-card__head strong {
+  font-size: 14px;
+  font-weight: 880;
+  letter-spacing: 0;
+}
+
+.teacher-artifact-card__head div:first-child small {
+  color: #75827b;
+  font-size: 10.5px;
+  font-weight: 650;
+}
+
+.teacher-artifact-card__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border: 1px solid rgb(80 110 100 / 0.14);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.66);
+  color: #566861;
+  font-size: 11px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.teacher-artifact-card__badge.is-good {
+  border-color: rgb(24 121 94 / 0.18);
+  background: rgb(233 250 242 / 0.74);
+  color: #16664e;
+}
+
+.teacher-artifact-card__badge.is-warn {
+  border-color: rgb(180 126 39 / 0.20);
+  background: rgb(255 247 229 / 0.78);
+  color: #8b5a18;
+}
+
+.teacher-artifact-card__badge.is-bad {
+  border-color: rgb(168 70 58 / 0.18);
+  background: rgb(255 240 237 / 0.78);
+  color: #934135;
+}
+
+.teacher-artifact-card__actions {
+  gap: 3px;
+  justify-content: end;
+}
+
+.teacher-artifact-card__actions button {
+  min-height: 26px;
+  padding: 0 10px;
+  border-color: rgb(31 122 112 / 0.16);
+  border-radius: 7px;
+  background: rgb(255 255 255 / 0.76);
+  color: #205d55;
+  font-size: 10.8px;
+  font-weight: 760;
+}
+
+.teacher-artifact-card__actions small {
+  max-width: 220px;
+  color: #7a867f;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.teacher-artifact-card__summary {
+  padding: 2px 0 4px;
+  color: #263a33;
+  font-size: 13.4px;
+  line-height: 1.72;
+  font-weight: 650;
+}
+
+.teacher-artifact-card__facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid rgb(52 82 72 / 0.10);
+  border-radius: 9px;
+  background: rgb(52 82 72 / 0.10);
+}
+
+.teacher-artifact-card__facts.is-count-1 {
+  grid-template-columns: 1fr;
+}
+
+.teacher-artifact-card__facts.is-count-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.teacher-artifact-card__facts div,
+.teacher-artifact-card__facts button {
+  display: grid;
+  gap: 3px;
+  min-height: 48px;
+  padding: 9px 10px;
+  border: 0;
+  border-radius: 0;
+  background: rgb(255 255 255 / 0.54);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.teacher-artifact-card__facts button {
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.teacher-artifact-card__facts button:hover:not(:disabled) {
+  background: rgb(232 247 242 / 0.58);
+}
+
+.teacher-artifact-card__facts button:disabled {
+  cursor: default;
+}
+
+.teacher-artifact-card__facts span {
+  color: #77837d;
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.teacher-artifact-card__facts strong {
+  overflow: hidden;
+  color: #182a24;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.2px;
+  font-weight: 880;
+}
+
+.teacher-artifact-card__facts .is-loss strong {
+  color: #815c20;
+  text-overflow: clip;
+  white-space: normal;
+}
+
+.teacher-artifact-section,
+.teacher-artifact-evidence {
+  gap: 7px;
+}
+
+.teacher-artifact-section__head h4,
+.teacher-artifact-grid h4 {
+  font-size: 11.8px;
+  font-weight: 880;
+}
+
+.teacher-artifact-section__head small {
+  color: #87918c;
+  font-size: 10.4px;
+  font-weight: 680;
+}
+
+.teacher-artifact-candidates__list {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.teacher-artifact-candidates button {
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 44px;
+  padding: 8px 10px;
+  border-color: rgb(52 82 72 / 0.10);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.42);
+}
+
+.teacher-artifact-candidates button.is-primary {
+  border-color: rgb(31 122 112 / 0.20);
+  background: linear-gradient(135deg, rgb(234 250 245 / 0.78), rgb(255 255 255 / 0.50));
+}
+
+.teacher-artifact-candidates span {
+  align-self: center;
+  color: #1d746a;
+  font-size: 10.5px;
+  font-weight: 820;
+}
+
+.teacher-artifact-candidates strong {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: start;
+  justify-self: start;
+  color: #182721;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.teacher-artifact-candidates small,
+.teacher-artifact-candidates em {
+  grid-column: 2;
+  color: #5d6d66;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.teacher-artifact-candidates em {
+  color: #8a958f;
+}
+
+.teacher-artifact-variation article,
+.teacher-artifact-keymoves article,
+.teacher-artifact-grid__panel {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid rgb(52 82 72 / 0.10);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.34);
+}
+
+.teacher-artifact-variation strong {
+  color: #1f342c;
+  font-size: 12.5px;
+  font-weight: 850;
+}
+
+.teacher-artifact-variation p,
+.teacher-artifact-keymoves p,
+.teacher-artifact-grid p {
+  color: #52635b;
+  font-size: 11.8px;
+  line-height: 1.58;
+}
+
+.teacher-artifact-variation small {
+  overflow: hidden;
+  color: #78857e;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.teacher-artifact-variation em {
+  color: #8a651f;
+  font-size: 11.2px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.teacher-artifact-grid {
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+
+.teacher-artifact-grid__panel {
+  gap: 7px;
+}
+
+.teacher-artifact-grid article {
+  gap: 3px;
+}
+
+.teacher-artifact-grid article div {
+  gap: 8px;
+}
+
+.teacher-artifact-grid b {
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.teacher-artifact-grid span {
+  color: #1e7469;
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.teacher-artifact-grid small {
+  font-size: 10.8px;
+}
+
+.teacher-artifact-evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.teacher-artifact-evidence span {
+  padding: 4px 7px;
+  border: 1px solid rgb(60 92 82 / 0.10);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.38);
+  color: #6c7973;
+  font-size: 10.2px;
+  font-weight: 720;
+}
+
+.ui-gallery.ui-gallery .ui-gallery__grid--artifact {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ui-gallery.ui-gallery .ui-gallery__panel--artifact {
+  overflow: visible;
+}
+
+.ui-gallery.ui-gallery .ui-gallery__artifact-stage .teacher-artifact-card {
+  max-width: 1120px;
+  margin-top: 0;
+}
+
+.ui-gallery.ui-gallery .ui-gallery__agent-shell,
+.ui-gallery.ui-gallery .ui-gallery__panel--teacher,
+.ui-gallery.ui-gallery .message-list {
+  min-width: 0;
+}
+
+@media (max-width: 1320px) {
+  .ui-gallery.ui-gallery .ui-gallery__grid--main {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ui-gallery.ui-gallery .ui-gallery__panel--board .ks-board-shell {
+    width: min(100%, 560px);
+  }
+}
+
+@media (max-width: 760px) {
+  .teacher-artifact-card {
+    padding: 12px;
+  }
+
+  .teacher-artifact-card__head,
+  .teacher-artifact-card__actions,
+  .teacher-artifact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-artifact-card__actions {
+    justify-content: stretch;
+  }
+
+  .teacher-artifact-card__actions button {
+    width: 100%;
+  }
+
+  .teacher-artifact-card__actions small {
+    max-width: none;
+    text-align: left;
+  }
+
+  .teacher-artifact-card__facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .teacher-artifact-section__head {
+    display: grid;
+    gap: 3px;
+  }
+
+  .teacher-artifact-section__head small {
+    max-width: none;
+    text-align: left;
+  }
+
+  .teacher-artifact-sandbox__toggle {
+    grid-template-columns: 1fr;
+    gap: 2px;
+    padding: 8px 10px;
+  }
+
+  .ui-gallery.ui-gallery {
+    padding: 16px;
+  }
+
+  .ui-gallery.ui-gallery .ui-gallery__hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ui-gallery.ui-gallery .ui-gallery__state-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .teacher-artifact-card__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .teacher-artifact-candidates strong {
+    grid-column: 1 / -1;
+    grid-row: auto;
+    justify-self: start;
+  }
+
+  .teacher-artifact-sandbox__frame iframe {
+    height: 220px;
+  }
 }

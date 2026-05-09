@@ -11,11 +11,12 @@ assert.equal(packageJson.scripts['eval:tts-provider-policy'], 'node scripts/eval
 assert.ok(packageJson.dependencies?.['kokoro-js'], 'kokoro-js dependency is required for bundled Kokoro provider')
 
 const types = readFileSync(join(root, 'src', 'main', 'lib', 'types.ts'), 'utf8')
-assert.match(types, /TtsProviderId = 'kokoro-bundled' \| 'custom-openai-compatible' \| 'custom-http-json' \| 'external-local-service'/)
+assert.match(types, /TtsProviderId = 'kokoro-bundled' \| 'volcengine-doubao' \| 'custom-openai-compatible' \| 'custom-http-json' \| 'external-local-service'/)
 assert.doesNotMatch(types, /system-web-speech|speechSynthesis/)
 
 const serviceDir = join(root, 'src', 'main', 'services', 'tts')
 assert.ok(existsSync(join(serviceDir, 'kokoroBundledProvider.ts')), 'missing Kokoro provider')
+assert.ok(existsSync(join(serviceDir, 'volcengineDoubaoProvider.ts')), 'missing Volcengine Doubao provider')
 assert.ok(existsSync(join(serviceDir, 'customOpenAiSpeechProvider.ts')), 'missing custom OpenAI-compatible provider')
 assert.ok(existsSync(join(serviceDir, 'index.ts')), 'missing TTS registry')
 
@@ -30,6 +31,10 @@ assert.doesNotMatch(implementation, /system-web-speech|speechSynthesis|webkitSpe
 assert.doesNotMatch(implementation, /tryNextProvider|providerChain|autoSwitchProvider/)
 assert.match(implementation, /assertSelectedProvider/)
 assert.match(implementation, /kokoro-bundled/)
+assert.match(implementation, /volcengine-doubao/)
+assert.match(implementation, /X-Api-Key/)
+assert.match(implementation, /X-Api-Resource-Id/)
+assert.match(implementation, /readVolcengineAudio/)
 assert.match(implementation, /assertSpeechLanguageMatches/)
 assert.match(implementation, /phonemizeChineseWithMisaki/)
 assert.match(implementation, /synthesizeKokoroChunkInWorker/)

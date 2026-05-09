@@ -532,7 +532,7 @@ function arrayInput(input: JsonObject, key: string): string[] {
 }
 
 function redactSensitiveText(text: string): string {
-  const secretKeyPattern = '(?:api[_-]?key|apikey|llmApiKey|ttsCustomApiKey|proxyApiKey|token|password|secret|authorization|github[_-]?token|gh[_-]?token|csc_link|apple_app_specific_password)'
+  const secretKeyPattern = '(?:api[_-]?key|apikey|llmApiKey|ttsCustomApiKey|ttsVolcengineApiKey|proxyApiKey|token|password|secret|authorization|github[_-]?token|gh[_-]?token|csc_link|apple_app_specific_password)'
   return text
     .replace(/data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=_-]+/gi, '[REDACTED_IMAGE_DATA]')
     .replace(/file:\/\/[^\s"'<>)]*/gi, '[REDACTED_LOCAL_PATH]')
@@ -635,6 +635,7 @@ function safeSettingsSummaryForAgent(settings: ReturnType<typeof getSettings>): 
     ttsProvider: settings.ttsProvider,
     ttsLanguage: settings.ttsLanguage,
     hasTtsCustomApiKey: Boolean(settings.ttsCustomApiKey),
+    hasTtsVolcengineApiKey: Boolean(settings.ttsVolcengineApiKey),
     reviewLanguage: settings.reviewLanguage
   }
 }

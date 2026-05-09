@@ -8,9 +8,11 @@ import { externalLocalTtsProvider } from './externalLocalTtsProvider'
 import { kokoroBundledProvider } from './kokoroBundledProvider'
 import { limitSpeechLength, markdownToSpeechText } from './speechText'
 import type { TtsProvider } from './ttsTypes'
+import { volcengineDoubaoProvider } from './volcengineDoubaoProvider'
 
 const providers: Record<TtsProviderId, TtsProvider> = {
   'kokoro-bundled': kokoroBundledProvider,
+  'volcengine-doubao': volcengineDoubaoProvider,
   'custom-openai-compatible': customOpenAiSpeechProvider,
   'custom-http-json': customHttpJsonProvider,
   'external-local-service': externalLocalTtsProvider
@@ -50,7 +52,8 @@ export async function testTtsSettings(payload: Partial<AppSettings>): Promise<Tt
   const provider = selectedProvider(settings)
   const readiness = await provider.inspect(settings)
   if (!readiness.ready) throw new Error(readiness.message)
-  return provider.synthesize({ text: '现在开始复盘第八十七手。', language: settings.ttsLanguage, voiceId: settings.ttsVoiceId, format: settings.ttsProvider === 'custom-openai-compatible' ? 'mp3' : 'wav' }, settings)
+  const format = settings.ttsProvider === 'custom-openai-compatible' || settings.ttsProvider === 'volcengine-doubao' ? 'mp3' : 'wav'
+  return provider.synthesize({ text: '现在开始复盘第八十七手。', language: settings.ttsLanguage, voiceId: settings.ttsVoiceId, format }, settings)
 }
 
 export async function clearTtsCache(): Promise<{ deleted: number }> {

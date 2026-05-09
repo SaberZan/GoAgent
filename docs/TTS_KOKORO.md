@@ -65,12 +65,14 @@ or custom API.
 
 GoAgent supports explicit custom providers:
 
+- `volcengine-doubao`
 - `custom-openai-compatible`
 - `custom-http-json`
 - `external-local-service`
 
 When a custom provider is selected, the text is sent to the configured endpoint.
 When `kokoro-bundled` is selected, no custom API is called.
+See `docs/TTS_VOLCENGINE.md` for the dedicated Volcengine Doubao provider.
 
 ## Privacy
 

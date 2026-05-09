@@ -11,9 +11,17 @@ interface TtsSettingsPanelProps {
 
 const PROVIDERS: Array<{ id: TtsProviderId; label: string; badge: string; note: string }> = [
   { id: 'kokoro-bundled', label: 'Kokoro 中文离线语音', badge: '推荐', note: '本机合成老师讲解，不发送到外部服务。' },
+  { id: 'volcengine-doubao', label: '火山引擎 · 豆包语音', badge: '云端', note: '使用火山引擎豆包语音合成，只有你显式选择后才会发送朗读文本。' },
   { id: 'custom-openai-compatible', label: 'OpenAI 兼容语音 API', badge: '自定义', note: '仅在你显式选择后发送文本到配置的服务。' },
   { id: 'custom-http-json', label: 'HTTP JSON 语音 API', badge: '高级', note: '适配自建或第三方 JSON 语音服务。' },
   { id: 'external-local-service', label: '本地语音服务', badge: '高级', note: '只连接 localhost / 127.0.0.1。' }
+]
+
+const VOLCENGINE_VOICES: TtsVoice[] = [
+  { id: 'zh_female_vv_uranus_bigtts', label: '中文女声 · 清亮自然', language: 'zh-CN', provider: 'volcengine-doubao' },
+  { id: 'zh_female_xiaohe_uranus_bigtts', label: '中文女声 · 温和讲解', language: 'zh-CN', provider: 'volcengine-doubao' },
+  { id: 'zh_male_bvlazysheep', label: '中文男声 · 沉稳口语', language: 'zh-CN', provider: 'volcengine-doubao' },
+  { id: 'zh_male_ahu_conversation_wvae_bigtts', label: '中文男声 · 对话讲解', language: 'zh-CN', provider: 'volcengine-doubao' }
 ]
 
 const LANGUAGES: Array<{ value: AppSettings['ttsLanguage']; label: string; note: string }> = [
@@ -32,9 +40,16 @@ function providerNote(providerId: TtsProviderId): string {
 
 function statusLabel(status: TtsAssetStatus | null, provider: TtsProviderId, enabled: boolean): { text: string; tone: 'ready' | 'warn' | 'off' } {
   if (!enabled) return { text: '语音已关闭', tone: 'off' }
+  if (provider === 'volcengine-doubao') return { text: '保存后可测试火山语音', tone: 'warn' }
   if (provider !== 'kokoro-bundled') return { text: '等待保存并测试自定义引擎', tone: 'warn' }
   if (!status) return { text: '正在读取本地语音资源', tone: 'warn' }
   return status.ready ? { text: '本地语音已就绪', tone: 'ready' } : { text: '本地语音资源未就绪', tone: 'warn' }
+}
+
+function defaultVoiceForProvider(provider: TtsProviderId, settings: AppSettings): string {
+  if (provider === 'volcengine-doubao') return settings.ttsVolcengineSpeaker || VOLCENGINE_VOICES[0].id
+  if (provider === 'kokoro-bundled') return settings.ttsVoiceId || 'zf_001'
+  return settings.ttsCustomVoice || settings.ttsVoiceId || 'default'
 }
 
 export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettingsPanelProps): ReactElement {
@@ -44,11 +59,22 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
   const [testing, setTesting] = useState(false)
   const [selectedProvider, setSelectedProvider] = useState<TtsProviderId>(settings.ttsProvider)
   const [selectedLanguage, setSelectedLanguage] = useState<AppSettings['ttsLanguage']>(settings.ttsLanguage)
+  const [selectedVoiceId, setSelectedVoiceId] = useState(defaultVoiceForProvider(settings.ttsProvider, settings))
   const [enabled, setEnabled] = useState(settings.ttsEnabled)
   const [rate, setRate] = useState(settings.ttsRate || 1)
   const [volume, setVolume] = useState(settings.ttsVolume || 1)
   const status = useMemo(() => statusLabel(assetStatus, selectedProvider, enabled), [assetStatus, enabled, selectedProvider])
-  const showCustomApi = selectedProvider !== 'kokoro-bundled'
+  const showVolcengineApi = selectedProvider === 'volcengine-doubao'
+  const showCustomApi = selectedProvider !== 'kokoro-bundled' && !showVolcengineApi
+  const visibleVoices = useMemo(() => {
+    if (showVolcengineApi) {
+      const custom = settings.ttsVolcengineSpeaker && !VOLCENGINE_VOICES.some((voice) => voice.id === settings.ttsVolcengineSpeaker)
+        ? [{ id: settings.ttsVolcengineSpeaker, label: `${settings.ttsVolcengineSpeaker} · 自定义音色`, language: settings.ttsLanguage, provider: 'volcengine-doubao' as const }]
+        : []
+      return [...custom, ...VOLCENGINE_VOICES]
+    }
+    return voices
+  }, [settings.ttsLanguage, settings.ttsVolcengineSpeaker, showVolcengineApi, voices])
 
   async function refresh(): Promise<void> {
     setMessage('')
@@ -67,10 +93,15 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
   useEffect(() => {
     setSelectedProvider(settings.ttsProvider)
     setSelectedLanguage(settings.ttsLanguage)
+    setSelectedVoiceId(defaultVoiceForProvider(settings.ttsProvider, settings))
     setEnabled(settings.ttsEnabled)
     setRate(settings.ttsRate || 1)
     setVolume(settings.ttsVolume || 1)
-  }, [settings.ttsEnabled, settings.ttsLanguage, settings.ttsProvider, settings.ttsRate, settings.ttsVolume])
+  }, [settings])
+
+  useEffect(() => {
+    setSelectedVoiceId(defaultVoiceForProvider(selectedProvider, settings))
+  }, [selectedProvider])
 
   useEffect(() => { void refresh() }, [settings.ttsProvider, settings.ttsLanguage])
 
@@ -82,11 +113,19 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
       ttsAutoPlay: data.get('ttsAutoPlay') === 'on',
       ttsProvider: selectedProvider,
       ttsLanguage: selectedLanguage,
-      ttsVoiceId: String(data.get('ttsVoiceId') || settings.ttsVoiceId),
+      ttsVoiceId: selectedVoiceId,
       ttsRate: Number(data.get('ttsRate') || 1),
       ttsPitch: settings.ttsPitch,
       ttsVolume: Number(data.get('ttsVolume') || 1),
       ttsReadMode: String(data.get('ttsReadMode')) as AppSettings['ttsReadMode']
+    }
+    if (showVolcengineApi) {
+      next.ttsVolcengineEndpoint = String(data.get('ttsVolcengineEndpoint') || '')
+      next.ttsVolcengineApiKey = String(data.get('ttsVolcengineApiKey') || '')
+      next.ttsVolcengineResourceId = String(data.get('ttsVolcengineResourceId') || '')
+      next.ttsVolcengineSpeaker = selectedVoiceId || String(data.get('ttsVolcengineSpeaker') || '')
+      next.ttsVolcengineModel = String(data.get('ttsVolcengineModel') || '')
+      next.ttsVolcengineSampleRate = Number(data.get('ttsVolcengineSampleRate') || 24000)
     }
     if (showCustomApi) {
       next.ttsCustomBaseUrl = String(data.get('ttsCustomBaseUrl') || '')
@@ -160,7 +199,10 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
                 type="radio"
                 value={provider.id}
                 checked={selectedProvider === provider.id}
-                onChange={() => setSelectedProvider(provider.id)}
+                onChange={() => {
+                  setSelectedProvider(provider.id)
+                  setSelectedVoiceId(defaultVoiceForProvider(provider.id, settings))
+                }}
               />
               <span className="ga-tts-provider__top">
                 <strong>{provider.label}</strong>
@@ -176,7 +218,7 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
         <div className="ga-tts-section-head">
           <div>
             <h4>声音与语言</h4>
-            <p>{showCustomApi ? '自定义引擎会使用下方 API 配置。' : assetStatus?.detail ?? '读取内置 Kokoro 中文语音资源。'}</p>
+            <p>{showVolcengineApi ? '火山引擎音色来自豆包语音，若控制台音色不同，可在下方填写自定义 speaker。' : showCustomApi ? '自定义引擎会使用下方 API 配置。' : assetStatus?.detail ?? '读取内置 Kokoro 中文语音资源。'}</p>
           </div>
           <button type="button" className="ga-tts-secondary" onClick={() => void refresh()} disabled={busy}>刷新</button>
         </div>
@@ -193,8 +235,8 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
           </label>
           <label>
             <span>声音</span>
-            <select name="ttsVoiceId" defaultValue={settings.ttsVoiceId}>
-              {voices.length ? voices.map((voice) => <option key={voice.id} value={voice.id}>{voice.label}</option>) : <option value={settings.ttsVoiceId}>{settings.ttsVoiceId || '未加载声音'}</option>}
+            <select name="ttsVoiceId" value={selectedVoiceId} onChange={(event) => setSelectedVoiceId(event.target.value)}>
+              {visibleVoices.length ? visibleVoices.map((voice) => <option key={voice.id} value={voice.id}>{voice.label}</option>) : <option value={settings.ttsVoiceId}>{settings.ttsVoiceId || '未加载声音'}</option>}
             </select>
           </label>
         </div>
@@ -231,6 +273,23 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
           </fieldset>
         </div>
       </section>
+
+      {showVolcengineApi ? (
+        <section className="ga-tts-card ga-tts-card--advanced">
+          <details open>
+            <summary>火山引擎配置</summary>
+            <div className="ga-tts-grid">
+              <label><span>Endpoint</span><input name="ttsVolcengineEndpoint" defaultValue={settings.ttsVolcengineEndpoint} placeholder="https://openspeech.bytedance.com/api/v3/tts/unidirectional" /></label>
+              <label><span>API Key</span><input name="ttsVolcengineApiKey" type="password" placeholder="留空表示不修改已保存密钥" /></label>
+              <label><span>Resource ID</span><input name="ttsVolcengineResourceId" defaultValue={settings.ttsVolcengineResourceId} placeholder="seed-tts-2.0" /></label>
+              <label><span>自定义 speaker</span><input name="ttsVolcengineSpeaker" value={selectedVoiceId} onChange={(event) => setSelectedVoiceId(event.target.value)} placeholder="zh_female_vv_uranus_bigtts" /></label>
+              <label><span>Model</span><input name="ttsVolcengineModel" defaultValue={settings.ttsVolcengineModel} placeholder="seed-tts-2.0-standard" /></label>
+              <label><span>采样率</span><select name="ttsVolcengineSampleRate" defaultValue={String(settings.ttsVolcengineSampleRate || 24000)}><option value="24000">24000 Hz</option><option value="32000">32000 Hz</option><option value="44100">44100 Hz</option><option value="48000">48000 Hz</option></select></label>
+            </div>
+            <p className="ga-tts-message">GoAgent 使用火山 HTTP Chunked V3 接口，解析返回的 base64 音频片段并保存为 MP3 缓存。失败时只显示火山错误，不会自动切换到其它语音引擎。</p>
+          </details>
+        </section>
+      ) : null}
 
       {showCustomApi ? (
         <section className="ga-tts-card ga-tts-card--advanced">

@@ -49,6 +49,12 @@ const defaults: AppSettings = {
   ttsCacheEnabled: true,
   ttsKokoroDType: 'q8',
   ttsKokoroDevice: 'cpu',
+  ttsVolcengineEndpoint: 'https://openspeech.bytedance.com/api/v3/tts/unidirectional',
+  ttsVolcengineApiKey: '',
+  ttsVolcengineResourceId: 'seed-tts-2.0',
+  ttsVolcengineSpeaker: 'zh_female_vv_uranus_bigtts',
+  ttsVolcengineModel: 'seed-tts-2.0-standard',
+  ttsVolcengineSampleRate: 24000,
   ttsCustomBaseUrl: '',
   ttsCustomApiKey: '',
   ttsCustomModel: '',
@@ -77,7 +83,7 @@ type SecretValue =
   | { mode: 'safeStorage'; value: string }
   | { mode: 'plain'; value: string }
 
-export const secretStore = new Store<{ llmApiKey?: SecretValue; ttsCustomApiKey?: SecretValue }>({
+export const secretStore = new Store<{ llmApiKey?: SecretValue; ttsCustomApiKey?: SecretValue; ttsVolcengineApiKey?: SecretValue }>({
   name: 'secrets',
   cwd: appHome,
   defaults: {}
@@ -127,6 +133,10 @@ export function hasTtsCustomApiKey(): boolean {
   return decryptSecret(secretStore.get('ttsCustomApiKey')).trim().length > 0
 }
 
+export function hasTtsVolcengineApiKey(): boolean {
+  return decryptSecret(secretStore.get('ttsVolcengineApiKey')).trim().length > 0
+}
+
 function saveLlmApiKey(value: string): void {
   const trimmed = value.trim()
   if (trimmed) {
@@ -138,6 +148,13 @@ function saveTtsCustomApiKey(value: string): void {
   const trimmed = value.trim()
   if (trimmed) {
     secretStore.set('ttsCustomApiKey', encryptSecret(trimmed))
+  }
+}
+
+function saveTtsVolcengineApiKey(value: string): void {
+  const trimmed = value.trim()
+  if (trimmed) {
+    secretStore.set('ttsVolcengineApiKey', encryptSecret(trimmed))
   }
 }
 
@@ -155,7 +172,8 @@ export function getSettings(): AppSettings {
   return {
     ...persisted,
     llmApiKey: decryptSecret(secretStore.get('llmApiKey')),
-    ttsCustomApiKey: decryptSecret(secretStore.get('ttsCustomApiKey'))
+    ttsCustomApiKey: decryptSecret(secretStore.get('ttsCustomApiKey')),
+    ttsVolcengineApiKey: decryptSecret(secretStore.get('ttsVolcengineApiKey'))
   }
 }
 
@@ -166,7 +184,15 @@ export function setSettings(next: Partial<AppSettings>): AppSettings {
   if (typeof next.ttsCustomApiKey === 'string') {
     saveTtsCustomApiKey(next.ttsCustomApiKey)
   }
-  const { llmApiKey: _llmApiKey, ttsCustomApiKey: _ttsCustomApiKey, ...safeNext } = next
+  if (typeof next.ttsVolcengineApiKey === 'string') {
+    saveTtsVolcengineApiKey(next.ttsVolcengineApiKey)
+  }
+  const {
+    llmApiKey: _llmApiKey,
+    ttsCustomApiKey: _ttsCustomApiKey,
+    ttsVolcengineApiKey: _ttsVolcengineApiKey,
+    ...safeNext
+  } = next
   settingsStore.set(safeNext)
   return getSettings()
 }
@@ -178,12 +204,19 @@ export function replaceSettings(next: AppSettings): AppSettings {
   if (next.ttsCustomApiKey.trim()) {
     saveTtsCustomApiKey(next.ttsCustomApiKey)
   }
-  settingsStore.store = { ...next, llmApiKey: '', ttsCustomApiKey: '' }
+  if (next.ttsVolcengineApiKey.trim()) {
+    saveTtsVolcengineApiKey(next.ttsVolcengineApiKey)
+  }
+  settingsStore.store = { ...next, llmApiKey: '', ttsCustomApiKey: '', ttsVolcengineApiKey: '' }
   return getSettings()
 }
 
 export function getTtsCustomApiKey(): string {
   return decryptSecret(secretStore.get('ttsCustomApiKey'))
+}
+
+export function getTtsVolcengineApiKey(): string {
+  return decryptSecret(secretStore.get('ttsVolcengineApiKey'))
 }
 
 export function getGames(): LibraryGame[] {

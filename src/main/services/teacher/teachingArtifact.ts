@@ -122,7 +122,7 @@ function normalizeRankValue(value: unknown, index: number, zeroBased = false): n
 }
 
 function redactSensitiveText(value: string): string {
-  const secretKeyPattern = '(?:api[_-]?key|apikey|llmApiKey|ttsCustomApiKey|proxyApiKey|token|password|secret|authorization|github[_-]?token|gh[_-]?token|csc_link|apple_app_specific_password)'
+  const secretKeyPattern = '(?:api[_-]?key|apikey|llmApiKey|ttsCustomApiKey|ttsVolcengineApiKey|proxyApiKey|token|password|secret|authorization|github[_-]?token|gh[_-]?token|csc_link|apple_app_specific_password)'
   return value
     .replace(/data:image\/[a-z0-9.+-]+;base64,[a-z0-9+/=_-]+/gi, '[REDACTED_IMAGE_DATA]')
     .replace(/javascript:/gi, 'javascript-removed:')
@@ -539,7 +539,7 @@ function hasLocalPathOrSecret(value: string): boolean {
     /(^|[\s"'(])(?:\/Users|\/home|\/var|\/private|\/tmp|\/Volumes)\/[^\s"'<>)]*/.test(value) ||
     /\b[A-Za-z]:\\[^\s"'<>)]*/.test(value) ||
     /\b(sk-[A-Za-z0-9_-]{12,}|github_pat_[A-Za-z0-9_]{12,}|ghp_[A-Za-z0-9_]{12,}|xox[baprs]-[A-Za-z0-9-]{12,}|AKIA[A-Z0-9]{12,})\b/.test(value) ||
-    /["']?(?:api[_-]?key|apikey|llmApiKey|ttsCustomApiKey|proxyApiKey|token|password|secret|authorization)["']?\s*[=:]\s*["']?[^\s"',}`<>]+/i.test(value)
+    /["']?(?:api[_-]?key|apikey|llmApiKey|ttsCustomApiKey|ttsVolcengineApiKey|proxyApiKey|token|password|secret|authorization)["']?\s*[=:]\s*["']?[^\s"',}`<>]+/i.test(value)
 }
 
 function sanitizeSandboxHtml(value: unknown, allowSandboxScripts: boolean): { sandboxHtml?: TeacherArtifactSandboxHtml; warnings: string[] } {

@@ -1,6 +1,6 @@
 export type ReviewStatus = 'idle' | 'running' | 'done' | 'error'
 
-export type TtsProviderId = 'kokoro-bundled' | 'custom-openai-compatible' | 'custom-http-json' | 'external-local-service'
+export type TtsProviderId = 'kokoro-bundled' | 'volcengine-doubao' | 'custom-openai-compatible' | 'custom-http-json' | 'external-local-service'
 export type TtsReadMode = 'summary' | 'full' | 'selection'
 export type TtsAudioFormat = 'wav' | 'mp3' | 'pcm' | 'opus' | 'aac' | 'flac'
 export type TtsRuntimeDevice = 'cpu' | 'wasm' | 'webgpu'
@@ -107,6 +107,12 @@ export interface AppSettings {
   ttsCacheEnabled: boolean
   ttsKokoroDType: TtsKokoroDType
   ttsKokoroDevice: TtsRuntimeDevice
+  ttsVolcengineEndpoint: string
+  ttsVolcengineApiKey: string
+  ttsVolcengineResourceId: string
+  ttsVolcengineSpeaker: string
+  ttsVolcengineModel: string
+  ttsVolcengineSampleRate: number
   ttsCustomBaseUrl: string
   ttsCustomApiKey: string
   ttsCustomModel: string

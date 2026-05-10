@@ -5,7 +5,7 @@ GoAgent 支持把老师讲解朗读交给火山引擎豆包语音。这个能力
 - 默认语音仍是 `kokoro-bundled` 本地离线语音。
 - 只有用户在设置里选择 `火山引擎 · 豆包语音` 时，GoAgent 才会把朗读文本发送给火山引擎。
 - 火山调用失败时直接显示错误，不会自动切换到 Kokoro、自定义 API 或系统语音。
-- API Key 使用 Electron `safeStorage` 保存，不写入普通 settings、日志或报告。
+- API Key / Access Token 使用 Electron `safeStorage` 保存，不写入普通 settings、日志或报告。
 
 ## 接口策略
 
@@ -15,11 +15,35 @@ GoAgent 支持把老师讲解朗读交给火山引擎豆包语音。这个能力
 POST https://openspeech.bytedance.com/api/v3/tts/unidirectional
 ```
 
+GoAgent 支持两种火山控制台常见鉴权方式。
+
+### 新版 API Key
+
 请求头：
 
 - `X-Api-Key`: 火山控制台 API Key
 - `X-Api-Resource-Id`: 默认 `seed-tts-2.0`
 - `X-Api-Request-Id`: GoAgent 每次请求生成的随机 ID
+
+适用于控制台已经提供 API Key 的账号。官方 API Key 文档见：
+`https://www.volcengine.com/docs/6561/1816214?lang=zh`
+
+### 旧版 APP ID + Access Token
+
+如果控制台页面显示的是：
+
+- `APP ID`
+- `Access Token`
+- `Secret Key`
+
+请在 GoAgent 设置中选择“旧版 APP ID + Access Token”。请求头使用：
+
+- `X-Api-App-Id`: 控制台 APP ID
+- `X-Api-Access-Key`: 控制台 Access Token
+- `X-Api-Resource-Id`: 默认 `seed-tts-2.0`
+- `X-Api-Request-Id`: GoAgent 每次请求生成的随机 ID
+
+`Secret Key` 不用于这个 HTTP Chunked V3 TTS 接口，不需要填入 GoAgent。
 
 GoAgent 会读取火山流式返回的 JSON，把 `data` 字段里的 base64 音频片段拼接成 MP3 文件，再交给现有播放器。
 
@@ -31,6 +55,8 @@ GoAgent 会读取火山流式返回的 JSON，把 `data` 字段里的 base64 音
 - Sample rate: `24000`
 
 预置音色仅作为便捷入口。若火山控制台给出的 speaker ID 与预置不同，可以在“自定义 speaker”里直接填入控制台音色 ID。
+
+如果报错包含 `requested resource not granted`，说明当前账号没有开通这个 Resource ID。请在火山控制台查看已授权资源，并把 GoAgent 的 Resource ID 改成已授权值；常见错误是把未授权的 `volc.seedtts.default` 填进来。
 
 ## 隐私边界
 

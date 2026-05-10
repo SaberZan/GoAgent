@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs'
 import type { AppSettings, TtsSynthesisRequest, TtsSynthesisResult, TtsVoice } from '@main/lib/types'
-import { getTtsVolcengineApiKey } from '@main/lib/store'
+import { getTtsVolcengineAccessToken, getTtsVolcengineApiKey } from '@main/lib/store'
 import { audioDataUrl, cachedAudioPath, hashTtsInput, makeTtsResultId, mimeForFormat, writeAudio } from './cache'
 import { assertSelectedProvider, type TtsProvider } from './ttsTypes'
 
@@ -31,6 +31,28 @@ function endpoint(settings: AppSettings): string {
 
 function apiKey(settings: AppSettings): string {
   return settings.ttsVolcengineApiKey.trim() || getTtsVolcengineApiKey().trim()
+}
+
+function accessToken(settings: AppSettings): string {
+  return settings.ttsVolcengineAccessToken.trim() || getTtsVolcengineAccessToken().trim()
+}
+
+function authMode(settings: AppSettings): AppSettings['ttsVolcengineAuthMode'] {
+  return settings.ttsVolcengineAuthMode === 'legacy-token' ? 'legacy-token' : 'api-key'
+}
+
+function authHeaders(settings: AppSettings, resourceId: string): Record<string, string> {
+  if (authMode(settings) === 'legacy-token') {
+    return {
+      'X-Api-App-Id': settings.ttsVolcengineAppId.trim(),
+      'X-Api-Access-Key': accessToken(settings),
+      'X-Api-Resource-Id': resourceId
+    }
+  }
+  return {
+    'X-Api-Key': apiKey(settings),
+    'X-Api-Resource-Id': resourceId
+  }
 }
 
 function voiceId(settings: AppSettings, request?: TtsSynthesisRequest): string {
@@ -91,13 +113,29 @@ function normalizeStreamText(value: string): string {
 function collectAudioChunk(payload: unknown, chunks: Buffer[]): void {
   if (!payload || typeof payload !== 'object') return
   const item = payload as Record<string, unknown>
-  const code = typeof item.code === 'number' ? item.code : undefined
+  const header = item.header && typeof item.header === 'object' ? item.header as Record<string, unknown> : undefined
+  const code = typeof item.code === 'number' ? item.code : typeof header?.code === 'number' ? header.code : undefined
+  const message = String(item.message ?? header?.message ?? '')
   if (code !== undefined && code !== 0 && code !== 20000000) {
-    throw new Error(`火山引擎 TTS 返回错误: code=${code} message=${String(item.message ?? '')}`)
+    throw new Error(`火山引擎 TTS 返回错误: code=${code} message=${message}`)
   }
   if (typeof item.data === 'string' && item.data.trim()) {
     chunks.push(Buffer.from(item.data.replace(/^data:audio\/[^;]+;base64,/, ''), 'base64'))
   }
+}
+
+function formatVolcengineHttpError(status: number, body: string, mode: AppSettings['ttsVolcengineAuthMode']): string {
+  let hint = ''
+  if (/Invalid X-Api-Key|X-Api-Key/i.test(body)) {
+    hint = mode === 'api-key'
+      ? '当前选择的是“新版 API Key”鉴权；如果火山控制台只给你 APP ID / Access Token / Secret Key，请切换到“旧版 APP ID + Access Token”。'
+      : '当前选择的是旧版鉴权，但火山返回了 API Key 错误；请确认设置页的鉴权方式和控制台凭据类型一致。'
+  } else if (/requested resource not granted|resource_id/i.test(body)) {
+    hint = '当前 Resource ID 没有开通权限。请在火山控制台查看已授权的 Resource ID；豆包语音 2.0 通常是 seed-tts-2.0，不是 volc.seedtts.default。'
+  } else if (/Access|App-Id|AppId|Unauthorized|authorization|auth/i.test(body)) {
+    hint = '请确认 APP ID 和 Access Token 来自同一个火山应用，并且该应用已开通对应语音资源。Secret Key 不用于这个 TTS V3 HTTP 接口。'
+  }
+  return `火山引擎 TTS 请求失败: HTTP ${status} ${body}${hint ? `\n${hint}` : ''}`
 }
 
 async function readVolcengineAudio(response: Response): Promise<Buffer> {
@@ -131,7 +169,12 @@ export const volcengineDoubaoProvider: TtsProvider = {
   async inspect(settings) {
     assertSelectedProvider('volcengine-doubao', settings)
     if (!endpoint(settings)) return { ready: false, code: 'missing-endpoint', message: '火山引擎 TTS Endpoint 未配置。' }
-    if (!apiKey(settings)) return { ready: false, code: 'missing-api-key', message: '火山引擎 API Key 未配置。' }
+    if (authMode(settings) === 'legacy-token') {
+      if (!settings.ttsVolcengineAppId.trim()) return { ready: false, code: 'missing-app-id', message: '火山引擎 APP ID 未配置。' }
+      if (!accessToken(settings)) return { ready: false, code: 'missing-access-token', message: '火山引擎 Access Token 未配置。' }
+    } else if (!apiKey(settings)) {
+      return { ready: false, code: 'missing-api-key', message: '火山引擎 API Key 未配置。' }
+    }
     if (!settings.ttsVolcengineResourceId.trim()) return { ready: false, code: 'missing-resource-id', message: '火山引擎 Resource ID 未配置。' }
     if (!settings.ttsVolcengineSpeaker.trim() && !settings.ttsVoiceId.trim()) return { ready: false, code: 'missing-speaker', message: '火山引擎发音人未配置。' }
     return { ready: true, code: 'ready', message: '火山引擎豆包语音已配置。' }
@@ -158,6 +201,7 @@ export const volcengineDoubaoProvider: TtsProvider = {
     const cacheKey = hashTtsInput({
       provider: 'volcengine-doubao',
       endpoint: endpoint(settings),
+      authMode: authMode(settings),
       resourceId,
       model,
       speaker,
@@ -176,8 +220,7 @@ export const volcengineDoubaoProvider: TtsProvider = {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Api-Key': apiKey(settings),
-        'X-Api-Resource-Id': resourceId,
+        ...authHeaders(settings, resourceId),
         'X-Api-Request-Id': makeTtsResultId(),
         'X-Control-Require-Usage-Tokens-Return': 'text_words'
       },
@@ -198,7 +241,7 @@ export const volcengineDoubaoProvider: TtsProvider = {
       })
     })
     if (!response.ok) {
-      throw new Error(`火山引擎 TTS 请求失败: HTTP ${response.status} ${await response.text().catch(() => '')}`)
+      throw new Error(formatVolcengineHttpError(response.status, await response.text().catch(() => ''), authMode(settings)))
     }
     const audio = await readVolcengineAudio(response)
     const audioPath = writeAudio('volcengine-doubao', cacheKey, format, audio)

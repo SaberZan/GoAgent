@@ -1,6 +1,6 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell, type ContextMenuParams, type IpcMainInvokeEvent, type MenuItemConstructorOptions } from 'electron'
 import { isAbsolute, relative, resolve, join } from 'node:path'
-import { appHome, findGame, getGames, getSettings, getTtsCustomApiKey, getTtsVolcengineApiKey, hasLlmApiKey, hasTtsCustomApiKey, hasTtsVolcengineApiKey, replaceSettings, setSettings, upsertGames } from './lib/store'
+import { appHome, findGame, getGames, getSettings, getTtsCustomApiKey, getTtsVolcengineAccessToken, getTtsVolcengineApiKey, hasLlmApiKey, hasTtsCustomApiKey, hasTtsVolcengineAccessToken, hasTtsVolcengineApiKey, replaceSettings, setSettings, upsertGames } from './lib/store'
 import { BRAND_NAME } from '@shared/brand'
 import type { AnalyzeGameQuickRequest, AnalyzePositionRequest, AppSettings, DashboardData, FoxSyncRequest, KataGoAssetInstallRequest, KataGoBenchmarkRequest, KataGoCancelAnalysisRequest, LibraryDeleteRequest, LlmModelsListRequest, LlmSettingsTestRequest, ReviewRequest, TeacherChatMessage, TeacherRunCancelRequest, TeacherRunRequest } from './lib/types'
 import { importSgfFile, readGameRecord } from './services/sgf'
@@ -231,7 +231,7 @@ function buildApplicationMenu(): void {
 async function dashboard(): Promise<DashboardData> {
   const hydratedSettings = await applyDetectedDefaults(getSettings())
   replaceSettings(hydratedSettings)
-  const publicSettings = { ...hydratedSettings, llmApiKey: '', ttsCustomApiKey: '', ttsVolcengineApiKey: '' }
+  const publicSettings = { ...hydratedSettings, llmApiKey: '', ttsCustomApiKey: '', ttsVolcengineApiKey: '', ttsVolcengineAccessToken: '' }
   const detectedProfile = await detectSystemProfile(hydratedSettings)
   return {
     settings: publicSettings,
@@ -413,6 +413,10 @@ app.whenReady().then(() => {
   ipcMain.handle('tts:get-saved-volcengine-api-key', async () => ({
     hasKey: hasTtsVolcengineApiKey(),
     apiKey: getTtsVolcengineApiKey()
+  }))
+  ipcMain.handle('tts:get-saved-volcengine-access-token', async () => ({
+    hasKey: hasTtsVolcengineAccessToken(),
+    accessToken: getTtsVolcengineAccessToken()
   }))
   ipcMain.handle('release:readiness', async () => inspectReleaseReadiness())
   ipcMain.handle('path:open', async (_event, filePath: string) => shell.showItemInFolder(assertManagedPath(filePath)))

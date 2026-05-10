@@ -105,6 +105,7 @@ declare global {
       testTtsSettings: (payload: Partial<AppSettings>) => Promise<TtsSynthesisResult>
       getSavedTtsApiKey: () => Promise<{ hasKey: boolean; apiKey: string }>
       getSavedVolcengineTtsApiKey: () => Promise<{ hasKey: boolean; apiKey: string }>
+      getSavedVolcengineTtsAccessToken: () => Promise<{ hasKey: boolean; accessToken: string }>
       getReleaseReadiness: () => Promise<ReleaseReadinessResult>
       writeClipboardText: (text: string) => Promise<{ ok: boolean; length: number }>
       openPath: (filePath: string) => Promise<void>

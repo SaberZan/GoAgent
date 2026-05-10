@@ -50,7 +50,10 @@ const defaults: AppSettings = {
   ttsKokoroDType: 'q8',
   ttsKokoroDevice: 'cpu',
   ttsVolcengineEndpoint: 'https://openspeech.bytedance.com/api/v3/tts/unidirectional',
+  ttsVolcengineAuthMode: 'api-key',
   ttsVolcengineApiKey: '',
+  ttsVolcengineAppId: '',
+  ttsVolcengineAccessToken: '',
   ttsVolcengineResourceId: 'seed-tts-2.0',
   ttsVolcengineSpeaker: 'zh_female_vv_uranus_bigtts',
   ttsVolcengineModel: 'seed-tts-2.0-standard',
@@ -83,7 +86,7 @@ type SecretValue =
   | { mode: 'safeStorage'; value: string }
   | { mode: 'plain'; value: string }
 
-export const secretStore = new Store<{ llmApiKey?: SecretValue; ttsCustomApiKey?: SecretValue; ttsVolcengineApiKey?: SecretValue }>({
+export const secretStore = new Store<{ llmApiKey?: SecretValue; ttsCustomApiKey?: SecretValue; ttsVolcengineApiKey?: SecretValue; ttsVolcengineAccessToken?: SecretValue }>({
   name: 'secrets',
   cwd: appHome,
   defaults: {}
@@ -137,6 +140,10 @@ export function hasTtsVolcengineApiKey(): boolean {
   return decryptSecret(secretStore.get('ttsVolcengineApiKey')).trim().length > 0
 }
 
+export function hasTtsVolcengineAccessToken(): boolean {
+  return decryptSecret(secretStore.get('ttsVolcengineAccessToken')).trim().length > 0
+}
+
 function saveLlmApiKey(value: string): void {
   const trimmed = value.trim()
   if (trimmed) {
@@ -158,6 +165,13 @@ function saveTtsVolcengineApiKey(value: string): void {
   }
 }
 
+function saveTtsVolcengineAccessToken(value: string): void {
+  const trimmed = value.trim()
+  if (trimmed) {
+    secretStore.set('ttsVolcengineAccessToken', encryptSecret(trimmed))
+  }
+}
+
 function migratePlaintextApiKey(settings: AppSettings): AppSettings {
   if (settings.llmApiKey.trim()) {
     saveLlmApiKey(settings.llmApiKey)
@@ -173,7 +187,8 @@ export function getSettings(): AppSettings {
     ...persisted,
     llmApiKey: decryptSecret(secretStore.get('llmApiKey')),
     ttsCustomApiKey: decryptSecret(secretStore.get('ttsCustomApiKey')),
-    ttsVolcengineApiKey: decryptSecret(secretStore.get('ttsVolcengineApiKey'))
+    ttsVolcengineApiKey: decryptSecret(secretStore.get('ttsVolcengineApiKey')),
+    ttsVolcengineAccessToken: decryptSecret(secretStore.get('ttsVolcengineAccessToken'))
   }
 }
 
@@ -187,10 +202,14 @@ export function setSettings(next: Partial<AppSettings>): AppSettings {
   if (typeof next.ttsVolcengineApiKey === 'string') {
     saveTtsVolcengineApiKey(next.ttsVolcengineApiKey)
   }
+  if (typeof next.ttsVolcengineAccessToken === 'string') {
+    saveTtsVolcengineAccessToken(next.ttsVolcengineAccessToken)
+  }
   const {
     llmApiKey: _llmApiKey,
     ttsCustomApiKey: _ttsCustomApiKey,
     ttsVolcengineApiKey: _ttsVolcengineApiKey,
+    ttsVolcengineAccessToken: _ttsVolcengineAccessToken,
     ...safeNext
   } = next
   settingsStore.set(safeNext)
@@ -207,7 +226,10 @@ export function replaceSettings(next: AppSettings): AppSettings {
   if (next.ttsVolcengineApiKey.trim()) {
     saveTtsVolcengineApiKey(next.ttsVolcengineApiKey)
   }
-  settingsStore.store = { ...next, llmApiKey: '', ttsCustomApiKey: '', ttsVolcengineApiKey: '' }
+  if (next.ttsVolcengineAccessToken.trim()) {
+    saveTtsVolcengineAccessToken(next.ttsVolcengineAccessToken)
+  }
+  settingsStore.store = { ...next, llmApiKey: '', ttsCustomApiKey: '', ttsVolcengineApiKey: '', ttsVolcengineAccessToken: '' }
   return getSettings()
 }
 
@@ -217,6 +239,10 @@ export function getTtsCustomApiKey(): string {
 
 export function getTtsVolcengineApiKey(): string {
   return decryptSecret(secretStore.get('ttsVolcengineApiKey'))
+}
+
+export function getTtsVolcengineAccessToken(): string {
+  return decryptSecret(secretStore.get('ttsVolcengineAccessToken'))
 }
 
 export function getGames(): LibraryGame[] {

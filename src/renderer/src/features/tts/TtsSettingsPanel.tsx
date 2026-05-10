@@ -60,6 +60,7 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
   const [selectedProvider, setSelectedProvider] = useState<TtsProviderId>(settings.ttsProvider)
   const [selectedLanguage, setSelectedLanguage] = useState<AppSettings['ttsLanguage']>(settings.ttsLanguage)
   const [selectedVoiceId, setSelectedVoiceId] = useState(defaultVoiceForProvider(settings.ttsProvider, settings))
+  const [selectedVolcengineAuthMode, setSelectedVolcengineAuthMode] = useState<AppSettings['ttsVolcengineAuthMode']>(settings.ttsVolcengineAuthMode || 'api-key')
   const [enabled, setEnabled] = useState(settings.ttsEnabled)
   const [rate, setRate] = useState(settings.ttsRate || 1)
   const [volume, setVolume] = useState(settings.ttsVolume || 1)
@@ -94,6 +95,7 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
     setSelectedProvider(settings.ttsProvider)
     setSelectedLanguage(settings.ttsLanguage)
     setSelectedVoiceId(defaultVoiceForProvider(settings.ttsProvider, settings))
+    setSelectedVolcengineAuthMode(settings.ttsVolcengineAuthMode || 'api-key')
     setEnabled(settings.ttsEnabled)
     setRate(settings.ttsRate || 1)
     setVolume(settings.ttsVolume || 1)
@@ -121,7 +123,13 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
     }
     if (showVolcengineApi) {
       next.ttsVolcengineEndpoint = String(data.get('ttsVolcengineEndpoint') || '')
-      next.ttsVolcengineApiKey = String(data.get('ttsVolcengineApiKey') || '')
+      next.ttsVolcengineAuthMode = selectedVolcengineAuthMode
+      if (selectedVolcengineAuthMode === 'legacy-token') {
+        next.ttsVolcengineAppId = String(data.get('ttsVolcengineAppId') || '')
+        next.ttsVolcengineAccessToken = String(data.get('ttsVolcengineAccessToken') || '')
+      } else {
+        next.ttsVolcengineApiKey = String(data.get('ttsVolcengineApiKey') || '')
+      }
       next.ttsVolcengineResourceId = String(data.get('ttsVolcengineResourceId') || '')
       next.ttsVolcengineSpeaker = selectedVoiceId || String(data.get('ttsVolcengineSpeaker') || '')
       next.ttsVolcengineModel = String(data.get('ttsVolcengineModel') || '')
@@ -278,15 +286,45 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
         <section className="ga-tts-card ga-tts-card--advanced">
           <details open>
             <summary>火山引擎配置</summary>
+            <fieldset className="ga-tts-segment">
+              <legend>鉴权方式</legend>
+              <label>
+                <input
+                  name="ttsVolcengineAuthMode"
+                  type="radio"
+                  value="api-key"
+                  checked={selectedVolcengineAuthMode === 'api-key'}
+                  onChange={() => setSelectedVolcengineAuthMode('api-key')}
+                />
+                <span>新版 API Key</span>
+              </label>
+              <label>
+                <input
+                  name="ttsVolcengineAuthMode"
+                  type="radio"
+                  value="legacy-token"
+                  checked={selectedVolcengineAuthMode === 'legacy-token'}
+                  onChange={() => setSelectedVolcengineAuthMode('legacy-token')}
+                />
+                <span>旧版 APP ID + Access Token</span>
+              </label>
+            </fieldset>
             <div className="ga-tts-grid">
               <label><span>Endpoint</span><input name="ttsVolcengineEndpoint" defaultValue={settings.ttsVolcengineEndpoint} placeholder="https://openspeech.bytedance.com/api/v3/tts/unidirectional" /></label>
-              <label><span>API Key</span><input name="ttsVolcengineApiKey" type="password" placeholder="留空表示不修改已保存密钥" /></label>
+              {selectedVolcengineAuthMode === 'api-key' ? (
+                <label><span>API Key</span><input name="ttsVolcengineApiKey" type="password" placeholder="留空表示不修改已保存 API Key" /></label>
+              ) : (
+                <>
+                  <label><span>APP ID</span><input name="ttsVolcengineAppId" defaultValue={settings.ttsVolcengineAppId} placeholder="火山控制台 APP ID" /></label>
+                  <label><span>Access Token</span><input name="ttsVolcengineAccessToken" type="password" placeholder="留空表示不修改已保存 Access Token" /></label>
+                </>
+              )}
               <label><span>Resource ID</span><input name="ttsVolcengineResourceId" defaultValue={settings.ttsVolcengineResourceId} placeholder="seed-tts-2.0" /></label>
               <label><span>自定义 speaker</span><input name="ttsVolcengineSpeaker" value={selectedVoiceId} onChange={(event) => setSelectedVoiceId(event.target.value)} placeholder="zh_female_vv_uranus_bigtts" /></label>
               <label><span>Model</span><input name="ttsVolcengineModel" defaultValue={settings.ttsVolcengineModel} placeholder="seed-tts-2.0-standard" /></label>
               <label><span>采样率</span><select name="ttsVolcengineSampleRate" defaultValue={String(settings.ttsVolcengineSampleRate || 24000)}><option value="24000">24000 Hz</option><option value="32000">32000 Hz</option><option value="44100">44100 Hz</option><option value="48000">48000 Hz</option></select></label>
             </div>
-            <p className="ga-tts-message">GoAgent 使用火山 HTTP Chunked V3 接口，解析返回的 base64 音频片段并保存为 MP3 缓存。失败时只显示火山错误，不会自动切换到其它语音引擎。</p>
+            <p className="ga-tts-message">GoAgent 使用火山 HTTP Chunked V3 接口。新版控制台填 API Key；旧控制台如果显示 APP ID / Access Token / Secret Key，请选择旧版鉴权，只填 APP ID 和 Access Token，Secret Key 不用于这个接口。Resource ID 请填控制台已授权的资源，常见为 seed-tts-2.0。</p>
           </details>
         </section>
       ) : null}

@@ -5,6 +5,7 @@ export type TtsReadMode = 'summary' | 'full' | 'selection'
 export type TtsAudioFormat = 'wav' | 'mp3' | 'pcm' | 'opus' | 'aac' | 'flac'
 export type TtsRuntimeDevice = 'cpu' | 'wasm' | 'webgpu'
 export type TtsKokoroDType = 'q8' | 'fp32' | 'fp16' | 'q4' | 'q4f16'
+export type TtsVolcengineAuthMode = 'api-key' | 'legacy-token'
 
 export interface TtsVoice {
   id: string
@@ -108,7 +109,10 @@ export interface AppSettings {
   ttsKokoroDType: TtsKokoroDType
   ttsKokoroDevice: TtsRuntimeDevice
   ttsVolcengineEndpoint: string
+  ttsVolcengineAuthMode: TtsVolcengineAuthMode
   ttsVolcengineApiKey: string
+  ttsVolcengineAppId: string
+  ttsVolcengineAccessToken: string
   ttsVolcengineResourceId: string
   ttsVolcengineSpeaker: string
   ttsVolcengineModel: string

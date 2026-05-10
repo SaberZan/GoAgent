@@ -120,6 +120,7 @@ const api = {
   testTtsSettings: (payload: Partial<AppSettings>): Promise<TtsSynthesisResult> => ipcRenderer.invoke('tts:test', payload),
   getSavedTtsApiKey: (): Promise<{ hasKey: boolean; apiKey: string }> => ipcRenderer.invoke('tts:get-saved-api-key'),
   getSavedVolcengineTtsApiKey: (): Promise<{ hasKey: boolean; apiKey: string }> => ipcRenderer.invoke('tts:get-saved-volcengine-api-key'),
+  getSavedVolcengineTtsAccessToken: (): Promise<{ hasKey: boolean; accessToken: string }> => ipcRenderer.invoke('tts:get-saved-volcengine-access-token'),
   getReleaseReadiness: (): Promise<ReleaseReadinessResult> => ipcRenderer.invoke('release:readiness'),
   writeClipboardText: (text: string): Promise<{ ok: boolean; length: number }> => ipcRenderer.invoke('clipboard:write-text', text),
   openPath: (filePath: string): Promise<void> => ipcRenderer.invoke('path:open', filePath),

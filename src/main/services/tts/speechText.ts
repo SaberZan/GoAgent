@@ -31,20 +31,20 @@ const COORDINATE_LETTER_SPEECH: Record<string, string> = {
 }
 
 const ENGLISH_TERM_SPEECH: Record<string, string> = {
-  ai: '人工智能',
+  ai: 'AI',
   byo: '读秒',
   byoyomi: '读秒',
-  gpt: '大模型',
+  gpt: 'GPT',
   joseki: '定式',
   katago: '卡塔狗',
   komi: '贴目',
   ko: '劫',
-  llm: '大模型',
-  openai: '欧盆人工智能',
-  pv: '参考变化',
+  llm: 'LLM',
+  openai: 'OpenAI',
+  pv: 'PV',
   scorelead: '目差',
   scoreloss: '目差损失',
-  sgf: '棋谱文件',
+  sgf: 'SGF',
   sente: '先手',
   gote: '后手',
   tesuji: '手筋',
@@ -179,6 +179,12 @@ function latinTokenToSpeech(token: string, coordinateLetterMode: CoordinateLette
   const normalized = token.toLowerCase().replace(/[^a-z0-9]+/g, '')
   const known = ENGLISH_TERM_SPEECH[normalized]
   if (known) return known
+  if (/^[A-Za-z]+(?:[-_][A-Za-z]+)+$/.test(token)) {
+    return token.replace(/[-_]+/g, ' ')
+  }
+  if (/^[A-Za-z]{2,}$/.test(token)) {
+    return token
+  }
   return [...token].map((char) => {
     if (/\d/.test(char)) return numberToChinese(Number(char))
     return LATIN_CHAR_SPEECH[char.toLowerCase()] ?? char

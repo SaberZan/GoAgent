@@ -39,21 +39,21 @@ COORD_LETTER_SPEECH = {
 }
 
 ENGLISH_TERM_SPEECH = {
-    "ai": "人工智能",
+    "ai": "AI",
     "byo": "读秒",
     "byoyomi": "读秒",
     "goagent": "围棋智能体",
-    "gpt": "大模型",
+    "gpt": "GPT",
     "joseki": "定式",
     "katago": "卡塔狗",
     "komi": "贴目",
     "ko": "劫",
-    "llm": "大模型",
-    "openai": "欧盆人工智能",
-    "pv": "参考变化",
+    "llm": "LLM",
+    "openai": "OpenAI",
+    "pv": "PV",
     "scorelead": "目差",
     "scoreloss": "目差损失",
-    "sgf": "棋谱文件",
+    "sgf": "SGF",
     "sente": "先手",
     "gote": "后手",
     "tesuji": "手筋",
@@ -132,6 +132,10 @@ def latin_token_to_speech(match: re.Match[str]) -> str:
     normalized = re.sub(r"[^a-z0-9]+", "", token.lower())
     if normalized in ENGLISH_TERM_SPEECH:
         return ENGLISH_TERM_SPEECH[normalized]
+    if re.fullmatch(r"[A-Za-z]+(?:[-_][A-Za-z]+)+", token):
+        return re.sub(r"[-_]+", " ", token)
+    if re.fullmatch(r"[A-Za-z]{2,}", token):
+        return token
     pieces = []
     for char in token:
         lower = char.lower()

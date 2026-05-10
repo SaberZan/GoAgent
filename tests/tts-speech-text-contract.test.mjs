@@ -29,6 +29,16 @@ test('cloud TTS speech cleanup preserves Go coordinate letters for pronunciation
   assert.doesNotMatch(text, /丘十六|凯五|艾勒点|阿尔处/)
 })
 
+test('TTS keeps normal English words and AI terms instead of spelling every letter', async () => {
+  const { markdownToSpeechText } = await importSpeechTextModule()
+  const text = markdownToSpeechText('AI 老师认为这是 strong visits 支持，不是 natural-but-refuted。')
+  assert.match(text, /AI 老师/)
+  assert.match(text, /strong visits/)
+  assert.match(text, /natural but refuted/)
+  assert.doesNotMatch(text, /人工智能/)
+  assert.doesNotMatch(text, /艾斯替阿尔欧恩吉|维艾艾斯艾替艾斯/)
+})
+
 test('Kokoro localized coordinate mode remains available for Chinese G2P', async () => {
   const { markdownToSpeechText } = await importSpeechTextModule()
   const text = markdownToSpeechText('建议下在 Q16，实战 K5 稍亏。', { coordinateLetterMode: 'localized' })

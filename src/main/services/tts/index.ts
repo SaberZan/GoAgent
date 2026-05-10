@@ -37,7 +37,9 @@ export async function synthesizeTts(payload: TtsSynthesisRequest): Promise<TtsSy
   const settings = getSettings()
   if (!settings.ttsEnabled) throw new Error('TTS is disabled in settings.')
   const readMode = payload.readMode ?? settings.ttsReadMode
-  const cleaned = markdownToSpeechText(payload.text ?? '')
+  const cleaned = markdownToSpeechText(payload.text ?? '', {
+    coordinateLetterMode: settings.ttsProvider === 'kokoro-bundled' ? 'localized' : 'latin'
+  })
   const text = readMode === 'full'
     ? limitSpeechLength(cleaned, 12000)
     : readMode === 'selection'

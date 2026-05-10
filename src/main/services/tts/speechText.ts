@@ -2,6 +2,11 @@ import type { AppSettings, TeacherRunResult, TtsReadMode } from '@main/lib/types
 
 const COORDINATE_PATTERN = /\b([A-HJ-T])\s*(\d{1,2})\b/gi
 type SpeechLanguage = AppSettings['reviewLanguage'] | 'unknown'
+type CoordinateLetterMode = 'latin' | 'localized'
+
+interface SpeechTextOptions {
+  coordinateLetterMode?: CoordinateLetterMode
+}
 
 const COORDINATE_LETTER_SPEECH: Record<string, string> = {
   A: '诶',
@@ -128,10 +133,18 @@ export function assertSpeechLanguageMatches(text: string, expected: AppSettings[
   throw new Error(`TTS 语言不匹配：当前文本主要是${LANGUAGE_LABELS[detected]}，但选择的语音包是 ${expected}。请切换老师输出语言/TTS 语言，或安装对应离线语音包/显式选择自定义 TTS API。`)
 }
 
-export function normalizeGoCoordinatesForSpeech(text: string): string {
+function coordinateLetterForSpeech(letter: string, mode: CoordinateLetterMode): string {
+  const normalized = letter.toUpperCase()
+  if (mode === 'latin') return normalized
+  return COORDINATE_LETTER_SPEECH[normalized] ?? normalized
+}
+
+export function normalizeGoCoordinatesForSpeech(text: string, options: SpeechTextOptions = {}): string {
+  const mode = options.coordinateLetterMode ?? 'latin'
   return text.replace(COORDINATE_PATTERN, (_match, letter: string, number: string) => {
-    const letterName = COORDINATE_LETTER_SPEECH[letter.toUpperCase()]
-    return letterName ? `${letterName}${numberToChinese(Number(number))}` : `${letter} ${number}`
+    const letterName = coordinateLetterForSpeech(letter, mode)
+    const numberName = numberToChinese(Number(number))
+    return mode === 'latin' ? `${letterName} ${numberName}` : `${letterName}${numberName}`
   })
 }
 
@@ -146,16 +159,23 @@ function numberToChinese(value: number): string {
   return ones === 0 ? `${digits[tens]}十` : `${digits[tens]}十${digits[ones]}`
 }
 
-export function normalizeTechnicalTermsForSpeech(text: string): string {
+export function normalizeTechnicalTermsForSpeech(text: string, options: SpeechTextOptions = {}): string {
+  const mode = options.coordinateLetterMode ?? 'latin'
   return text
     .replace(/\bwinrateLoss\s*=\s*([0-9.]+)/gi, '胜率损失约 $1 个百分点')
     .replace(/\bscoreLoss\s*=\s*([0-9.]+)/gi, '目差损失约 $1 目')
     .replace(/([0-9]+(?:\.[0-9]+)?)\s*%/g, '百分之$1')
-    .replace(/\b([A-HJ-T])(?=\s*[点处位])/g, (_match, letter: string) => COORDINATE_LETTER_SPEECH[letter.toUpperCase()] ?? letter)
-    .replace(/\b[A-Za-z][A-Za-z0-9+#._-]*\b/g, (token) => latinTokenToSpeech(token))
+    .replace(/\b([A-HJ-T])(?=\s*[点处位])/g, (_match, letter: string) => {
+      const spoken = coordinateLetterForSpeech(letter, mode)
+      return mode === 'latin' ? `${spoken} ` : spoken
+    })
+    .replace(/\b[A-Za-z][A-Za-z0-9+#._-]*\b/g, (token) => latinTokenToSpeech(token, mode))
 }
 
-function latinTokenToSpeech(token: string): string {
+function latinTokenToSpeech(token: string, coordinateLetterMode: CoordinateLetterMode = 'localized'): string {
+  if (coordinateLetterMode === 'latin' && /^[A-HJ-T]$/i.test(token)) {
+    return token.toUpperCase()
+  }
   const normalized = token.toLowerCase().replace(/[^a-z0-9]+/g, '')
   const known = ENGLISH_TERM_SPEECH[normalized]
   if (known) return known
@@ -165,7 +185,10 @@ function latinTokenToSpeech(token: string): string {
   }).join('')
 }
 
-export function markdownToSpeechText(markdown: string): string {
+export function markdownToSpeechText(markdown: string, options: SpeechTextOptions = {}): string {
+  const normalizedOptions: Required<SpeechTextOptions> = {
+    coordinateLetterMode: options.coordinateLetterMode ?? 'latin'
+  }
   const stripped = markdown
     .replace(/```[\s\S]*?```/g, '')
     .replace(/`([^`]+)`/g, '$1')
@@ -177,7 +200,8 @@ export function markdownToSpeechText(markdown: string): string {
     .replace(/^\s*\|.*\|\s*$/gm, '')
     .replace(/sourceRefs?:\s*[^\n]+/gi, '')
     .replace(/evidenceRefs?:\s*[^\n]+/gi, '')
-  return normalizeTechnicalTermsForSpeech(normalizeGoCoordinatesForSpeech(stripped))
+  return normalizeTechnicalTermsForSpeech(normalizeGoCoordinatesForSpeech(stripped, normalizedOptions), normalizedOptions)
+    .replace(/[ \t]{2,}/g, ' ')
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }

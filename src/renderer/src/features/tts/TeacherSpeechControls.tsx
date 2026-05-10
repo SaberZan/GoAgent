@@ -1,6 +1,7 @@
 import type { ReactElement } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import type { AppSettings, TeacherRunResult, TtsSynthesisResult } from '@main/lib/types'
+import { splitProgressiveSpeech } from './speechChunking'
 import './tts.css'
 
 interface TeacherSpeechControlsProps {
@@ -57,49 +58,6 @@ export function TeacherSpeechControls({ markdown, result, readMode = 'full', aut
     }
     if (readMode === 'summary') return summarySpeechSourceText(markdown)
     return markdown
-  }
-
-  function splitProgressiveSpeech(text: string, maxChars = 220): string[] {
-    const normalized = text.replace(/\r/g, '').replace(/\n{2,}/g, '。\n').replace(/\s+/g, ' ').trim()
-    if (!normalized) return []
-    const sentences = normalized.match(/[^。！？!?；;\n]+[。！？!?；;]?/g) ?? [normalized]
-    const chunks: string[] = []
-    let current = ''
-    const push = (): void => {
-      const trimmed = current.trim()
-      if (trimmed) chunks.push(trimmed)
-      current = ''
-    }
-    for (const sentence of sentences) {
-      const part = sentence.trim()
-      if (!part) continue
-      if (part.length > maxChars) {
-        push()
-        const smaller = part.match(/[^，,、：:]+[，,、：:]?/g) ?? [part]
-        let fragment = ''
-        for (const item of smaller) {
-          const trimmed = item.trim()
-          if (!trimmed) continue
-          if (fragment && fragment.length + trimmed.length > maxChars) {
-            chunks.push(fragment.trim())
-            fragment = ''
-          }
-          if (trimmed.length > maxChars) {
-            for (let index = 0; index < trimmed.length; index += maxChars) {
-              chunks.push(trimmed.slice(index, index + maxChars))
-            }
-          } else {
-            fragment += trimmed
-          }
-        }
-        if (fragment.trim()) chunks.push(fragment.trim())
-        continue
-      }
-      if (current && current.length + part.length > maxChars) push()
-      current += part
-    }
-    push()
-    return chunks
   }
 
   async function synthesizeAndPlay(): Promise<void> {

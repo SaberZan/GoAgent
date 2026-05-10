@@ -207,6 +207,10 @@
   gap: 8px;
 }
 
+.ga-tts-provider-grid--compact {
+  margin-top: 8px;
+}
+
 .ga-tts-provider {
   display: grid;
   gap: 6px;
@@ -336,11 +340,27 @@
   gap: 10px;
 }
 
-.ga-tts-card--advanced summary {
+.ga-tts-card--advanced summary,
+.ga-tts-more-providers summary,
+.ga-tts-nested-details summary {
   cursor: pointer;
   color: var(--ks-text-main);
   font-size: 13px;
   font-weight: 900;
+}
+
+.ga-tts-more-providers {
+  padding-top: 2px;
+}
+
+.ga-tts-nested-details {
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
+  padding: 9px;
+  border: 1px dashed var(--ks-border-soft);
+  border-radius: var(--ks-radius-sm);
+  background: rgb(255 255 255 / 0.32);
 }
 
 .ga-tts-card textarea {

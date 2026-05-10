@@ -10,11 +10,16 @@ interface TtsSettingsPanelProps {
 }
 
 const PROVIDERS: Array<{ id: TtsProviderId; label: string; badge: string; note: string }> = [
-  { id: 'kokoro-bundled', label: 'Kokoro 中文离线语音', badge: '推荐', note: '本机合成老师讲解，不发送到外部服务。' },
-  { id: 'volcengine-doubao', label: '火山引擎 · 豆包语音', badge: '云端', note: '使用火山引擎豆包语音合成，只有你显式选择后才会发送朗读文本。' },
-  { id: 'custom-openai-compatible', label: 'OpenAI 兼容语音 API', badge: '自定义', note: '仅在你显式选择后发送文本到配置的服务。' },
+  { id: 'kokoro-bundled', label: '内置中文语音', badge: '本机', note: '默认推荐。离线朗读老师讲解，不上传文本。' },
+  { id: 'volcengine-doubao', label: '火山豆包语音', badge: '在线', note: '音色更自然。需要你自己的火山账号，只发送朗读文本。' },
+  { id: 'custom-openai-compatible', label: '自定义语音 API', badge: '高级', note: '给已经有语音接口的用户使用。' },
   { id: 'custom-http-json', label: 'HTTP JSON 语音 API', badge: '高级', note: '适配自建或第三方 JSON 语音服务。' },
-  { id: 'external-local-service', label: '本地语音服务', badge: '高级', note: '只连接 localhost / 127.0.0.1。' }
+  { id: 'external-local-service', label: '本地语音服务', badge: '高级', note: '连接本机 localhost 语音服务。' }
+]
+
+const KOKORO_VOICES: TtsVoice[] = [
+  { id: 'zf_001', label: '内置女声 · 清楚自然', language: 'zh-CN', provider: 'kokoro-bundled', bundled: true },
+  { id: 'zm_009', label: '内置男声 · 稳定讲解', language: 'zh-CN', provider: 'kokoro-bundled', bundled: true }
 ]
 
 const VOLCENGINE_VOICES: TtsVoice[] = [
@@ -43,13 +48,21 @@ function statusLabel(status: TtsAssetStatus | null, provider: TtsProviderId, ena
   if (provider === 'volcengine-doubao') return { text: '保存后可测试火山语音', tone: 'warn' }
   if (provider !== 'kokoro-bundled') return { text: '等待保存并测试自定义引擎', tone: 'warn' }
   if (!status) return { text: '正在读取本地语音资源', tone: 'warn' }
-  return status.ready ? { text: '本地语音已就绪', tone: 'ready' } : { text: '本地语音资源未就绪', tone: 'warn' }
+  return status.ready ? { text: '内置语音已就绪', tone: 'ready' } : { text: '内置语音资源未就绪', tone: 'warn' }
 }
 
 function defaultVoiceForProvider(provider: TtsProviderId, settings: AppSettings): string {
   if (provider === 'volcengine-doubao') return settings.ttsVolcengineSpeaker || VOLCENGINE_VOICES[0].id
-  if (provider === 'kokoro-bundled') return settings.ttsVoiceId || 'zf_001'
+  if (provider === 'kokoro-bundled') {
+    return KOKORO_VOICES.some((voice) => voice.id === settings.ttsVoiceId) ? settings.ttsVoiceId : KOKORO_VOICES[0].id
+  }
   return settings.ttsCustomVoice || settings.ttsVoiceId || 'default'
+}
+
+function voiceOptionLabel(voice: TtsVoice, provider: TtsProviderId): string {
+  if (provider === 'volcengine-doubao') return `${voice.label} · ${voice.id}`
+  if (provider === 'kokoro-bundled') return voice.label
+  return voice.label || voice.id
 }
 
 interface SecretFieldProps {
@@ -122,11 +135,15 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
   const [selectedVolcengineAuthMode, setSelectedVolcengineAuthMode] = useState<AppSettings['ttsVolcengineAuthMode']>(settings.ttsVolcengineAuthMode || 'api-key')
   const [selectedReadMode, setSelectedReadMode] = useState<AppSettings['ttsReadMode']>(settings.ttsReadMode || 'full')
   const [enabled, setEnabled] = useState(settings.ttsEnabled)
+  const [autoPlay, setAutoPlay] = useState(settings.ttsAutoPlay)
   const [rate, setRate] = useState(settings.ttsRate || 1)
   const [volume, setVolume] = useState(settings.ttsVolume || 1)
   const status = useMemo(() => statusLabel(assetStatus, selectedProvider, enabled), [assetStatus, enabled, selectedProvider])
+  const showKokoro = selectedProvider === 'kokoro-bundled'
   const showVolcengineApi = selectedProvider === 'volcengine-doubao'
   const showCustomApi = selectedProvider !== 'kokoro-bundled' && !showVolcengineApi
+  const primaryProviders = PROVIDERS.filter((provider) => ['kokoro-bundled', 'volcengine-doubao', 'custom-openai-compatible'].includes(provider.id))
+  const advancedProviders = PROVIDERS.filter((provider) => !primaryProviders.some((item) => item.id === provider.id))
   const visibleVoices = useMemo(() => {
     if (showVolcengineApi) {
       const custom = settings.ttsVolcengineSpeaker && !VOLCENGINE_VOICES.some((voice) => voice.id === settings.ttsVolcengineSpeaker)
@@ -134,8 +151,12 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
         : []
       return [...custom, ...VOLCENGINE_VOICES]
     }
-    return voices
-  }, [settings.ttsLanguage, settings.ttsVolcengineSpeaker, showVolcengineApi, voices])
+    if (showKokoro) {
+      const kokoroVoices = voices.filter((voice) => voice.provider === 'kokoro-bundled')
+      return kokoroVoices.length ? kokoroVoices : KOKORO_VOICES
+    }
+    return [{ id: selectedVoiceId || 'default', label: selectedVoiceId || '自定义声音', language: selectedLanguage, provider: selectedProvider }]
+  }, [selectedLanguage, selectedProvider, selectedVoiceId, settings.ttsLanguage, settings.ttsVolcengineSpeaker, showKokoro, showVolcengineApi, voices])
 
   async function refresh(): Promise<void> {
     setMessage('')
@@ -158,6 +179,7 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
     setSelectedVolcengineAuthMode(settings.ttsVolcengineAuthMode || 'api-key')
     setSelectedReadMode(settings.ttsReadMode || 'full')
     setEnabled(settings.ttsEnabled)
+    setAutoPlay(settings.ttsAutoPlay)
     setRate(settings.ttsRate || 1)
     setVolume(settings.ttsVolume || 1)
   }, [settings])
@@ -173,7 +195,7 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
     const data = new FormData(event.currentTarget)
     const next: Partial<AppSettings> = {
       ttsEnabled: data.get('ttsEnabled') === 'on',
-      ttsAutoPlay: data.get('ttsAutoPlay') === 'on',
+      ttsAutoPlay: autoPlay,
       ttsProvider: selectedProvider,
       ttsLanguage: selectedLanguage,
       ttsVoiceId: selectedVoiceId,
@@ -229,9 +251,9 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
     <form className="ga-tts-settings" onSubmit={(event) => void save(event)}>
       <section className="ga-tts-hero">
         <div>
-          <span className="ga-tts-kicker">Teacher voice</span>
+          <span className="ga-tts-kicker">Voice</span>
           <h3>语音朗读</h3>
-          <p>把老师讲解读出来。GoAgent 只使用你选中的语音引擎，失败时会直接说明原因，不会偷偷切换。</p>
+          <p>选择老师讲解的声音。默认使用内置中文语音；只有你切到在线语音时才会发送朗读文本。</p>
         </div>
         <span className={`ga-tts-status ga-tts-status--${status.tone}`}>{status.text}</span>
       </section>
@@ -245,7 +267,7 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
           </span>
         </label>
         <label className="ga-tts-switch">
-          <input name="ttsAutoPlay" type="checkbox" defaultChecked={settings.ttsAutoPlay} />
+          <input name="ttsAutoPlay" type="checkbox" checked={autoPlay} onChange={(event) => setAutoPlay(event.target.checked)} />
           <span>
             <strong>回答完成后自动播放</strong>
             <small>适合课堂或投屏讲解；手动播放仍然可用。</small>
@@ -261,7 +283,7 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
           </div>
         </div>
         <div className="ga-tts-provider-grid">
-          {PROVIDERS.map((provider) => (
+          {primaryProviders.map((provider) => (
             <label key={provider.id} className={`ga-tts-provider ${selectedProvider === provider.id ? 'is-selected' : ''}`}>
               <input
                 name="ttsProvider"
@@ -281,13 +303,37 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
             </label>
           ))}
         </div>
+        <details className="ga-tts-more-providers">
+          <summary>更多接口</summary>
+          <div className="ga-tts-provider-grid ga-tts-provider-grid--compact">
+            {advancedProviders.map((provider) => (
+              <label key={provider.id} className={`ga-tts-provider ${selectedProvider === provider.id ? 'is-selected' : ''}`}>
+                <input
+                  name="ttsProvider"
+                  type="radio"
+                  value={provider.id}
+                  checked={selectedProvider === provider.id}
+                  onChange={() => {
+                    setSelectedProvider(provider.id)
+                    setSelectedVoiceId(defaultVoiceForProvider(provider.id, settings))
+                  }}
+                />
+                <span className="ga-tts-provider__top">
+                  <strong>{provider.label}</strong>
+                  <em>{provider.badge}</em>
+                </span>
+                <small>{provider.note}</small>
+              </label>
+            ))}
+          </div>
+        </details>
       </section>
 
       <section className="ga-tts-card">
         <div className="ga-tts-section-head">
           <div>
             <h4>声音与语言</h4>
-            <p>{showVolcengineApi ? '火山引擎音色来自豆包语音，若控制台音色不同，可在下方填写自定义 speaker。' : showCustomApi ? '自定义引擎会使用下方 API 配置。' : assetStatus?.detail ?? '读取内置 Kokoro 中文语音资源。'}</p>
+            <p>{showVolcengineApi ? '选择火山音色；下方只填账号和资源。' : showCustomApi ? '自定义引擎会使用下方接口配置。' : assetStatus?.ready ? '内置语音可以直接使用。' : assetStatus?.detail ?? '正在读取内置语音资源。'}</p>
           </div>
           <button type="button" className="ga-tts-secondary" onClick={() => void refresh()} disabled={busy}>刷新</button>
         </div>
@@ -305,9 +351,10 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
           <label>
             <span>声音</span>
             <select name="ttsVoiceId" value={selectedVoiceId} onChange={(event) => setSelectedVoiceId(event.target.value)}>
-              {visibleVoices.length ? visibleVoices.map((voice) => <option key={voice.id} value={voice.id}>{voice.label} · {voice.id}</option>) : <option value={settings.ttsVoiceId}>{settings.ttsVoiceId || '未加载声音'}</option>}
+              {visibleVoices.length ? visibleVoices.map((voice) => <option key={voice.id} value={voice.id}>{voiceOptionLabel(voice, selectedProvider)}</option>) : <option value={settings.ttsVoiceId}>{settings.ttsVoiceId || '未加载声音'}</option>}
             </select>
             {showVolcengineApi ? <small className="ga-tts-field-note">下拉项后半段是火山 speaker ID，方便和控制台核对。</small> : null}
+            {showKokoro ? <small className="ga-tts-field-note">内置语音不需要账号；目前内置中文女声和男声。</small> : null}
           </label>
         </div>
       </section>
@@ -315,8 +362,8 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
       <section className="ga-tts-card">
         <div className="ga-tts-section-head">
           <div>
-            <h4>播放偏好</h4>
-            <p>生成长讲解时会分段衔接，播放期间仍可滚动和操作棋盘。</p>
+            <h4>朗读方式</h4>
+            <p>默认完整朗读。选中文本模式只读你在老师回复中选中的文字。</p>
           </div>
         </div>
         <div className="ga-tts-grid">
@@ -353,7 +400,7 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
       {showVolcengineApi ? (
         <section className="ga-tts-card ga-tts-card--advanced">
           <details open>
-            <summary>火山引擎配置</summary>
+            <summary>火山账号</summary>
             <fieldset className="ga-tts-segment">
               <legend>鉴权方式</legend>
               <label>
@@ -406,11 +453,17 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
                 </>
               )}
               <label><span>Resource ID</span><input name="ttsVolcengineResourceId" defaultValue={settings.ttsVolcengineResourceId} placeholder="seed-tts-2.0" /></label>
-              <label><span>自定义 speaker</span><input name="ttsVolcengineSpeaker" value={selectedVoiceId} onChange={(event) => setSelectedVoiceId(event.target.value)} placeholder="zh_female_vv_uranus_bigtts" /></label>
-              <label><span>Model</span><input name="ttsVolcengineModel" defaultValue={settings.ttsVolcengineModel} placeholder="seed-tts-2.0-standard" /></label>
-              <label><span>采样率</span><select name="ttsVolcengineSampleRate" defaultValue={String(settings.ttsVolcengineSampleRate || 24000)}><option value="24000">24000 Hz</option><option value="32000">32000 Hz</option><option value="44100">44100 Hz</option><option value="48000">48000 Hz</option></select></label>
             </div>
-            <p className="ga-tts-message">GoAgent 使用火山 HTTP Chunked V3 接口。新版控制台填 API Key；旧控制台如果显示 APP ID / Access Token / Secret Key，请选择旧版鉴权，只填 APP ID 和 Access Token，Secret Key 不用于这个接口。Resource ID 请填控制台已授权的资源，常见为 seed-tts-2.0。</p>
+            <details className="ga-tts-nested-details">
+              <summary>高级参数</summary>
+              <div className="ga-tts-grid">
+                <label><span>Endpoint</span><input name="ttsVolcengineEndpoint" defaultValue={settings.ttsVolcengineEndpoint} placeholder="https://openspeech.bytedance.com/api/v3/tts/unidirectional" /></label>
+                <label><span>自定义 speaker ID</span><input name="ttsVolcengineSpeaker" value={selectedVoiceId} onChange={(event) => setSelectedVoiceId(event.target.value)} placeholder="zh_female_xiaohe_uranus_bigtts" /></label>
+                <label><span>Model</span><input name="ttsVolcengineModel" defaultValue={settings.ttsVolcengineModel} placeholder="seed-tts-2.0-standard" /></label>
+                <label><span>采样率</span><select name="ttsVolcengineSampleRate" defaultValue={String(settings.ttsVolcengineSampleRate || 24000)}><option value="24000">24000 Hz</option><option value="32000">32000 Hz</option><option value="44100">44100 Hz</option><option value="48000">48000 Hz</option></select></label>
+              </div>
+            </details>
+            <p className="ga-tts-message">新版控制台填 API Key；旧控制台如果显示 APP ID / Access Token / Secret Key，请选择旧版鉴权，只填 APP ID 和 Access Token。Secret Key 不用于这个接口。</p>
           </details>
         </section>
       ) : null}

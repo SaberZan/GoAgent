@@ -256,9 +256,9 @@ export function TeacherSpeechControls({ markdown, result, readMode = 'full', aut
   }, [autoPlay, disabled, result?.id, markdown])
 
   const playDisabled = disabled || state === 'synthesizing' || state === 'playing' || state === 'paused'
-  const pauseDisabled = state !== 'playing'
-  const resumeDisabled = state !== 'paused'
-  const stopDisabled = state === 'idle' && !message
+  const pauseDisabled = disabled || state !== 'playing'
+  const resumeDisabled = disabled || state !== 'paused'
+  const stopDisabled = disabled || !['synthesizing', 'playing', 'paused'].includes(state)
   const providerLabel = lastAudio ? (TTS_PROVIDER_LABELS[lastAudio.provider] ?? lastAudio.provider) : ''
   const cacheLabel = lastAudio ? (lastAudio.cached ? '缓存' : '新生成') : ''
   const playHint = disabled
@@ -294,10 +294,10 @@ export function TeacherSpeechControls({ markdown, result, readMode = 'full', aut
 
   return (
     <div className="ga-tts-controls" aria-label="老师语音朗读">
-      <button type="button" onClick={() => void synthesizeAndPlay()} disabled={playDisabled} aria-label={playHint} data-tooltip={playHint}>播放</button>
-      <button type="button" onClick={pauseAudio} disabled={pauseDisabled} aria-label={pauseHint} data-tooltip={pauseHint}>暂停</button>
-      <button type="button" onClick={() => void resumeAudio()} disabled={resumeDisabled} aria-label={resumeHint} data-tooltip={resumeHint}>继续</button>
-      <button type="button" onClick={stopAudio} disabled={stopDisabled} aria-label={stopHint} data-tooltip={stopHint}>停止</button>
+      <button type="button" onClick={() => void synthesizeAndPlay()} disabled={playDisabled} aria-label={playHint}>播放</button>
+      <button type="button" onClick={pauseAudio} disabled={pauseDisabled} aria-label={pauseHint}>暂停</button>
+      <button type="button" onClick={() => void resumeAudio()} disabled={resumeDisabled} aria-label={resumeHint}>继续</button>
+      <button type="button" onClick={stopAudio} disabled={stopDisabled} aria-label={stopHint}>停止</button>
       {lastAudio ? <small>{providerLabel} · {cacheLabel}</small> : null}
       {message ? <small className={state === 'error' ? 'is-error' : ''}>{message}</small> : null}
     </div>

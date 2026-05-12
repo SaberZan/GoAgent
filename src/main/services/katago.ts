@@ -7,7 +7,7 @@ import { resolveKataGoRuntime } from './katagoRuntime'
 import { ensureFoxGameDownloaded } from './fox'
 import { beginKataGoEngineTask } from './katagoEnginePool'
 import { cancelPersistentKataGoAnalysis, persistentKataGoEngineEnabled, queryKataGoPersistentBatch } from './katagoPersistentEngine'
-import { normalizeSgfKomi } from './sgfScoring'
+import { normalizeSgfKomiForAnalysis } from './sgfScoring'
 import { buildKataGoTracePacket } from './teacher/katagoTraceTranslator'
 
 interface KataGoResponse {
@@ -15,6 +15,7 @@ interface KataGoResponse {
   error?: string
   isDuringSearch?: boolean
   rootInfo?: {
+    currentPlayer?: GameMove['color']
     winrate?: number
     scoreLead?: number
     scoreStdev?: number
@@ -84,12 +85,12 @@ interface ActiveKataGoProcess {
   cancelled: boolean
 }
 
-const QUICK_ANALYSIS_FAST_VISITS = 4
-const QUICK_ANALYSIS_MAX_SWEEP_VISITS = 16
+const QUICK_ANALYSIS_FAST_VISITS = 24
+const QUICK_ANALYSIS_MAX_SWEEP_VISITS = 80
 const QUICK_ANALYSIS_REFINE_VISITS = 120
 const QUICK_ANALYSIS_REFINE_TOP_N = 10
 const QUICK_ANALYSIS_REFINE_MIN_LOSS = 4
-const QUICK_ANALYSIS_WIDE_ROOT_NOISE = 0.04
+const QUICK_ANALYSIS_WIDE_ROOT_NOISE = 0
 const FORCED_ACTUAL_EVIDENCE_MIN_VISITS = 1200
 const QUICK_FORCED_ACTUAL_REFINE_MIN_VISITS = 80
 const activeKataGoProcesses = new Map<string, ActiveKataGoProcess>()
@@ -124,6 +125,15 @@ function initialStonesFromRecord(record: ReturnType<typeof readGameRecord>): Arr
 
 function initialPlayerFromRecord(record: ReturnType<typeof readGameRecord>): GameMove['color'] {
   return sideToMoveAt(record.moves, 0)
+}
+
+function analysisKomiForRecord(record: ReturnType<typeof readGameRecord>): number {
+  return normalizeSgfKomiForAnalysis(record.komi, {
+    source: record.game.source,
+    rules: record.rules,
+    handicap: record.handicap,
+    initialStoneCount: record.initialStones?.length ?? 0
+  })
 }
 
 function inferPhase(moveNumber: number): AnalysisQuality['phase'] {
@@ -182,23 +192,31 @@ function blackScoreLeadFromSideToMove(rawScoreLead: number, sideToMove: GameMove
   return sideToMove === 'B' ? rawScoreLead : -rawScoreLead
 }
 
+function responseSideToMove(response: KataGoResponse, fallback: GameMove['color']): GameMove['color'] {
+  return response.rootInfo?.currentPlayer === 'B' || response.rootInfo?.currentPlayer === 'W'
+    ? response.rootInfo.currentPlayer
+    : fallback
+}
+
 function root(response: KataGoResponse, sideToMove: GameMove['color']): { winrate: number; scoreLead: number } {
   if (!response.rootInfo) {
     throw new Error(`KataGo 没有返回 rootInfo${response.error ? `: ${response.error}` : ''}`)
   }
+  const actualSideToMove = responseSideToMove(response, sideToMove)
   const rawWinrate = Number(response.rootInfo.winrate ?? 0.5)
   const rawScoreLead = Number(response.rootInfo.scoreLead ?? response.rootInfo.scoreMean ?? 0)
   return {
-    winrate: blackWinrateFromSideToMove(rawWinrate, sideToMove),
-    scoreLead: blackScoreLeadFromSideToMove(rawScoreLead, sideToMove)
+    winrate: blackWinrateFromSideToMove(rawWinrate, actualSideToMove),
+    scoreLead: blackScoreLeadFromSideToMove(rawScoreLead, actualSideToMove)
   }
 }
 
 function candidates(response: KataGoResponse, sideToMove: GameMove['color']): KataGoCandidate[] {
+  const actualSideToMove = responseSideToMove(response, sideToMove)
   return (response.moveInfos ?? []).map((move, index) => ({
     move: move.move ?? '',
-    winrate: blackWinrateFromSideToMove(Number(move.winrate ?? 0.5), sideToMove),
-    scoreLead: blackScoreLeadFromSideToMove(Number(move.scoreLead ?? move.scoreMean ?? 0), sideToMove),
+    winrate: blackWinrateFromSideToMove(Number(move.winrate ?? 0.5), actualSideToMove),
+    scoreLead: blackScoreLeadFromSideToMove(Number(move.scoreLead ?? move.scoreMean ?? 0), actualSideToMove),
     visits: Number(move.visits ?? 0),
     order: Number(move.order ?? index),
     edgeVisits: typeof move.edgeVisits === 'number' ? move.edgeVisits : undefined,
@@ -706,7 +724,7 @@ export async function analyzePosition(
   const currentMove = moveNumber > 0 ? record.moves[moveNumber - 1] : undefined
   const beforeMoves = record.moves.slice(0, Math.max(0, moveNumber - 1))
   const afterMoves = record.moves.slice(0, Math.max(0, moveNumber))
-  const komi = normalizeSgfKomi(record.komi)
+  const komi = analysisKomiForRecord(record)
   const rootInitialStones = initialStonesFromRecord(record)
   const rootInitialPlayer = initialPlayerFromRecord(record)
   const deepEvidence = maxVisits >= 500
@@ -852,7 +870,7 @@ export async function analyzePositionWithProgress(
   const currentMove = moveNumber > 0 ? record.moves[moveNumber - 1] : undefined
   const beforeMoves = record.moves.slice(0, Math.max(0, moveNumber - 1))
   const afterMoves = record.moves.slice(0, Math.max(0, moveNumber))
-  const komi = normalizeSgfKomi(record.komi)
+  const komi = analysisKomiForRecord(record)
   const rootInitialStones = initialStonesFromRecord(record)
   const rootInitialPlayer = initialPlayerFromRecord(record)
   const deepEvidence = maxVisits >= 500
@@ -978,7 +996,7 @@ export async function analyzeGameQuick(
   const game = await ensureFoxGameDownloaded(indexedGame)
 
   const record = readGameRecord(game)
-  const normalizedKomi = normalizeSgfKomi(record.komi)
+  const normalizedKomi = analysisKomiForRecord(record)
   const moves = record.moves
   const rootInitialStones = initialStonesFromRecord(record)
   const rootInitialPlayer = initialPlayerFromRecord(record)

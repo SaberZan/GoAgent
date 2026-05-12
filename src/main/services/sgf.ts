@@ -258,6 +258,7 @@ export function readGameRecord(game: LibraryGame): GameRecord {
   return {
     game,
     boardSize: size,
+    rules: extract('RU', content),
     komi: extract('KM', content) || '0',
     handicap: extract('HA', content) || '0',
     moves: parseMoves(content, size),

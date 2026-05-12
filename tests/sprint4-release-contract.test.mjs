@@ -45,6 +45,7 @@ test('Windows portable release artifact is a ZIP, not a portable EXE', () => {
 test('timelineInteraction exports move helpers', () => {
   const text = read('src/renderer/src/features/board/timelineInteraction.ts')
   assert.match(text, /moveFromPointer/)
+  assert.match(text, /moveFromTimelineSvgX/)
   assert.match(text, /progressFromMove/)
   assert.match(text, /lossSeverityFromWinrateDrop/)
 })

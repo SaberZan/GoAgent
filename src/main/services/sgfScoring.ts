@@ -2,6 +2,13 @@ import type { LibraryGame, StoneColor } from '@main/lib/types'
 
 const COMMON_KOMI = [7.5, 6.5, 5.5, 0.5, 0]
 
+export interface KomiNormalizationContext {
+  source?: LibraryGame['source']
+  rules?: string
+  handicap?: string | number
+  initialStoneCount?: number
+}
+
 function round(value: number, digits = 2): number {
   const factor = 10 ** digits
   return Math.round(value * factor) / factor
@@ -39,19 +46,58 @@ export function normalizeSgfKomi(raw: string | number | undefined, fallback = 7.
   return best && Number.isFinite(best.score) ? best.value : parsed
 }
 
-export function komiSummary(raw: string | number | undefined): {
+function normalizedHandicap(value: string | number | undefined): number {
+  const parsed = typeof value === 'number' ? value : Number.parseInt(String(value || '0'), 10)
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0
+}
+
+function standardKomiForRules(rules: string | undefined, fallback: number): number {
+  const normalized = String(rules ?? '').trim().toLowerCase()
+  if (normalized.includes('japanese')) return 6.5
+  if (normalized.includes('chinese')) return 7.5
+  if (normalized.includes('korean')) return 6.5
+  return fallback
+}
+
+function zeroKomiLooksSuspicious(raw: string | number | undefined, context: KomiNormalizationContext): boolean {
+  const parsed = typeof raw === 'number' ? raw : Number.parseFloat(String(raw ?? ''))
+  return (
+    Number.isFinite(parsed) &&
+    Math.abs(parsed) < 0.001 &&
+    context.source === 'fox' &&
+    normalizedHandicap(context.handicap) === 0 &&
+    (context.initialStoneCount ?? 0) === 0
+  )
+}
+
+export function normalizeSgfKomiForAnalysis(
+  raw: string | number | undefined,
+  context: KomiNormalizationContext = {},
+  fallback = 7.5
+): number {
+  const normalized = normalizeSgfKomi(raw, fallback)
+  if (zeroKomiLooksSuspicious(raw, context)) {
+    return standardKomiForRules(context.rules, fallback)
+  }
+  return normalized
+}
+
+export function komiSummary(raw: string | number | undefined, context: KomiNormalizationContext = {}): {
   raw: string
   normalized: number
   text: string
   note?: string
 } {
   const rawText = String(raw ?? '')
-  const normalized = normalizeSgfKomi(rawText)
+  const normalized = normalizeSgfKomiForAnalysis(rawText, context)
   const text = `贴目 ${trimNumber(normalized, 2)}`
   const parsed = Number.parseFloat(rawText)
-  const note = Number.isFinite(parsed) && Math.abs(parsed - normalized) > 0.001
-    ? `SGF 原始 KM[${rawText}] 是平台编码，KataGo 分析使用归一后的 ${trimNumber(normalized, 2)}。`
-    : undefined
+  let note: string | undefined
+  if (zeroKomiLooksSuspicious(raw, context) && Math.abs(normalized) > 0.001) {
+    note = `Fox SGF 原始 KM[${rawText}] 像是缺省贴目记录；非让子局按规则使用 ${trimNumber(normalized, 2)} 贴目分析。`
+  } else if (Number.isFinite(parsed) && Math.abs(parsed - normalized) > 0.001) {
+    note = `SGF 原始 KM[${rawText}] 是平台编码，KataGo 分析使用归一后的 ${trimNumber(normalized, 2)}。`
+  }
   return { raw: rawText, normalized: round(normalized, 2), text, note }
 }
 

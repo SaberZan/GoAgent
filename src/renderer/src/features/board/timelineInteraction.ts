@@ -9,6 +9,13 @@ export interface MoveFromPointerOptions {
   totalMoves: number
 }
 
+export interface MoveFromTimelineSvgXOptions {
+  svgX: number
+  plotLeft: number
+  plotWidth: number
+  totalMoves: number
+}
+
 export type LossSeverity = 'quiet' | 'inaccuracy' | 'mistake' | 'blunder'
 
 export function clampNumber(value: number, min: number, max: number): number {
@@ -23,6 +30,14 @@ export function moveFromPointer({ clientX, rect, totalMoves }: MoveFromPointerOp
     return 0
   }
   const progress = clampNumber((clientX - rect.left) / rect.width, 0, 1)
+  return Math.round(progress * totalMoves)
+}
+
+export function moveFromTimelineSvgX({ svgX, plotLeft, plotWidth, totalMoves }: MoveFromTimelineSvgXOptions): number {
+  if (totalMoves <= 0 || plotWidth <= 0) {
+    return 0
+  }
+  const progress = clampNumber((svgX - plotLeft) / plotWidth, 0, 1)
   return Math.round(progress * totalMoves)
 }
 

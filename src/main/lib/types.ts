@@ -229,6 +229,7 @@ export interface BoardSetupStone {
 export interface GameRecord {
   game: LibraryGame
   boardSize: number
+  rules?: string
   komi: string
   handicap: string
   moves: GameMove[]

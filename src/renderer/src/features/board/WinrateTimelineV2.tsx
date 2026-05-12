@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react'
 import type { KataGoMoveAnalysis } from '@main/lib/types'
 import type { UiTranslator } from '../../i18n'
 import { getAnalysisMoveNumber, getAnalysisWinrate, classifyMoveLoss, normalizeWinrate } from './boardGeometry'
-import { moveFromPointer } from './timelineInteraction'
+import { moveFromTimelineSvgX } from './timelineInteraction'
 import './board-v2.css'
 
 interface TimelinePoint {
@@ -168,10 +168,7 @@ export function WinrateTimelineV2({
     : ''
   const hoverPoint = hoveredMove === null
     ? null
-    : points.reduce<TimelinePoint | null>((nearest, point) => {
-      if (!nearest) return point
-      return Math.abs(point.moveNumber - hoveredMove) < Math.abs(nearest.moveNumber - hoveredMove) ? point : nearest
-    }, null)
+    : points.find((point) => point.moveNumber === hoveredMove) ?? null
   const currentPoint = points.find((point) => point.moveNumber === currentMoveNumber)
   const currentBlackWinrateLabel = formatBlackWinrate(currentPoint?.winrate)
   const canMovePrevious = Boolean(onMove) && currentMoveNumber > 0
@@ -184,14 +181,37 @@ export function WinrateTimelineV2({
     ? Math.max(dragRangeStart ?? 0, dragRangeEnd ?? 0)
     : hasActiveRange ? Math.max(activeRangeStart, activeRangeEnd) : null
 
+  function svgXFromEvent(event: ReactPointerEvent<SVGSVGElement>): number {
+    const svg = event.currentTarget
+    const matrix = svg.getScreenCTM()?.inverse()
+    if (matrix) {
+      const point = svg.createSVGPoint()
+      point.x = event.clientX
+      point.y = event.clientY
+      return point.matrixTransform(matrix).x
+    }
+    const rect = svg.getBoundingClientRect()
+    return ((event.clientX - rect.left) / Math.max(1, rect.width)) * width
+  }
+
+  function containerLeftFromSvgX(svg: SVGSVGElement, svgX: number): number {
+    const containerRect = containerRef.current?.getBoundingClientRect()
+    const matrix = svg.getScreenCTM()
+    if (containerRect && matrix) {
+      const point = svg.createSVGPoint()
+      point.x = svgX
+      point.y = 0
+      return point.matrixTransform(matrix).x - containerRect.left
+    }
+    const rect = svg.getBoundingClientRect()
+    return rect.left + (svgX / width) * rect.width - (containerRect?.left ?? rect.left)
+  }
+
   function moveFromEvent(event: ReactPointerEvent<SVGSVGElement>): number {
-    const rect = event.currentTarget.getBoundingClientRect()
-    return moveFromPointer({
-      clientX: event.clientX,
-      rect: {
-        left: rect.left + (padX / width) * rect.width,
-        width: (plotW / width) * rect.width
-      },
+    return moveFromTimelineSvgX({
+      svgX: svgXFromEvent(event),
+      plotLeft: padX,
+      plotWidth: plotW,
       totalMoves
     })
   }
@@ -226,10 +246,10 @@ export function WinrateTimelineV2({
       return
     }
     const move = moveFromEvent(event)
-    const rect = event.currentTarget.getBoundingClientRect()
-    const rawLeft = event.clientX - rect.left
     setHoveredMove(move)
-    setHoverLeft(Math.min(Math.max(8, rawLeft + 10), Math.max(8, rect.width - 166)))
+    const markerLeft = containerLeftFromSvgX(event.currentTarget, x(move))
+    const containerWidth = containerRef.current?.getBoundingClientRect().width ?? event.currentTarget.getBoundingClientRect().width
+    setHoverLeft(Math.min(Math.max(8, markerLeft + 10), Math.max(8, containerWidth - 166)))
     if (draggingRef.current) {
       selectMove(event)
     }
@@ -355,10 +375,10 @@ export function WinrateTimelineV2({
         {path ? <path className="ks-timeline-line ks-timeline-line--winrate" d={path} /> : null}
         {scorePath ? <path className="ks-timeline-line ks-timeline-line--score" d={scorePath} /> : null}
         <line className="ks-timeline-current" x1={x(currentMoveNumber)} y1={padY} x2={x(currentMoveNumber)} y2={height - padY} />
-        {hoverPoint ? (
+        {hoveredMove !== null ? (
           <g className="ks-timeline-hover">
-            <line className="ks-timeline-hover-line" x1={x(hoverPoint.moveNumber)} y1={padY} x2={x(hoverPoint.moveNumber)} y2={height - padY} />
-            <circle className="ks-timeline-hover-dot" cx={x(hoverPoint.moveNumber)} cy={y(hoverPoint.winrate)} r="5" />
+            <line className="ks-timeline-hover-line" x1={x(hoveredMove)} y1={padY} x2={x(hoveredMove)} y2={height - padY} />
+            {hoverPoint ? <circle className="ks-timeline-hover-dot" cx={x(hoveredMove)} cy={y(hoverPoint.winrate)} r="5" /> : null}
           </g>
         ) : null}
         <g transform={`translate(${x(currentMoveNumber)} ${padY + 12})`}>
@@ -367,10 +387,10 @@ export function WinrateTimelineV2({
         </g>
         {points.length === 0 ? <text className="ks-timeline-empty" x={width / 2} y={height / 2}>{t('timelineEmpty')}</text> : null}
       </svg>
-      {hoverPoint ? (
+      {hoveredMove !== null ? (
         <div className="ks-timeline-tooltip" style={{ left: `${Math.round(hoverLeft)}px` }}>
-          <strong>{t('timelineTooltip', { move: hoverPoint.moveNumber, winrate: Math.round(hoverPoint.winrate * 100) })}</strong>
-          <span>{t('timelineTooltipLoss', { loss: formatWinrateLoss(hoverPoint.loss), severity: severityLabel(hoverPoint.severity, t) })}</span>
+          <strong>{hoverPoint ? t('timelineTooltip', { move: hoveredMove, winrate: Math.round(hoverPoint.winrate * 100) }) : `第 ${hoveredMove} 手`}</strong>
+          <span>{hoverPoint ? t('timelineTooltipLoss', { loss: formatWinrateLoss(hoverPoint.loss), severity: severityLabel(hoverPoint.severity, t) }) : t('timelineLoading')}</span>
         </div>
       ) : null}
       {rangeLo !== null && rangeHi !== null && !isRangeDragging ? (

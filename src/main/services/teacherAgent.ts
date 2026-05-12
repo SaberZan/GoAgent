@@ -784,6 +784,15 @@ function summarizeGames(games: LibraryGame[]): JsonObject[] {
   }))
 }
 
+function komiSummaryForRecord(record: ReturnType<typeof readGameRecord>): ReturnType<typeof komiSummary> {
+  return komiSummary(record.komi, {
+    source: record.game.source,
+    rules: record.rules,
+    handicap: record.handicap,
+    initialStoneCount: record.initialStones?.length ?? 0
+  })
+}
+
 type StoneColor = GameMove['color']
 
 function oppositeColor(color: StoneColor): StoneColor {
@@ -1097,11 +1106,13 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
         const record = await ensureSessionRecord(state, stringInput(input, 'gameId'))
         if (!record) throw new Error('没有可读取的棋谱。')
         const maxMoves = numberInput(input, 'maxMoves', 80, 1, record.moves.length)
+        const normalizedKomi = komiSummaryForRecord(record)
         return {
           game: summarizeGames([record.game])[0],
           boardSize: record.boardSize,
-          komi: komiSummary(record.komi).normalized,
-          komiSummary: komiSummary(record.komi),
+          rules: record.rules,
+          komi: normalizedKomi.normalized,
+          komiSummary: normalizedKomi,
           handicap: record.handicap,
           totalMoves: record.moves.length,
           moves: record.moves.slice(0, maxMoves)
@@ -1158,8 +1169,8 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
           : findGamesForStudent(studentName, count)
         const issues: BatchIssue[] = []
         const failedGames: Array<{ gameId: string; title: string; error: string }> = []
-        const requestedVisits = numberInput(input, 'maxVisits', 4, 1, 600)
-        const sweepVisits = Math.min(16, Math.max(4, requestedVisits))
+        const requestedVisits = numberInput(input, 'maxVisits', 24, 1, 600)
+        const sweepVisits = Math.min(80, Math.max(24, requestedVisits))
         const refineVisits = Math.max(120, Math.min(420, requestedVisits * 16))
         const refineTopN = count > 1 ? 2 : 4
         const minWinrateDrop = numberInput(input, 'minWinrateDrop', 6, 1, 40)

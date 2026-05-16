@@ -271,6 +271,22 @@ jobs:
             node scripts/check_katago_assets.mjs --mode=release
           fi
 
+      - name: Bundle zhizi b28 model
+        shell: bash
+        env:
+          ZHIZI_B28_URL: https://media.katagotraining.org/uploaded/networks/models/kata1/kata1-zhizi-b28c512nbt-muonfd2.bin.gz
+          ZHIZI_B28_FILENAME: kata1-zhizi-b28c512nbt-muonfd2.bin.gz
+        run: |
+          mkdir -p data/katago/models
+          target="data/katago/models/${ZHIZI_B28_FILENAME}"
+          if [[ -f "${target}" ]]; then
+            echo "zhizi b28 already present, skipping download"
+          else
+            echo "Downloading zhizi b28 from ${ZHIZI_B28_URL}"
+            curl -fsSL --retry 3 --retry-delay 5 "${ZHIZI_B28_URL}" -o "${target}"
+          fi
+          node scripts/prepare_katago_assets.mjs --extra-model="${target}"
+
       - name: Package desktop app
         shell: bash
         env:
@@ -422,6 +438,22 @@ jobs:
             --flavor=nvidia \
             --source-label="${GOAGENT_NVIDIA_KATAGO_ASSET_REPO}@${GOAGENT_NVIDIA_KATAGO_ASSET_RELEASE_TAG}:${GOAGENT_NVIDIA_KATAGO_ASSET_PATTERN}"
           node scripts/check_katago_assets.mjs --mode=release --platform=win32-x64
+
+      - name: Bundle zhizi b28 model (NVIDIA)
+        shell: bash
+        env:
+          ZHIZI_B28_URL: https://media.katagotraining.org/uploaded/networks/models/kata1/kata1-zhizi-b28c512nbt-muonfd2.bin.gz
+          ZHIZI_B28_FILENAME: kata1-zhizi-b28c512nbt-muonfd2.bin.gz
+        run: |
+          mkdir -p data/katago/models
+          target="data/katago/models/${ZHIZI_B28_FILENAME}"
+          if [[ -f "${target}" ]]; then
+            echo "zhizi b28 already present, skipping download"
+          else
+            echo "Downloading zhizi b28 from ${ZHIZI_B28_URL}"
+            curl -fsSL --retry 3 --retry-delay 5 "${ZHIZI_B28_URL}" -o "${target}"
+          fi
+          node scripts/prepare_katago_assets.mjs --extra-model="${target}"
 
       - name: Package NVIDIA desktop app
         shell: bash

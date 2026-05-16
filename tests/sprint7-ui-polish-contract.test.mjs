@@ -139,32 +139,40 @@ test('Current-move teacher screenshot has procedural asset fallback', () => {
   assert.match(smoke, /UI current-move analysis should render the teacher answer/)
 })
 
-test('WinrateTimelineV2 exposes hover tooltip and score line rendering', () => {
+test('WinrateTimelineV2 exposes hover tooltip and severity markers on a single-line KPI header', () => {
   const timeline = read('src/renderer/src/features/board/WinrateTimelineV2.tsx')
   assert.match(timeline, /ks-timeline-tooltip/)
-  assert.match(timeline, /ks-timeline-legend/)
-  assert.match(timeline, /t\('timelineBlackWinrate'\)/)
+  assert.match(timeline, /ks-timeline-severity-legend/)
+  assert.match(timeline, /ks-timeline-kpi--winrate/)
+  assert.match(timeline, /ks-timeline-kpi--score/)
   assert.match(timeline, /t\('timelineScoreLead'\)/)
   assert.match(timeline, /t\('timelineCurrentBlackWinrate'\)/)
   assert.match(timeline, /t\('timelinePreviousMove'\)/)
   assert.match(timeline, /t\('timelineNextMove'\)/)
+  assert.match(timeline, /t\('timelineSeverityHeader'\)/)
   assert.match(timeline, /ArrowLeft/)
   assert.match(timeline, /ArrowRight/)
   assert.match(timeline, /ks-timeline-move-count/)
   assert.match(timeline, /playedMove'\), 'winrateLoss'/)
-  assert.match(timeline, /ks-timeline-line--score/)
+  // severity markers must be rendered on the curve
+  assert.match(timeline, /ks-timeline-dot--\$\{point\.severity\}/)
   assert.match(timeline, /extractScoreLead/)
   assert.match(timeline, /hoveredMove/)
   assert.match(timeline, /formatBlackWinrate/)
   assert.match(timeline, /ks-timeline-nav/)
-  assert.match(timeline, /ks-timeline-control-strip/)
-  assert.match(timeline, /ks-timeline-meta/)
   assert.match(timeline, /getScreenCTM\(\)\?\.inverse\(\)/)
   assert.match(timeline, /moveFromTimelineSvgX/)
   assert.match(timeline, /x1=\{x\(hoveredMove\)\}/)
   const boardCss = read('src/renderer/src/features/board/board-v2.css')
-  assert.match(boardCss, /grid-template-columns:\s*minmax\(0,\s*1fr\) auto minmax\(0,\s*1fr\)/)
-  assert.match(boardCss, /\.ks-timeline-control-strip\s*\{[^}]*justify-self:\s*center/s)
+  // single-line flex header
+  assert.match(boardCss, /\.ks-timeline-head\s*\{[^}]*display:\s*flex/s)
+  // severity markers on the curve in three intensity tones
+  assert.match(boardCss, /\.ks-timeline-dot--blunder\s*\{[^}]*--ks-red/s)
+  assert.match(boardCss, /\.ks-timeline-dot--mistake\s*\{[^}]*--ks-orange/s)
+  assert.match(boardCss, /\.ks-timeline-dot--inaccuracy\s*\{[^}]*--ks-gold/s)
+  // light surface canvas, not the old dark gradient
+  assert.match(boardCss, /\.ks-timeline-canvas\s*\{[^}]*--ks-bg-elevated/s)
+  assert.doesNotMatch(boardCss, /\.ks-timeline-canvas\s*\{[^}]*#171d24/s)
 })
 
 test('KataGo live analysis controls expose start pause and visit thresholds', () => {
@@ -211,7 +219,7 @@ test('KataGo live analysis controls expose start pause and visit thresholds', ()
   assert.match(styles, /timeline-issues/)
   const timeline = read('src/renderer/src/features/board/WinrateTimelineV2.tsx')
   assert.match(timeline, /currentBlackWinrateLabel/)
-  assert.match(timeline, /ks-timeline-current-black/)
+  assert.match(timeline, /ks-timeline-kpi--winrate/)
 })
 
 test('KataGo benchmark tuning is wired from main process to settings UI', () => {

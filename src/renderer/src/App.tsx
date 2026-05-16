@@ -1,5 +1,5 @@
 import type { FormEvent, KeyboardEvent, PointerEvent, ReactElement, ReactNode } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type {
   AnalyzeGameQuickProgress,
   AppSettings,
@@ -135,15 +135,6 @@ const emptyDashboard: DashboardData = {
     notes: []
   }
 }
-
-const fallbackLlmModels = [
-  'gpt-5.5',
-  'gpt-5.4-mini',
-  'gpt-5-codex-mini',
-  'gpt-5',
-  'gpt-4.1',
-  'claude-3-5-sonnet-latest'
-]
 
 function uniqueModelOptions(models: string[]): string[] {
   return Array.from(new Set(models.map((model) => model.trim()).filter(Boolean)))
@@ -3896,17 +3887,43 @@ function SettingsDrawer({
   const [savedLlmApiKey, setSavedLlmApiKey] = useState('')
   const [showLlmApiKey, setShowLlmApiKey] = useState(false)
   const [llmKeyMessage, setLlmKeyMessage] = useState('')
+  const [autoSaveBusy, setAutoSaveBusy] = useState(false)
+  const [autoSaveTick, setAutoSaveTick] = useState(0)
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const modelPresets = dashboard.systemProfile.katagoModelPresets
   const [selectedPresetId, setSelectedPresetId] = useState<KataGoModelPresetId>(dashboard.settings.katagoModelPreset)
   const selectedPreset = modelPresets.find((preset) => preset.id === selectedPresetId) ?? modelPresets[0]
   const localeOptions = SUPPORTED_UI_LOCALES
-  const fallbackLlmModelOptions = uniqueModelOptions([
-    selectedLlmModel,
-    dashboard.settings.llmModel,
-    ...dashboard.systemProfile.proxyModels,
-    ...fallbackLlmModels
-  ])
-  const llmModelOptions = llmModelsFetched ? refreshedLlmModels : fallbackLlmModelOptions
+  const llmModelOptions = useMemo(() => {
+    if (llmModelsFetched) {
+      return refreshedLlmModels
+    }
+    return uniqueModelOptions([selectedLlmModel, dashboard.settings.llmModel])
+  }, [llmModelsFetched, refreshedLlmModels, selectedLlmModel, dashboard.settings.llmModel])
+
+  const autoSave = useCallback((patch: Partial<AppSettings>, delay = 500): void => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+    }
+    autoSaveTimerRef.current = setTimeout(async () => {
+      setAutoSaveBusy(true)
+      try {
+        const updated = await window.goagent.updateSettings(patch)
+        onDashboardUpdated(updated)
+        setAutoSaveTick((value) => value + 1)
+      } catch {
+        // ignore — user can retry by editing again
+      } finally {
+        setAutoSaveBusy(false)
+      }
+    }, delay)
+  }, [onDashboardUpdated])
+
+  useEffect(() => () => {
+    if (autoSaveTimerRef.current) {
+      clearTimeout(autoSaveTimerRef.current)
+    }
+  }, [])
   const groupedModelPresets = useMemo(() => {
     const groups = new Map<string, typeof modelPresets>()
     for (const preset of modelPresets) {
@@ -3926,14 +3943,22 @@ function SettingsDrawer({
       return (leftIndex === -1 ? 99 : leftIndex) - (rightIndex === -1 ? 99 : rightIndex)
     })
   }, [modelPresets, t])
-  async function refreshLlmModels(form: HTMLFormElement | null): Promise<void> {
+  const [llmBaseUrlInput, setLlmBaseUrlInput] = useState(dashboard.settings.llmBaseUrl)
+  const llmBaseUrlSyncedRef = useRef(dashboard.settings.llmBaseUrl)
+  useEffect(() => {
+    if (dashboard.settings.llmBaseUrl !== llmBaseUrlSyncedRef.current) {
+      llmBaseUrlSyncedRef.current = dashboard.settings.llmBaseUrl
+      setLlmBaseUrlInput(dashboard.settings.llmBaseUrl)
+    }
+  }, [dashboard.settings.llmBaseUrl])
+
+  const refreshLlmModels = useCallback(async (): Promise<void> => {
     setLlmModelsRefreshing(true)
     setLlmModelRefreshMessage('')
     try {
-      const formData = new FormData(form ?? undefined)
       const result = await window.goagent.listLlmModels({
-        llmBaseUrl: String(formData.get('llmBaseUrl') ?? dashboard.settings.llmBaseUrl),
-        llmApiKey: String(formData.get('llmApiKey') ?? '')
+        llmBaseUrl: dashboard.settings.llmBaseUrl,
+        llmApiKey: ''
       })
       if (result.ok) {
         const models = uniqueModelOptions(result.models)
@@ -3942,13 +3967,9 @@ function SettingsDrawer({
         if (!models.length) {
           setSelectedLlmModel('')
         } else if (!models.includes(selectedLlmModel)) {
-          setSelectedLlmModel(
-            models.includes('gpt-5.5')
-              ? 'gpt-5.5'
-              : models.includes(dashboard.settings.llmModel)
-                ? dashboard.settings.llmModel
-                : models[0]
-          )
+          const fallback = models.includes(dashboard.settings.llmModel) ? dashboard.settings.llmModel : models[0]
+          setSelectedLlmModel(fallback)
+          autoSave({ llmModel: fallback }, 0)
         }
       }
       setLlmModelRefreshMessage(result.message)
@@ -3957,7 +3978,7 @@ function SettingsDrawer({
     } finally {
       setLlmModelsRefreshing(false)
     }
-  }
+  }, [dashboard.settings.llmBaseUrl, dashboard.settings.llmModel, selectedLlmModel, autoSave, t])
 
   useEffect(() => {
     setSelectedPresetId(dashboard.settings.katagoModelPreset)
@@ -3966,6 +3987,22 @@ function SettingsDrawer({
   useEffect(() => {
     setSelectedLlmModel(dashboard.settings.llmModel)
   }, [dashboard.settings.llmModel])
+
+  const llmAutoFetchKeyRef = useRef('')
+  useEffect(() => {
+    const fetchKey = `${dashboard.settings.llmBaseUrl}|${dashboard.systemProfile.hasLlmApiKey ? '1' : '0'}`
+    if (!dashboard.settings.llmBaseUrl.trim() || !dashboard.systemProfile.hasLlmApiKey) {
+      return
+    }
+    if (llmAutoFetchKeyRef.current === fetchKey) {
+      return
+    }
+    llmAutoFetchKeyRef.current = fetchKey
+    const timer = setTimeout(() => {
+      void refreshLlmModels()
+    }, 600)
+    return () => clearTimeout(timer)
+  }, [dashboard.settings.llmBaseUrl, dashboard.systemProfile.hasLlmApiKey, refreshLlmModels])
 
   async function revealSavedLlmApiKey(): Promise<void> {
     setLlmKeyMessage('')
@@ -3992,7 +4029,6 @@ function SettingsDrawer({
   return (
     <div className="settings-drawer">
       <form
-        key={`${dashboard.settings.katagoModelPreset}|${dashboard.settings.llmBaseUrl}|${dashboard.settings.llmModel}|${dashboard.settings.reviewLanguage}`}
         className="settings-drawer__form"
         onSubmit={(event) => {
           event.preventDefault()
@@ -4004,7 +4040,11 @@ function SettingsDrawer({
         <select
           name="katagoModelPreset"
           value={selectedPresetId}
-          onChange={(event) => setSelectedPresetId(event.target.value as KataGoModelPresetId)}
+          onChange={(event) => {
+            const next = event.target.value as KataGoModelPresetId
+            setSelectedPresetId(next)
+            autoSave({ katagoModelPreset: next }, 0)
+          }}
         >
           {groupedModelPresets.map(([group, presets]) => (
             <optgroup key={group} label={group}>
@@ -4044,7 +4084,11 @@ function SettingsDrawer({
         <p>{t('languageHelp')}</p>
         <label>
           <span>{t('reviewLanguage')}</span>
-          <select name="reviewLanguage" defaultValue={dashboard.settings.reviewLanguage}>
+          <select
+            name="reviewLanguage"
+            defaultValue={dashboard.settings.reviewLanguage}
+            onChange={(event) => autoSave({ reviewLanguage: normalizeUiLocale(event.target.value) }, 0)}
+          >
             {localeOptions.map((locale) => (
               <option key={locale.value} value={locale.value}>
                 {locale.label}
@@ -4058,10 +4102,14 @@ function SettingsDrawer({
         <input
           className="llm-config-input"
           name="llmBaseUrl"
-          defaultValue={dashboard.settings.llmBaseUrl}
+          value={llmBaseUrlInput}
           autoCapitalize="off"
           autoCorrect="off"
           spellCheck={false}
+          onChange={(event) => {
+            setLlmBaseUrlInput(event.target.value)
+            autoSave({ llmBaseUrl: event.target.value })
+          }}
         />
         <small>{t('currentApi', { url: dashboard.settings.llmBaseUrl || t('apiNotSet') })}</small>
       </label>
@@ -4078,6 +4126,12 @@ function SettingsDrawer({
               autoCapitalize="off"
               autoCorrect="off"
               spellCheck={false}
+              onBlur={(event) => {
+                const value = event.target.value
+                if (value.trim()) {
+                  autoSave({ llmApiKey: value }, 0)
+                }
+              }}
             />
             <button
               className="ghost-button"
@@ -4099,7 +4153,11 @@ function SettingsDrawer({
             className="llm-model-select"
             name="llmModel"
             value={selectedLlmModel}
-            onChange={(event) => setSelectedLlmModel(event.target.value)}
+            onChange={(event) => {
+              const next = event.target.value
+              setSelectedLlmModel(next)
+              autoSave({ llmModel: next }, 0)
+            }}
             aria-label={t('selectMultimodalModel')}
           >
             {llmModelOptions.length ? (
@@ -4110,14 +4168,14 @@ function SettingsDrawer({
               ))
             ) : (
               <option value="" disabled>
-                {t('noModelReturned')}
+                {dashboard.settings.llmBaseUrl && dashboard.systemProfile.hasLlmApiKey ? t('noModelReturned') : t('modelPickerEmpty')}
               </option>
             )}
           </select>
           <button
             className="ghost-button"
             type="button"
-            onClick={(event) => void refreshLlmModels(event.currentTarget.form)}
+            onClick={() => void refreshLlmModels()}
             disabled={busy !== '' || llmModelsRefreshing}
           >
             {llmModelsRefreshing ? t('refreshing') : t('refreshModels')}
@@ -4130,9 +4188,9 @@ function SettingsDrawer({
         <button className="ghost-button" type="button" onClick={(event) => onTest(event.currentTarget.form!)} disabled={busy !== ''}>
           {t('imageTest')}
         </button>
-        <button className="primary-button" type="submit" disabled={busy !== ''}>
-          {t('save')}
-        </button>
+        <span className="settings-autosave-status" aria-live="polite" data-tick={autoSaveTick}>
+          {autoSaveBusy ? t('autoSaving') : t('autoSaved')}
+        </span>
       </div>
       {llmTestMessage ? <div className="test-message">{llmTestMessage}</div> : null}
       </form>

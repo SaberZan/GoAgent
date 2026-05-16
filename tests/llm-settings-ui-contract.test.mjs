@@ -55,13 +55,29 @@ test('Electron app exposes native paste controls for editable settings fields', 
   assert.match(main, /role: 'pasteAndMatchStyle'/)
 })
 
-test('LLM model refresh replaces the picker with only provider-returned models', () => {
+test('LLM model picker fetches from the user proxy and has no hardcoded GPT fallback', () => {
   const app = read('src/renderer/src/App.tsx')
   assert.match(app, /const \[llmModelsFetched, setLlmModelsFetched\]/)
-  assert.match(app, /const fallbackLlmModelOptions = uniqueModelOptions/)
-  assert.match(app, /const llmModelOptions = llmModelsFetched \? refreshedLlmModels : fallbackLlmModelOptions/)
+  assert.match(app, /const llmModelOptions = useMemo\(/)
+  assert.match(app, /if \(llmModelsFetched\) \{[\s\S]*return refreshedLlmModels/)
   assert.match(app, /setRefreshedLlmModels\(models\)/)
   assert.match(app, /setLlmModelsFetched\(true\)/)
   assert.match(app, /t\('noModelReturned'\)/)
-  assert.doesNotMatch(app, /dashboard\.systemProfile\.proxyModels,[\s\S]*\.\.\.refreshedLlmModels,[\s\S]*'gpt-5\.5'/)
+  assert.match(app, /t\('modelPickerEmpty'\)/)
+  // No hardcoded list of provider-specific defaults like gpt-5.5
+  assert.doesNotMatch(app, /const fallbackLlmModels = \[/)
+  assert.doesNotMatch(app, /'gpt-5\.5'/)
+  // Auto-fetch effect must exist
+  assert.match(app, /llmAutoFetchKeyRef/)
+})
+
+test('LLM settings drawer auto-saves edits without requiring a save button', () => {
+  const app = read('src/renderer/src/App.tsx')
+  assert.match(app, /const autoSave = useCallback\(/)
+  assert.match(app, /autoSave\(\{ llmBaseUrl: event\.target\.value \}\)/)
+  assert.match(app, /autoSave\(\{ llmApiKey:/)
+  assert.match(app, /autoSave\(\{ llmModel: next \}, 0\)/)
+  assert.match(app, /settings-autosave-status/)
+  assert.match(app, /t\('autoSaved'\)/)
+  assert.match(app, /t\('autoSaving'\)/)
 })

@@ -612,6 +612,18 @@ label,
   gap: 8px;
 }
 
+.settings-autosave-status {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ks-teal, #4f9b91) 14%, transparent);
+  color: color-mix(in srgb, var(--ks-teal, #4f9b91) 80%, var(--ks-text-muted, #756d60));
+  font-size: 11.5px;
+  font-weight: 720;
+  letter-spacing: 0.01em;
+  transition: opacity 180ms ease;
+}
+
 .topbar-actions {
   flex: 0 1 auto;
   flex-wrap: wrap;

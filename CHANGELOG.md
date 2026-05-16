@@ -4,6 +4,24 @@ All notable changes to GoAgent will be documented here.
 
 This project follows semantic versioning once public releases begin.
 
+## 0.4.0 - Lizzie-clean Winrate Timeline + zhizi b28 Bundled
+
+### Added
+
+- Bundled the official zhizi b28 KataGo model (`kata1-zhizi-b28c512nbt-muonfd2.bin.gz`) into the release so users no longer need to download it from the settings panel after installing the app.
+- Added `pnpm prepare:zhizi-b28` and `pnpm dist:local:mac|win|linux` scripts so the release can be packaged locally without depending on GitHub Actions credits.
+- Added `--extra-model` support to `scripts/prepare_katago_assets.mjs` and a `bundledModels` array in `data/katago/manifest.json` so any extra preset can be shipped alongside the default model.
+
+### Changed
+
+- Redesigned the winrate timeline header and chart to a Lizzie-clean light theme: a single-line KPI bar (move counter, black winrate with delta, score lead, severity legend, range chip), a porcelain canvas surface aligned with the rest of the light theme, and severity markers (blunder / mistake / inaccuracy) now drawn directly on the curve instead of only appearing inside the hover tooltip.
+- LLM model picker no longer hardcodes provider-specific defaults like `gpt-5.5` / `claude-3-5-sonnet-latest`. When a Base URL and API key are configured, the picker fetches the model list from the user's proxy automatically; otherwise it shows an explicit "fill in Base URL and API key" hint.
+- LLM settings auto-save on every edit (Base URL and selects on change, API key on blur), so the Test and Refresh-Models buttons immediately operate against the latest configuration without requiring a separate Save click. The Save button is replaced by an inline "Auto-saved" status indicator.
+
+### Fixed
+
+- The settings panel's "Apply selected weight" button no longer triggers a redundant download or surfaces a confusing error when the selected preset is already bundled with the installer. Bundled models are now detected up front and reused, and only non-bundled presets fall through to the network download path.
+
 ## 0.3.16 - Strict Offline Kokoro TTS
 
 ### Added

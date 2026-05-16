@@ -146,8 +146,8 @@ async function writeEditionMetadata(metadata) {
   console.log(`[prepare-katago-assets] wrote edition metadata: ${relative(root, editionPath)}`)
 }
 
-async function writePreparedManifest(manifest, platform, modelTarget, binaryTarget, flavor) {
-  const nextManifest = {
+async function writePreparedManifest(manifest, platform, modelTarget, binaryTarget, flavor, bundledExtras = []) {
+  const baseNext = {
     ...manifest,
     defaultModelFileName: basename(modelTarget),
     defaultModelDisplayName: flavor === 'nvidia'
@@ -163,6 +163,7 @@ async function writePreparedManifest(manifest, platform, modelTarget, binaryTarg
       }
     }
   }
+  const nextManifest = bundledExtras.length > 0 ? mergeBundledModels(baseNext, bundledExtras) : baseNext
   await writeFile(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`, 'utf8')
   console.log(`[prepare-katago-assets] updated manifest for ${platform}: ${nextManifest.modelPath}`)
 }
@@ -183,6 +184,7 @@ async function main() {
   const preserveModelName = hasFlag('preserve-model-name')
   const flavor = arg('flavor', process.env.GOAGENT_KATAGO_FLAVOR ?? 'standard')
   const sourceLabel = arg('source-label', process.env.GOAGENT_KATAGO_SOURCE_LABEL ?? (assetDir || 'manual'))
+  const extraModels = collectExtraModelArgs()
 
   const binaryFallback = assetDir ? (scan ? await findRuntimeBinary(assetDir, platform) : join(resolve(assetDir), platform.binaryPath)) : ''
   const modelFallback = assetDir ? (scan ? await findModel(assetDir, manifest) : join(resolve(assetDir), manifest.modelPath)) : ''
@@ -199,6 +201,14 @@ async function main() {
     : await copyIfProvided(resolvedBinarySource, binaryTarget, `binary ${key}`)
   const copiedModel = await copyIfProvided(resolvedModelSource, modelTarget, preserveModelName ? 'bundled model' : 'default model')
 
+  const bundledExtras = []
+  for (const extraSource of extraModels) {
+    const target = join(root, 'data', 'katago', 'models', basename(extraSource))
+    if (await copyIfProvided(extraSource, target, `extra model ${basename(extraSource)}`)) {
+      bundledExtras.push({ fileName: basename(target), sha256: await sha256(target) })
+    }
+  }
+
   if (copiedBinary || copiedModel) {
     await writeEditionMetadata({
       flavor,
@@ -211,12 +221,56 @@ async function main() {
   }
 
   if (copiedBinary && copiedModel) {
-    await writePreparedManifest(manifest, key, modelTarget, binaryTarget, flavor)
+    await writePreparedManifest(manifest, key, modelTarget, binaryTarget, flavor, bundledExtras)
+  } else if (bundledExtras.length > 0) {
+    // Even without a binary+model pair, persist the extras list so the runtime can find them.
+    await persistBundledExtras(manifest, bundledExtras)
   }
 
   if (!copiedBinary || !copiedModel) {
     console.log('[prepare-katago-assets] No complete asset pair copied. This is OK for local development but release packaging should provide both assets.')
   }
+}
+
+function collectExtraModelArgs() {
+  const extras = []
+  for (let index = 0; index < process.argv.length; index += 1) {
+    const item = process.argv[index]
+    if (item.startsWith('--extra-model=')) {
+      extras.push(item.slice('--extra-model='.length))
+    } else if (item === '--extra-model' && index + 1 < process.argv.length) {
+      extras.push(process.argv[index + 1])
+      index += 1
+    }
+  }
+  const fromEnv = process.env.GOAGENT_KATAGO_MODEL_EXTRA ?? ''
+  if (fromEnv) {
+    for (const part of fromEnv.split(/[;\n]/)) {
+      const trimmed = part.trim()
+      if (trimmed) extras.push(trimmed)
+    }
+  }
+  return extras.filter((entry, index, self) => self.indexOf(entry) === index)
+}
+
+async function persistBundledExtras(manifest, bundledExtras) {
+  const nextManifest = mergeBundledModels(manifest, bundledExtras)
+  await writeFile(manifestPath, `${JSON.stringify(nextManifest, null, 2)}\n`, 'utf8')
+  console.log(`[prepare-katago-assets] manifest bundledModels updated with ${bundledExtras.length} entry(ies)`)
+}
+
+function mergeBundledModels(manifest, extras) {
+  const existing = Array.isArray(manifest.bundledModels) ? manifest.bundledModels : []
+  const merged = [...existing]
+  for (const entry of extras) {
+    const idx = merged.findIndex((item) => item && item.fileName === entry.fileName)
+    if (idx >= 0) {
+      merged[idx] = { ...merged[idx], ...entry }
+    } else {
+      merged.push(entry)
+    }
+  }
+  return { ...manifest, bundledModels: merged }
 }
 
 main().catch((error) => {

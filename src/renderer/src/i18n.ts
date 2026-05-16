@@ -438,7 +438,16 @@ const ZH_CN = {
   graphFailed: '胜率图生成失败: {{error}}',
   gameDeletedPaused: '棋谱已删除，停止精读',
   analysisCompletedPaused: '讲解完成，已暂停精读',
-  pausedFineReview: '已暂停精读'
+  pausedFineReview: '已暂停精读',
+  autoSaved: '已自动保存',
+  autoSaving: '保存中…',
+  modelPickerEmpty: '填好 Base URL 与 API Key 后会自动拉取模型列表',
+  timelineDeltaUp: '较上手 +{{delta}}%',
+  timelineDeltaDown: '较上手 {{delta}}%',
+  timelineDeltaFlat: '与上手持平',
+  timelineRangeBadge: '区间 {{lo}}-{{hi}}',
+  timelineScoreUnit: '目',
+  timelineSeverityHeader: '严重度'
 } as const
 
 export type TranslationKey = keyof typeof ZH_CN
@@ -581,7 +590,16 @@ const ZH_TW: Record<TranslationKey, string> = {
   skipBinding: '暫不綁定',
   createAndBind: '建立並綁定',
   rankSub1d: '1段以下',
-  styleRigorous: '職業複盤'
+  styleRigorous: '職業複盤',
+  autoSaved: '已自動儲存',
+  autoSaving: '儲存中…',
+  modelPickerEmpty: '填寫 Base URL 與 API Key 後會自動載入模型列表',
+  timelineDeltaUp: '較上手 +{{delta}}%',
+  timelineDeltaDown: '較上手 {{delta}}%',
+  timelineDeltaFlat: '與上手持平',
+  timelineRangeBadge: '區間 {{lo}}-{{hi}}',
+  timelineScoreUnit: '目',
+  timelineSeverityHeader: '嚴重度'
 }
 
 const EN_US: Record<TranslationKey, string> = {
@@ -973,7 +991,16 @@ const EN_US: Record<TranslationKey, string> = {
   graphFailed: 'Winrate timeline failed: {{error}}',
   gameDeletedPaused: 'Game deleted; deep analysis stopped',
   analysisCompletedPaused: 'Explanation complete; deep analysis paused',
-  pausedFineReview: 'Deep analysis paused'
+  pausedFineReview: 'Deep analysis paused',
+  autoSaved: 'Auto-saved',
+  autoSaving: 'Saving…',
+  modelPickerEmpty: 'Fill in Base URL and API Key — models load automatically.',
+  timelineDeltaUp: '+{{delta}}% vs prev',
+  timelineDeltaDown: '{{delta}}% vs prev',
+  timelineDeltaFlat: 'flat',
+  timelineRangeBadge: 'Range {{lo}}-{{hi}}',
+  timelineScoreUnit: 'pt',
+  timelineSeverityHeader: 'Severity'
 }
 
 const JA_JP: Record<TranslationKey, string> = { ...EN_US,

@@ -14,6 +14,12 @@ export interface KataGoPlatformAsset {
   sha256?: string
 }
 
+export interface KataGoBundledModel {
+  presetId?: string
+  fileName: string
+  sha256?: string
+}
+
 export interface KataGoAssetManifest {
   version: number
   defaultModelId: string
@@ -22,6 +28,7 @@ export interface KataGoAssetManifest {
   modelPath: string
   modelSha256?: string
   supportedPlatforms: Record<string, KataGoPlatformAsset>
+  bundledModels?: KataGoBundledModel[]
   notes?: string[]
 }
 
@@ -319,6 +326,16 @@ export async function inspectKataGoAssets(): Promise<KataGoAssetStatus> {
   }
 }
 
+async function findBundledModelPath(preset: { id: string; fileName: string; networkName: string }): Promise<string> {
+  for (const root of candidateRoots()) {
+    const direct = join(root, 'models', preset.fileName)
+    if (await exists(direct)) {
+      return direct
+    }
+  }
+  return ''
+}
+
 export async function installOfficialKataGoModel(
   request: KataGoAssetInstallRequest = {},
   onProgress?: (progress: KataGoAssetInstallProgress) => void
@@ -333,6 +350,39 @@ export async function installOfficialKataGoModel(
   if (!baseManifest) {
     throw new Error('缺少 data/katago/manifest.json，无法创建本机资源配置。')
   }
+
+  // If this preset is already bundled with the app or previously installed into userData, reuse it.
+  const bundledMatch = await findBundledModelPath(preset)
+  if (bundledMatch) {
+    onProgress?.({ stage: 'discovering', message: `${preset.label} 已随安装包提供，无需下载。`, percent: 100 })
+    const manifest: KataGoAssetManifest = {
+      ...baseManifest,
+      defaultModelId: preset.id,
+      defaultModelFileName: preset.fileName,
+      defaultModelDisplayName: `KataGo ${preset.label}`,
+      modelPath: `models/${preset.fileName}`,
+      modelSha256: await sha256(bundledMatch).catch(() => '')
+    }
+    const binary = await copyPlatformBinaryIfAvailable(userRoot, manifest, key)
+    onProgress?.({ stage: 'writing-manifest', message: '正在写入本机 KataGo 资源配置。' })
+    await mkdir(userRoot, { recursive: true })
+    await writeFile(join(userRoot, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8')
+    const finalStatus = await inspectKataGoAssets()
+    const detail = finalStatus.ready
+      ? `${preset.label} 已就绪（来自内置权重），可用于胜率图和实时分析。`
+      : `权重已就绪；${finalStatus.detail || '仍需准备当前平台 KataGo 引擎。'}`
+    onProgress?.({ stage: finalStatus.ready ? 'done' : 'error', message: detail, percent: 100 })
+    return {
+      ok: finalStatus.ready,
+      presetId: preset.id,
+      modelPath: bundledMatch,
+      binaryPath: binary.path,
+      downloadedModel: false,
+      copiedBinary: binary.copied,
+      detail
+    }
+  }
+
   onProgress?.({ stage: 'discovering', message: `准备安装 ${preset.label}。` })
   const downloadUrl = await discoverModelDownloadUrl(preset.id)
   const modelPath = join(userRoot, 'models', preset.fileName)

@@ -37,7 +37,17 @@ export function visionRequiredForMode(mode: TeacherRunMode | string | undefined)
 }
 
 export function visionRequiredForIntent(intent: string | undefined): boolean {
-  return intent === 'current-move' || intent === 'move-range' || intent === 'game-review'
+  // Image attachment is decided by the renderer based on request.mode (the user's
+  // explicit action), not by the classifier's inferred intent. Returning false
+  // here keeps freeform chats (e.g. "为什么这里下不下" with a selected game)
+  // from being upgraded to image-required by the prompt classifier and then
+  // failing because the renderer never attached a board screenshot. Modes that
+  // genuinely require an image are gated by visionRequiredForMode above; when
+  // the classifier infers a vision-style intent (e.g. intent === 'current-move'
+  // or intent === 'game-review'), the agent prompt still benefits from the
+  // inferred routing but no longer hard-blocks the task.
+  void intent
+  return false
 }
 
 function normalizeMime(value: string | undefined): VisionEvidenceImage['mimeType'] {

@@ -49,14 +49,14 @@ KataGo is the source of truth. The LLM is the teacher that turns those facts int
 
 Current release:
 
-[GoAgent v0.4.0](https://github.com/wimi321/GoAgent/releases/tag/v0.4.0)
+[GoAgent v0.4.1](https://github.com/wimi321/GoAgent/releases/tag/v0.4.1)
 
 | Platform | Download |
 | --- | --- |
-| macOS Apple Silicon | [GoAgent-0.4.0-mac-arm64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.0/GoAgent-0.4.0-mac-arm64.dmg) |
-| macOS Intel | [GoAgent-0.4.0-mac-x64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.0/GoAgent-0.4.0-mac-x64.dmg) |
-| Windows x64 portable ZIP | [GoAgent-0.4.0-win-x64-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.0/GoAgent-0.4.0-win-x64-portable.zip) |
-| Windows x64 installer | [GoAgent-0.4.0-win-x64.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.0/GoAgent-0.4.0-win-x64.exe) |
+| macOS Apple Silicon | [GoAgent-0.4.1-mac-arm64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.1/GoAgent-0.4.1-mac-arm64.dmg) |
+| macOS Intel | [GoAgent-0.4.1-mac-x64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.1/GoAgent-0.4.1-mac-x64.dmg) |
+| Windows x64 portable ZIP | [GoAgent-0.4.1-win-x64-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.1/GoAgent-0.4.1-win-x64-portable.zip) |
+| Windows x64 installer | [GoAgent-0.4.1-win-x64.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.1/GoAgent-0.4.1-win-x64.exe) |
 
 Release caveats:
 

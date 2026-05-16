@@ -4,6 +4,13 @@ All notable changes to GoAgent will be documented here.
 
 This project follows semantic versioning once public releases begin.
 
+## 0.4.1 - Hotfix: freeform chat unblocked + KataGo timeout buffer
+
+### Fixed
+
+- Manual prompts to the teacher no longer raise `棋盘图证据不完整` ("teacher task requires a board image") when the question happens to match a keyword like `为什么这里`, `这里不好`, or any coordinate / current-move phrase that the backend classifier interpreted as a vision-required intent. The vision requirement is now driven solely by the renderer's explicit `request.mode` (`current-move` / `move-range`); freeform chats route as freeform regardless of the inferred intent, and the agent gets the same `boardImageAttached=false` context so it falls back to SGF / KataGo tools instead of hallucinating an image.
+- KataGo whole-game analysis no longer times out partway through long games. The per-query budget is raised from 2.5 s to 5 s (and the floor from 120 s to 180 s), giving the zhizi b28 network and other heavy networks enough room to finish a 200-move sweep without aborting halfway through and leaving the winrate curve stuck on the opening moves.
+
 ## 0.4.0 - Lizzie-clean Winrate Timeline + zhizi b28 Bundled
 
 ### Added

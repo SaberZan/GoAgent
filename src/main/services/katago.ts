@@ -489,7 +489,7 @@ async function queryKataGoBatch(
         queries: queries.map(buildKataGoPayload),
         runId: options.runId,
         group: options.group,
-        timeoutMs: Math.max(120_000, queries.length * 2500),
+        timeoutMs: Math.max(180_000, queries.length * 5000),
         onResponse: onResponse as ((response: Record<string, unknown>) => void) | undefined
       })
       engineLease.finish('done')
@@ -563,7 +563,7 @@ async function queryKataGoBatch(
       cleanup()
       engineLease.finish('error')
       reject(new Error('KataGo 分析超时'))
-    }, Math.max(120_000, queries.length * 2500))
+    }, Math.max(180_000, queries.length * 5000))
 
     child.stdout.on('data', (chunk) => {
       if (settled) {

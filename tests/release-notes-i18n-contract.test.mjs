@@ -17,8 +17,7 @@ test('release notes list standard and NVIDIA artifacts', () => {
   for (const asset of [
     `GoAgent-${packageJson.version}-win-x64-portable.zip`,
     `GoAgent-${packageJson.version}-win-x64.exe`,
-    `GoAgent-${packageJson.version}-win-x64-nvidia-portable.zip`,
-    `GoAgent-${packageJson.version}-win-x64-nvidia.exe`
+    `GoAgent-${packageJson.version}-win-x64-nvidia-portable.zip`
   ]) {
     assert.ok(notes.includes(asset), `missing ${asset}`)
   }

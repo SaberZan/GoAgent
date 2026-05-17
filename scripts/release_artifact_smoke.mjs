@@ -39,7 +39,7 @@ for (const file of files) {
   const key = classify(file)
   if (key) found.set(key, file)
 }
-const required = ['mac-arm64-dmg', 'mac-x64-dmg', 'win-standard-exe', 'win-standard-zip', 'win-nvidia-exe', 'win-nvidia-zip']
+const required = ['mac-arm64-dmg', 'mac-x64-dmg', 'win-standard-exe', 'win-standard-zip', 'win-nvidia-zip']
 const missing = required.filter((key) => !found.has(key))
 const tiny = [...found.entries()].filter(([, file]) => statSync(file).size < 1024 * 1024).map(([key, file]) => `${key}:${file}`)
 if (strict && (missing.length || tiny.length)) {

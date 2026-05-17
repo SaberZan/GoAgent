@@ -45,9 +45,9 @@ test('teacher agent includes vision evidence instructions and refuses missing re
   assert.match(source, /intent 是 game-review/)
   assert.match(source, /严禁说“没有棋盘图”/)
   assert.match(source, /buildVisionImageContentParts\(state\.request, visionEvidence\)/)
-  assert.match(source, /verifyVisionEvidenceMarkdown\(finalText, visionEvidence\)/)
+  assert.match(source, /verifyVisionEvidenceMarkdown\(finalText, finalVisionEvidence\)/)
   assert.match(source, /buildVisionEvidenceRepairNote\(visionIssues\)/)
-  assert.match(source, /visionEvidence,?/)
+  assert.match(source, /visionEvidence: finalVisionEvidence/)
 })
 
 test('provider image parts support high-detail vision input', () => {

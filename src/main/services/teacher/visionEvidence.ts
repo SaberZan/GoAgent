@@ -183,11 +183,12 @@ export function buildVisionEvidenceReport(request: TeacherRunRequest, intentOrMo
     const mimeType = imageMime(input.url)
     const warnings = imageWarnings(input, bytes, mimeType)
     const size = decodeSizeFromDataUrl(input.url, mimeType)
-    return {
-      id: `vision-${input.index + 1}`,
-      index: input.index,
-      role: input.role,
-      moveNumber: input.moveNumber,
+      return {
+        id: `vision-${input.index + 1}`,
+        index: input.index,
+        role: input.role,
+        source: 'initial-attachment',
+        moveNumber: input.moveNumber,
       mimeType,
       bytes,
       ...size,
@@ -211,6 +212,7 @@ export function buildVisionEvidenceReport(request: TeacherRunRequest, intentOrMo
     attached: images.length > 0,
     imageCount: images.length,
     providerSupportsVision: 'unknown',
+    source: 'initial-attachment',
     images,
     warnings,
     blockingIssues,

@@ -1,8 +1,8 @@
-import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell, type ContextMenuParams, type IpcMainInvokeEvent, type MenuItemConstructorOptions } from 'electron'
+import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell, type ContextMenuParams, type IpcMainEvent, type IpcMainInvokeEvent, type MenuItemConstructorOptions } from 'electron'
 import { isAbsolute, relative, resolve, join } from 'node:path'
 import { appHome, findGame, getGames, getSettings, getTtsCustomApiKey, getTtsVolcengineAccessToken, getTtsVolcengineApiKey, hasLlmApiKey, hasTtsCustomApiKey, hasTtsVolcengineAccessToken, hasTtsVolcengineApiKey, replaceSettings, setSettings, upsertGames } from './lib/store'
 import { BRAND_NAME } from '@shared/brand'
-import type { AnalyzeGameQuickRequest, AnalyzePositionRequest, AppSettings, DashboardData, FoxSyncRequest, KataGoAssetInstallRequest, KataGoBenchmarkRequest, KataGoCancelAnalysisRequest, LibraryDeleteRequest, LlmModelsListRequest, LlmSettingsTestRequest, ReviewRequest, TeacherChatMessage, TeacherRunCancelRequest, TeacherRunRequest } from './lib/types'
+import type { AnalyzeGameQuickRequest, AnalyzePositionRequest, AppSettings, DashboardData, FoxSyncRequest, KataGoAssetInstallRequest, KataGoBenchmarkRequest, KataGoCancelAnalysisRequest, LibraryDeleteRequest, LlmModelsListRequest, LlmSettingsTestRequest, ReviewRequest, TeacherBoardImageRenderImage, TeacherBoardImageRenderRequest, TeacherBoardImageRenderResponse, TeacherChatMessage, TeacherRunCancelRequest, TeacherRunRequest } from './lib/types'
 import { importSgfFile, readGameRecord } from './services/sgf'
 import { ensureFoxGameDownloaded, syncFoxGames } from './services/fox'
 import { runReview } from './services/review'
@@ -72,6 +72,36 @@ function safeSendToRenderer(event: IpcMainInvokeEvent, channel: string, payload:
     }
     return false
   }
+}
+
+function requestTeacherBoardImages(event: IpcMainInvokeEvent, request: TeacherBoardImageRenderRequest): Promise<TeacherBoardImageRenderImage[]> {
+  if (event.sender.isDestroyed()) {
+    return Promise.reject(new Error('渲染窗口已关闭，无法生成棋盘截图。'))
+  }
+  return new Promise((resolvePromise, reject) => {
+    const timeout = setTimeout(() => {
+      ipcMain.removeListener('teacher:board-image-render-response', listener)
+      reject(new Error('棋盘截图生成超时。'))
+    }, 30_000)
+    const listener = (_responseEvent: IpcMainEvent, response: TeacherBoardImageRenderResponse): void => {
+      if (!response || response.requestId !== request.requestId) {
+        return
+      }
+      clearTimeout(timeout)
+      ipcMain.removeListener('teacher:board-image-render-response', listener)
+      if (!response.ok) {
+        reject(new Error(response.error || '棋盘截图生成失败。'))
+        return
+      }
+      resolvePromise(response.images ?? [])
+    }
+    ipcMain.on('teacher:board-image-render-response', listener)
+    if (!safeSendToRenderer(event, 'teacher:board-image-render-request', request)) {
+      clearTimeout(timeout)
+      ipcMain.removeListener('teacher:board-image-render-response', listener)
+      reject(new Error('无法向渲染窗口请求棋盘截图。'))
+    }
+  })
 }
 
 function attachTextEditingContextMenu(window: BrowserWindow): void {
@@ -387,6 +417,8 @@ app.whenReady().then(() => {
   ipcMain.handle('teacher:run', async (event, payload: TeacherRunRequest) =>
     runTeacherTask(payload, (progress) => {
       safeSendToRenderer(event, 'teacher:run-progress', progress)
+    }, {
+      captureBoardImages: (request) => requestTeacherBoardImages(event, request)
     })
   )
   ipcMain.handle('teacher:cancel-run', async (_event, payload: TeacherRunCancelRequest | undefined) =>

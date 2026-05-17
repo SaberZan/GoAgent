@@ -25,6 +25,8 @@ import type {
   TeacherRunResult,
   TeacherChatMessage,
   TeacherExplanationPace,
+  TeacherBoardImageRenderRequest,
+  TeacherBoardImageRenderResponse,
   TeacherPersonaStyle,
   TeacherSession,
   TeacherTerminologyDensity,
@@ -1049,6 +1051,11 @@ export function App(): ReactElement {
     return () => dispose?.()
   }, [selectedGame?.id, moveNumber, busy, record, dashboard.games.length])
 
+  useEffect(() => {
+    const dispose = window.goagent.onTeacherBoardImageRequest((payload) => renderTeacherBoardImages(payload))
+    return () => dispose()
+  }, [record, selectedGame?.id, evaluations, analysis])
+
   const arrowDebounceRef = useRef(0)
   useEffect(() => {
     function handleKeyDown(event: globalThis.KeyboardEvent): void {
@@ -1558,6 +1565,20 @@ export function App(): ReactElement {
   ): Promise<TeacherRunResult> {
     const runId = existingRunId ?? crypto.randomUUID()
     activeTeacherRunRef.current = { runId, messageId: assistantMessageId }
+    if (request.gameId) {
+      await Promise.all([
+        cancelKataGoWork({ group: 'quick' }),
+        cancelKataGoWork({ group: 'live' })
+      ])
+      setLiveAnalysis((current) => current.running
+        ? {
+            ...current,
+            running: false,
+            status: '老师讲解中，暂停精读',
+            visitsPerSecond: 0
+          }
+        : current)
+    }
     const dispose = window.goagent.onTeacherRunProgress((progress) => {
       if (progress.runId === runId && isActiveTeacherRun(runId)) {
         mergeTeacherProgress(assistantMessageId, progress)
@@ -1594,6 +1615,49 @@ export function App(): ReactElement {
       dispose()
       if (isActiveTeacherRun(runId)) {
         activeTeacherRunRef.current = null
+      }
+    }
+  }
+
+  async function renderTeacherBoardImages(payload: TeacherBoardImageRenderRequest): Promise<TeacherBoardImageRenderResponse> {
+    try {
+      const targetRecord = record?.game.id === payload.gameId
+        ? record
+        : await window.goagent.getGameRecord(payload.gameId)
+      const analysisMap = new Map((payload.analyses ?? []).map((item) => [item.moveNumber, item]))
+      const uniqueMoveNumbers = payload.moveNumbers
+        .map((item) => Math.max(0, Math.min(targetRecord.moves.length, Math.round(item))))
+        .filter((item, index, all) => all.indexOf(item) === index)
+        .slice(0, 6)
+      const images = await Promise.all(uniqueMoveNumbers.map(async (targetMove, index) => {
+        const cached = analysisMap.get(targetMove)
+          ?? (selectedGame?.id === payload.gameId ? analysisForMove(targetMove) : null)
+          ?? (selectedGame?.id === payload.gameId && analysis?.moveNumber === targetMove ? analysis : null)
+        const dataUrl = await renderBoardPng(targetRecord, targetMove, cached ?? null)
+        return {
+          imageId: `tool-board-${payload.requestId}-${index + 1}`,
+          gameId: payload.gameId,
+          moveNumber: targetMove,
+          caption: payload.captions?.[targetMove] ?? `棋盘图 ${index + 1}: 第 ${targetMove} 手。`,
+          mimeType: 'image/png' as const,
+          bytes: dataUrlByteLength(dataUrl),
+          width: 1000,
+          height: 1000,
+          hash: await dataUrlSha256(dataUrl),
+          source: 'tool-capture' as const,
+          dataUrl
+        }
+      }))
+      return {
+        requestId: payload.requestId,
+        ok: true,
+        images
+      }
+    } catch (cause) {
+      return {
+        requestId: payload.requestId,
+        ok: false,
+        error: String(cause)
       }
     }
   }
@@ -2059,33 +2123,18 @@ export function App(): ReactElement {
     const runId = crypto.randomUUID()
     activeTeacherRunRef.current = { runId, messageId: assistantMessageId }
     try {
-      const nextAnalysis = await window.goagent.analyzePosition({
-        gameId: selectedGame.id,
-        moveNumber: targetMove,
-        maxVisits: 520,
-        runId
-      })
-      if (!isActiveTeacherRun(runId)) {
-        return
-      }
-      setAnalysis(nextAnalysis)
-      rememberEvaluation(nextAnalysis, { force: true })
-      const boardImageDataUrl = await renderBoardPng(record, targetMove, nextAnalysis)
-      if (!isActiveTeacherRun(runId)) {
-        return
-      }
       const result = await runTeacherTaskWithStream({
         mode: 'current-move',
         prompt: ask,
         gameId: selectedGame.id,
         moveNumber: targetMove,
         playerName,
-        boardImageDataUrl,
-        prefetchedAnalysis: nextAnalysis
+        prefetchedAnalysis: analysisForMove(targetMove) ?? undefined
       }, assistantMessageId, runId)
-      const finalAnalysis = result.analysis ?? nextAnalysis
-      setAnalysis(finalAnalysis)
-      rememberEvaluation(finalAnalysis, { force: true })
+      if (result.analysis) {
+        setAnalysis(result.analysis)
+        rememberEvaluation(result.analysis, { force: true })
+      }
     } catch (cause) {
       if (/老师任务已停止|KataGo 分析已取消|AbortError|已取消/i.test(String(cause))) {
         return
@@ -2138,21 +2187,17 @@ export function App(): ReactElement {
     appendMessage({ role: 'student', content: text })
     const assistantMessageId = appendMessage({ role: 'teacher', content: '', status: 'running', toolLogs: [] })
     const quickNeedsBoardImage = !isRecentGamesReviewPrompt(text) && (isCurrentMoveReviewPrompt(text) || isWholeGameReviewPrompt(text))
-    const shouldSendBoardImage = Boolean(record && selectedGame && quickNeedsBoardImage)
     try {
-      if (quickNeedsBoardImage && (!record || !selectedGame)) {
+      if (quickNeedsBoardImage && !selectedGame) {
         throw new Error('请先加载棋谱，再做这项复盘。')
       }
-      const boardImageDataUrl = shouldSendBoardImage && record
-        ? await renderBoardPng(record, moveNumber, analysisForMove(moveNumber) ?? analysis)
-        : undefined
       const result = await runTeacherTaskWithStream({
-        mode: 'freeform',
+        mode: isCurrentMoveReviewPrompt(text) ? 'current-move' : 'freeform',
         prompt: text,
         gameId: selectedGame?.id,
         moveNumber,
         playerName,
-        boardImageDataUrl
+        prefetchedAnalysis: isCurrentMoveReviewPrompt(text) ? (analysisForMove(moveNumber) ?? undefined) : undefined
       }, assistantMessageId)
       if (result.analysis) {
         setAnalysis((current) => preferAnalysis(current, result.analysis))
@@ -2220,23 +2265,8 @@ export function App(): ReactElement {
       const range = parsedRange ?? (text === selectedRangeText ? moveRange : null)
       const wantsMoveRange = range !== null
       if (wantsCurrentMove) {
-        if (!record || !selectedGame) {
+        if (!selectedGame) {
           throw new Error('请先加载棋谱，再分析当前手。')
-        }
-        const nextAnalysis = await window.goagent.analyzePosition({
-          gameId: selectedGame.id,
-          moveNumber,
-          maxVisits: 520,
-          runId
-        })
-        if (!isActiveTeacherRun(runId)) {
-          return
-        }
-        setAnalysis(nextAnalysis)
-        rememberEvaluation(nextAnalysis, { force: true })
-        const boardImageDataUrl = await renderBoardPng(record, moveNumber, nextAnalysis)
-        if (!isActiveTeacherRun(runId)) {
-          return
         }
         const result = await runTeacherTaskWithStream({
           mode: 'current-move',
@@ -2244,8 +2274,7 @@ export function App(): ReactElement {
           gameId: selectedGame.id,
           moveNumber,
           playerName,
-          boardImageDataUrl,
-          prefetchedAnalysis: nextAnalysis
+          prefetchedAnalysis: analysisForMove(moveNumber) ?? undefined
         }, assistantMessageId, runId)
         if (result.analysis) {
           setAnalysis(result.analysis)
@@ -2260,38 +2289,13 @@ export function App(): ReactElement {
             throw new Error(validation.reason ?? t('moveRangeInvalid'))
           }
           const { start: rangeStart, end: rangeEnd } = validation.range
-          const merged = new Map<number, KataGoMoveAnalysis>()
-          for (const a of Object.values(evaluations)) merged.set(a.moveNumber, a)
-          const missing = []
-          for (let m = rangeStart; m <= rangeEnd; m += 1) {
-            if (!merged.has(m)) missing.push(m)
-          }
-          if (missing.length > 0) {
-            const allAnalyses = await window.goagent.analyzeGameQuick({ gameId: selectedGame.id, maxVisits: 25, refineVisits: 120, refineTopN: 12, runId })
-            if (!isActiveTeacherRun(runId)) {
-              return
-            }
-            for (const a of allAnalyses) {
-              const next = preferAnalysis(merged.get(a.moveNumber), a) ?? a
-              merged.set(a.moveNumber, next)
-              rememberEvaluation(next)
-            }
-          }
-          const rangeSlice = [...merged.values()].filter((a) => a.moveNumber >= rangeStart && a.moveNumber <= rangeEnd)
-          if (rangeSlice.length === 0) {
-            throw new Error(t('moveRangeNoEvaluations'))
-          }
-          const moveRangeSummary = buildMoveRangeSummary(rangeSlice, rangeStart, rangeEnd)
-          const boardImageDataUrls = await renderRangeBoardPngs(record, moveRangeSummary, rangeSlice)
           const result = await runTeacherTaskWithStream({
             mode: 'move-range',
             prompt: text,
             gameId: selectedGame.id,
             moveNumber,
             playerName,
-            moveRange: { start: rangeStart, end: rangeEnd },
-            moveRangeSummary,
-            boardImageDataUrls
+            moveRange: { start: rangeStart, end: rangeEnd }
           }, assistantMessageId, runId)
           if (result.analysis) {
             setAnalysis((current) => preferAnalysis(current, result.analysis))
@@ -2299,17 +2303,15 @@ export function App(): ReactElement {
           }
         }
       } else if (wantsGameReview) {
-        if (!record || !selectedGame) {
+        if (!selectedGame) {
           throw new Error('请先加载棋谱，再做整盘复盘。')
         }
-        const boardImageDataUrl = await renderBoardPng(record, moveNumber, analysisForMove(moveNumber) ?? analysis)
         await runTeacherTaskWithStream({
           mode: 'freeform',
           prompt: text,
           gameId: selectedGame.id,
           moveNumber,
-          playerName,
-          boardImageDataUrl
+          playerName
         }, assistantMessageId, runId)
       } else {
         await runTeacherTaskWithStream({
@@ -4995,6 +4997,20 @@ function gtpToPoint(gtp: string, size: number): { row: number; col: number } | n
     return null
   }
   return { row, col }
+}
+
+function dataUrlByteLength(dataUrl: string): number {
+  const base64 = dataUrl.split(',')[1] ?? ''
+  const clean = base64.replace(/\s+/g, '')
+  const padding = clean.endsWith('==') ? 2 : clean.endsWith('=') ? 1 : 0
+  return Math.max(0, Math.floor((clean.length * 3) / 4) - padding)
+}
+
+async function dataUrlSha256(dataUrl: string): Promise<string> {
+  const base64 = dataUrl.split(',')[1] ?? ''
+  const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0))
+  const digest = await crypto.subtle.digest('SHA-256', bytes)
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
 async function renderBoardPng(record: GameRecord, moveNumber: number, analysis: KataGoMoveAnalysis | null, useExternalAssets = true): Promise<string> {

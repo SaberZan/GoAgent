@@ -1,7 +1,8 @@
 import Store from 'electron-store'
-import { app, safeStorage } from 'electron'
-import { mkdirSync } from 'node:fs'
+import { app } from 'electron'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
+import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto'
 import { BRAND_DATA_DIR } from '@shared/brand'
 import type { AppSettings, LibraryGame } from './types'
 
@@ -84,6 +85,7 @@ export const settingsStore = new Store<AppSettings>({
 
 type SecretValue =
   | { mode: 'safeStorage'; value: string }
+  | { mode: 'local-v1'; value: string; iv: string; tag: string }
   | { mode: 'plain'; value: string }
 
 export const secretStore = new Store<{ llmApiKey?: SecretValue; ttsCustomApiKey?: SecretValue; ttsVolcengineApiKey?: SecretValue; ttsVolcengineAccessToken?: SecretValue }>({
@@ -104,14 +106,26 @@ export const profileStore = new Store<Record<string, unknown>>({
   defaults: {}
 })
 
-function encryptSecret(value: string): SecretValue {
-  if (safeStorage.isEncryptionAvailable()) {
-    return {
-      mode: 'safeStorage',
-      value: safeStorage.encryptString(value).toString('base64')
-    }
+const localSecretKeyPath = join(appHome, 'secrets.key')
+
+function localSecretKey(): Buffer {
+  if (!existsSync(localSecretKeyPath)) {
+    writeFileSync(localSecretKeyPath, randomBytes(32).toString('base64'), { mode: 0o600 })
   }
-  return { mode: 'plain', value }
+  const seed = readFileSync(localSecretKeyPath, 'utf8').trim()
+  return scryptSync(seed, 'goagent-local-secret-store-v1', 32)
+}
+
+function encryptSecret(value: string): SecretValue {
+  const iv = randomBytes(12)
+  const cipher = createCipheriv('aes-256-gcm', localSecretKey(), iv)
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()])
+  return {
+    mode: 'local-v1',
+    value: encrypted.toString('base64'),
+    iv: iv.toString('base64'),
+    tag: cipher.getAuthTag().toString('base64')
+  }
 }
 
 function decryptSecret(secret?: SecretValue): string {
@@ -119,8 +133,19 @@ function decryptSecret(secret?: SecretValue): string {
     return ''
   }
   try {
+    if (secret.mode === 'local-v1') {
+      const decipher = createDecipheriv('aes-256-gcm', localSecretKey(), Buffer.from(secret.iv, 'base64'))
+      decipher.setAuthTag(Buffer.from(secret.tag, 'base64'))
+      return Buffer.concat([
+        decipher.update(Buffer.from(secret.value, 'base64')),
+        decipher.final()
+      ]).toString('utf8')
+    }
     if (secret.mode === 'safeStorage') {
-      return safeStorage.decryptString(Buffer.from(secret.value, 'base64'))
+      // Old GoAgent builds used Electron safeStorage, which can trigger macOS
+      // Keychain prompts. Do not decrypt it here; users can paste the key once
+      // to rewrite it into the app-local store without OS authorization popups.
+      return ''
     }
     return secret.value
   } catch {
@@ -172,17 +197,37 @@ function saveTtsVolcengineAccessToken(value: string): void {
   }
 }
 
-function migratePlaintextApiKey(settings: AppSettings): AppSettings {
-  if (settings.llmApiKey.trim()) {
+function migratePlaintextSecrets(settings: AppSettings): AppSettings {
+  const sanitized: AppSettings = { ...settings }
+  let changed = false
+  if (sanitized.llmApiKey.trim()) {
     saveLlmApiKey(settings.llmApiKey)
-    settingsStore.set('llmApiKey', '')
-    return { ...settings, llmApiKey: '' }
+    sanitized.llmApiKey = ''
+    changed = true
   }
-  return settings
+  if (sanitized.ttsCustomApiKey.trim()) {
+    saveTtsCustomApiKey(sanitized.ttsCustomApiKey)
+    sanitized.ttsCustomApiKey = ''
+    changed = true
+  }
+  if (sanitized.ttsVolcengineApiKey.trim()) {
+    saveTtsVolcengineApiKey(sanitized.ttsVolcengineApiKey)
+    sanitized.ttsVolcengineApiKey = ''
+    changed = true
+  }
+  if (sanitized.ttsVolcengineAccessToken.trim()) {
+    saveTtsVolcengineAccessToken(sanitized.ttsVolcengineAccessToken)
+    sanitized.ttsVolcengineAccessToken = ''
+    changed = true
+  }
+  if (changed) {
+    settingsStore.store = sanitized
+  }
+  return sanitized
 }
 
 export function getSettings(): AppSettings {
-  const persisted = migratePlaintextApiKey({ ...defaults, ...settingsStore.store })
+  const persisted = migratePlaintextSecrets({ ...defaults, ...settingsStore.store })
   return {
     ...persisted,
     llmApiKey: decryptSecret(secretStore.get('llmApiKey')),

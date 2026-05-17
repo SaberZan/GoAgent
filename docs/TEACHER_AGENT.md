@@ -54,7 +54,7 @@ This is intentionally close to Claude Code's model: the teacher is a task-runnin
 
 ## Privacy Rules
 
-- LLM API keys are stored through Electron `safeStorage` when available.
+- LLM API keys are stored in GoAgent's local secret store to avoid OS keychain prompts during everyday use.
 - Renderer receives only whether an API key exists, never the saved key itself.
 - Opening files through IPC is restricted to GoAgent-managed directories.
 - Current-move analysis sends the board PNG, KataGo JSON, and selected knowledge cards to the configured multimodal LLM.

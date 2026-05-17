@@ -194,5 +194,5 @@ test('Workbench reuses cache for automatic analysis but manual analysis refreshe
   assert.match(app, /options\.force \? nextAnalysis : \(preferAnalysis/)
   assert.match(app, /rememberEvaluation\(nextAnalysis, \{ force: forceManualRefresh \}\)/)
   assert.match(app, /setAnalysis\(\(current\) => forceManualRefresh \? nextAnalysis : preferAnalysis\(current, nextAnalysis\)\)/)
-  assert.match(app, /rememberEvaluation\(nextAnalysis, \{ force: true \}\)/)
+  assert.match(app, /rememberEvaluation\(result\.analysis, \{ force: true \}\)/)
 })

@@ -96,7 +96,7 @@ Default local home:
   katago/            Generated analysis config and logs
 ```
 
-LLM API keys are stored through Electron `safeStorage` when available. The renderer only receives whether an API key exists.
+LLM API keys are stored in GoAgent's local secret store instead of the OS keychain, so settings changes do not trigger repeated authorization prompts. The renderer only receives whether an API key exists unless the user explicitly clicks to reveal it.
 
 ## KataGo Runtime Resolution
 

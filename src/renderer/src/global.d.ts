@@ -29,6 +29,8 @@ import type {
   StudentBindingSuggestion,
   StudentProfile,
   ReleaseReadinessResult,
+  TeacherBoardImageRenderRequest,
+  TeacherBoardImageRenderResponse,
   TeacherChatMessage,
   TeacherSession,
   TeacherRunCancelRequest,
@@ -95,6 +97,7 @@ declare global {
       runTeacherTask: (payload: TeacherRunRequest) => Promise<TeacherRunResult>
       cancelTeacherRun: (payload?: TeacherRunCancelRequest) => Promise<TeacherRunCancelResult>
       onTeacherRunProgress: (handler: (payload: TeacherRunProgress) => void) => () => void
+      onTeacherBoardImageRequest: (handler: (payload: TeacherBoardImageRenderRequest) => Promise<TeacherBoardImageRenderResponse> | TeacherBoardImageRenderResponse) => () => void
       testLlmSettings: (payload: LlmSettingsTestRequest) => Promise<LlmSettingsTestResult>
       listLlmModels: (payload: LlmModelsListRequest) => Promise<LlmModelsListResult>
       getSavedLlmApiKey: () => Promise<{ hasKey: boolean; apiKey: string }>

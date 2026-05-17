@@ -5,7 +5,7 @@ GoAgent 支持把老师讲解朗读交给火山引擎豆包语音。这个能力
 - 默认语音仍是 `kokoro-bundled` 本地离线语音。
 - 只有用户在设置里选择 `火山引擎 · 豆包语音` 时，GoAgent 才会把朗读文本发送给火山引擎。
 - 火山调用失败时直接显示错误，不会自动切换到 Kokoro、自定义 API 或系统语音。
-- API Key / Access Token 使用 Electron `safeStorage` 保存，不写入普通 settings、日志或报告。
+- API Key / Access Token 使用 GoAgent 本机 secret store 保存，不写入普通 settings、日志或报告，也不会触发系统钥匙串授权弹窗。
 
 ## 接口策略
 

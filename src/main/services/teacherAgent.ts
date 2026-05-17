@@ -4,6 +4,8 @@ import { randomUUID } from 'node:crypto'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { getGames, getSettings, replaceSettings, reportsDir } from '@main/lib/store'
 import type {
+  AgentToolImageResult,
+  BoardImageCaptureSelection,
   CoachUserLevel,
   GameMove,
   KataGoMoveAnalysis,
@@ -17,12 +19,17 @@ import type {
   TeachingPacingAdvice,
   TeacherArtifact,
   TeacherArtifactKind,
+  TeacherBoardImageRenderImage,
+  TeacherBoardImageRenderRequest,
   TeacherRunRequest,
   TeacherRunProgress,
   TeacherRunResult,
-  TeacherToolLog
+  TeacherToolLog,
+  VisionEvidenceImage,
+  VisionEvidenceImageRole,
+  VisionEvidenceReport
 } from '@main/lib/types'
-import type { ChatMessage, ChatTool, ChatToolCall, ProviderSettings } from './llm/provider'
+import type { ChatContentPart, ChatMessage, ChatTool, ChatToolCall, ProviderSettings } from './llm/provider'
 import { analyzeGameQuick, analyzePosition, cancelKataGoAnalysis } from './katago'
 import { MOVE_RANGE_KEY_MOVE_LIMIT, MOVE_RANGE_MAX_MOVES, parseMoveRangeFromPrompt, validateMoveRange } from '@shared/moveRange'
 import { formatMoveRangeSummaryForPrompt, selectMoveNumbersForRangeRefine } from './teacher/moveRangeReview'
@@ -62,11 +69,17 @@ import { buildVisionEvidenceRepairNote, verifyVisionEvidenceMarkdown } from './t
 import { streamOpenAICompatibleToolTurn } from './llm/openaiCompatibleProvider'
 
 type TeacherProgressEmitter = (progress: TeacherRunProgress) => void
+type TeacherBoardImageCaptureHandler = (request: TeacherBoardImageRenderRequest) => Promise<TeacherBoardImageRenderImage[]>
+
+interface RunTeacherTaskOptions {
+  captureBoardImages?: TeacherBoardImageCaptureHandler
+}
 
 interface TeacherRunContext {
   runId: string
   emit?: TeacherProgressEmitter
   signal?: AbortSignal
+  captureBoardImages?: TeacherBoardImageCaptureHandler
 }
 
 interface BatchIssue {
@@ -325,7 +338,8 @@ function systemPrompt(level: CoachUserLevel): string {
     `请默认使用${teacherLanguageName(settings.reviewLanguage)}回答；只有用户明确要求其它语言时才切换。`,
     '帮助学生理解棋局，并提升下一次判断。',
     '需要信息时调用工具；不要靠印象猜局面。',
-    '分析当前手或整盘复盘时必须先看棋盘图片，再调用 KataGo 工具核对当前手、一选、胜率差、目差、搜索数和 PV，然后调用知识库工具匹配棋形、定式、死活、手筋或常见错误类型。',
+    '你具备真正的工具调用能力：棋谱、棋盘截图、KataGo、知识库、学生画像、报告和本机工具都应按需调用；不要靠按钮预处理或印象猜局面。',
+    '分析当前手、整盘复盘或区间复盘时，必须通过工具取得棋盘图、KataGo 证据和知识库匹配。当前手至少调用 board.captureTeachingImage、katago.analyzePosition、knowledge.matchPosition 或 knowledge.searchLocal；整盘复盘先调用 sgf.readGameRecord、katago.analyzeGameBatch，再截图 3-6 个关键手；区间复盘先精读区间关键手，再截图关键手。',
     '工具结果和 KataGo 是事实依据。',
     '如果 KataGo 结果包含 tracePacket，优先使用 tracePacket.searchSummary、candidateComparison、policySearchDelta、pvSupport、ownershipSummary、humanPolicySignals 和 shallowSearchTree 来解释“为什么”。',
     'tracePacket 是给老师的搜索证据摘要，不要把原始 MCTS/搜索字段生硬堆给学生；请翻译成“自然但被搜索否定”“不直观但搜索支持”“PV 支撑弱所以只能参考”等教学语言。',
@@ -434,6 +448,8 @@ interface TeacherAgentSessionState {
   record?: ReturnType<typeof readGameRecord>
   lastAnalysis?: KataGoMoveAnalysis
   rangeAnalyses?: KataGoMoveAnalysis[]
+  batchIssues: BatchIssue[]
+  pendingToolMessages: ChatMessage[]
   knowledge: KnowledgePacket[]
   knowledgeMatches: KnowledgeMatch[]
   recommendedProblems: RecommendedProblem[]
@@ -475,6 +491,10 @@ function assertTeacherRunActive(context: TeacherRunContext | undefined): void {
 
 function isCancellationError(error: unknown): boolean {
   return error instanceof TeacherRunCancelledError || /老师任务已停止|KataGo 分析已取消|AbortError|LLM 请求已取消/i.test(String(error))
+}
+
+function allowToolFirstVision(request: TeacherRunRequest): boolean {
+  return request.toolPolicy === 'auto' || request.toolPolicy === undefined
 }
 
 export function cancelTeacherRun(payload: { runId?: string } = {}): { cancelled: number } {
@@ -538,6 +558,19 @@ function arrayInput(input: JsonObject, key: string): string[] {
   return Array.isArray(value) ? value.map((item) => String(item).trim()).filter(Boolean) : []
 }
 
+function numberArrayInput(input: JsonObject, key: string): number[] {
+  const value = input[key]
+  if (!Array.isArray(value)) return []
+  return value
+    .map((item) => typeof item === 'number' ? item : typeof item === 'string' ? Number(item) : NaN)
+    .filter((item) => Number.isInteger(item) && item >= 0)
+}
+
+function pauseInteractiveKataGoWork(): void {
+  cancelKataGoAnalysis({ group: 'quick' })
+  cancelKataGoAnalysis({ group: 'live' })
+}
+
 function redactSensitiveText(text: string): string {
   const secretKeyPattern = '(?:api[_-]?key|apikey|llmApiKey|ttsCustomApiKey|ttsVolcengineApiKey|ttsVolcengineAccessToken|proxyApiKey|token|password|secret|authorization|github[_-]?token|gh[_-]?token|csc_link|apple_app_specific_password)'
   return text
@@ -573,6 +606,78 @@ function compactToolResult(value: unknown, maxChars = MAX_TOOL_RESULT_CHARS): st
     return redacted
   }
   return `${redacted.slice(0, maxChars)}\n\n[tool result truncated: ${redacted.length - maxChars} chars omitted]`
+}
+
+function stripImageData(image: TeacherBoardImageRenderImage): AgentToolImageResult {
+  return {
+    imageId: image.imageId,
+    gameId: image.gameId,
+    moveNumber: image.moveNumber,
+    caption: image.caption,
+    mimeType: image.mimeType,
+    bytes: image.bytes,
+    width: image.width,
+    height: image.height,
+    hash: image.hash,
+    source: 'tool-capture'
+  }
+}
+
+function toolImageRoleForState(state: TeacherAgentSessionState, imageCount: number): VisionEvidenceImageRole {
+  if (state.intent === 'current-move') return 'current-board'
+  if (state.intent === 'move-range') return 'range-key-move'
+  return imageCount > 1 ? 'range-key-move' : 'current-board'
+}
+
+function toolImageToVisionImage(
+  state: TeacherAgentSessionState,
+  image: TeacherBoardImageRenderImage,
+  index: number,
+  imageCount: number
+): VisionEvidenceImage {
+  return {
+    id: image.imageId,
+    index,
+    role: toolImageRoleForState(state, imageCount),
+    source: 'tool-capture',
+    moveNumber: image.moveNumber,
+    mimeType: image.mimeType,
+    bytes: image.bytes,
+    width: image.width,
+    height: image.height,
+    detail: 'high',
+    caption: image.caption,
+    valid: Boolean(image.dataUrl && image.dataUrl.startsWith('data:image/') && image.bytes > 0),
+    warnings: []
+  }
+}
+
+function appendToolCapturedVisionEvidence(state: TeacherAgentSessionState, images: TeacherBoardImageRenderImage[]): VisionEvidenceReport {
+  const existing = state.request.visionEvidence ?? buildVisionEvidenceReport(state.request, state.intent)
+  const existingImages = existing.images ?? []
+  const captured = images.map((image, offset) => toolImageToVisionImage(state, image, existingImages.length + offset, images.length))
+  const merged: VisionEvidenceReport = {
+    ...existing,
+    attached: existing.attached || captured.length > 0,
+    imageCount: existingImages.length + captured.length,
+    source: captured.length > 0 ? 'tool-capture' : existing.source,
+    images: [...existingImages, ...captured],
+    warnings: existing.warnings,
+    blockingIssues: existing.blockingIssues.filter((issue) => !/image|棋盘图|board/i.test(issue)),
+    createdAt: new Date().toISOString()
+  }
+  state.request.visionEvidence = merged
+  return merged
+}
+
+function toolImageMessages(images: TeacherBoardImageRenderImage[]): ChatMessage[] {
+  return images.map((image) => ({
+    role: 'user',
+    content: [
+      { type: 'text', text: `${image.caption}\n这是 board.captureTeachingImage 工具刚生成的棋盘图。请先观察这张图，再结合 KataGo 和知识库继续分析。` },
+      { type: 'image_url', image_url: { url: image.dataUrl, detail: 'high' } }
+    ] satisfies ChatContentPart[]
+  }))
 }
 
 function parseToolArguments(call: ChatToolCall): JsonObject {
@@ -710,7 +815,7 @@ function defaultArtifactTitleForState(state: TeacherAgentSessionState): string {
 function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
   const visionEvidence = state.request.visionEvidence ?? buildVisionEvidenceReport(state.request, state.intent)
   const visionValidation = validateVisionEvidenceForIntent(visionEvidence, state.intent)
-  if (!visionValidation.ok) {
+  if (!visionValidation.ok && !allowToolFirstVision(state.request)) {
     throw new Error(`棋盘图证据不完整：${visionValidation.blockingIssues.join('；')}`)
   }
   const currentGame = state.request.gameId ? getGames().find((game) => game.id === state.request.gameId) : undefined
@@ -742,11 +847,13 @@ function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
   }
   const text = [
     '任务说明：请根据 intent 完成用户请求。',
-    '如果 intent 是 current-move，请先观察随消息附带的棋盘图片，再调用 KataGo 和知识库工具核对事实。',
-    '如果 intent 是 game-review，请先观察随消息附带的当前棋盘图片，确认本局全局格局，再调用 sgf.readGameRecord 和 katago.analyzeGameBatch 复盘关键问题手。',
-    '如果 intent 是 move-range，请依次观察附带的区间关键手棋盘图片，先概括区间胜率/目差走势，再重点讲解 top-loss 关键手。',
+    '你可以自主调用工具获取棋谱、棋盘图、KataGo 数据、知识库和学生画像；不要等待程序替你预处理。',
+    'board.captureTeachingImage 是用来看棋盘图片的工具；拿到图后再调用 KataGo、调用知识库，匹配棋形、定式、死活、手筋或常见错误类型。',
+    '如果 intent 是 current-move，请调用 board.captureTeachingImage 获取当前手棋盘图，再调用 katago.analyzePosition 和 knowledge.matchPosition/searchLocal 核对事实。',
+    '如果 intent 是 game-review，请先调用 sgf.readGameRecord 和 katago.analyzeGameBatch 找关键问题手，再调用 board.captureTeachingImage(selection=top-loss,maxImages=3-6) 获取关键手图，最后调用知识库工具讲解。',
+    '如果 intent 是 move-range，请调用 katago.analyzeMoveRangeKeyMoves 精读区间关键手，再调用 board.captureTeachingImage(selection=move-range-top-loss,maxImages=3-6) 获取关键手图。',
     '当前手讲解要按工具返回的 teachingDensity 掌握详略：常规定式少讲；定式分支或相似型列关键变化；中盘战、攻杀、转换要讲目的、对方应手、后续变化和实战评价。',
-    'boardImageAttached=true 表示本轮用户消息已附棋盘图，请把图片中的棋形、厚薄、急所和全局方向作为局面判断依据。',
+    'boardImageAttached=true 表示本轮用户消息已附棋盘图；否则请先调用 board.captureTeachingImage。请把图片中的棋形、厚薄、急所和全局方向作为局面判断依据。',
     '如果 visionEvidence.attached=true，本轮已经提供棋盘图，严禁说“没有棋盘图”“看不到棋盘”“未提供图片”。',
     '如果 visionEvidence.required=true 但证据不完整，程序会阻止任务执行；你不需要猜测缺失图片。',
     formatVisionEvidenceForPrompt(visionEvidence),
@@ -979,6 +1086,101 @@ async function knowledgeBundleForState(state: TeacherAgentSessionState, input: J
   return { knowledge, knowledgeMatches, recommendedProblems, teachingPacing }
 }
 
+function analysisForMoveNumber(state: TeacherAgentSessionState, moveNumber: number): KataGoMoveAnalysis | undefined {
+  if (state.lastAnalysis?.moveNumber === moveNumber) return state.lastAnalysis
+  return state.rangeAnalyses?.find((analysis) => analysis.moveNumber === moveNumber)
+}
+
+function explicitMoveNumbers(input: JsonObject): number[] {
+  const direct = numberArrayInput(input, 'moveNumbers')
+  if (direct.length) return direct
+  const single = numberInput(input, 'moveNumber', Number.NaN)
+  return Number.isInteger(single) ? [single] : []
+}
+
+function selectCaptureMoveNumbers(
+  input: JsonObject,
+  state: TeacherAgentSessionState,
+  record: ReturnType<typeof readGameRecord>,
+  selection: BoardImageCaptureSelection,
+  maxImages: number
+): number[] {
+  const clamp = (moveNumber: number): number => Math.max(0, Math.min(record.moves.length, Math.round(moveNumber)))
+  if (selection === 'explicit-moves') {
+    return explicitMoveNumbers(input).map(clamp)
+  }
+  if (selection === 'top-loss') {
+    return state.batchIssues
+      .filter((issue) => issue.moveNumber > 0)
+      .sort((left, right) => right.loss - left.loss || left.moveNumber - right.moveNumber)
+      .slice(0, maxImages)
+      .map((issue) => clamp(issue.moveNumber))
+  }
+  if (selection === 'move-range-top-loss') {
+    return (state.rangeAnalyses ?? [])
+      .filter((analysis) => analysis.playedMove)
+      .sort((left, right) =>
+        (right.playedMove?.winrateLoss ?? 0) - (left.playedMove?.winrateLoss ?? 0) ||
+        (right.playedMove?.scoreLoss ?? 0) - (left.playedMove?.scoreLoss ?? 0) ||
+        left.moveNumber - right.moveNumber
+      )
+      .slice(0, maxImages)
+      .map((analysis) => clamp(analysis.moveNumber))
+  }
+  const current = explicitMoveNumbers(input)[0] ?? state.request.moveNumber ?? state.lastAnalysis?.moveNumber ?? record.moves.length
+  return [clamp(current)]
+}
+
+async function captureTeachingImagesForState(state: TeacherAgentSessionState, input: JsonObject): Promise<{
+  images: AgentToolImageResult[]
+  visionEvidence: VisionEvidenceReport
+}> {
+  if (!state.context?.captureBoardImages) {
+    throw new Error('当前窗口没有注册棋盘截图渲染器，无法生成棋盘图。')
+  }
+  const gameId = stringInput(input, 'gameId', state.request.gameId)
+  if (!gameId) throw new Error('board.captureTeachingImage 需要 gameId。')
+  const record = await ensureSessionRecord(state, gameId)
+  if (!record) throw new Error('没有可截图的棋谱。')
+  const rawSelection = stringInput(input, 'selection', 'current') as BoardImageCaptureSelection
+  const allowedSelections: BoardImageCaptureSelection[] = ['current', 'explicit-moves', 'top-loss', 'move-range-top-loss']
+  const selection = allowedSelections.includes(rawSelection) ? rawSelection : 'current'
+  const maxImages = numberInput(input, 'maxImages', selection === 'current' ? 1 : 6, 1, 6)
+  let moveNumbers = selectCaptureMoveNumbers(input, state, record, selection, maxImages)
+    .filter((moveNumber, index, all) => all.indexOf(moveNumber) === index)
+    .slice(0, maxImages)
+  if (!moveNumbers.length && selection !== 'current') {
+    moveNumbers = selectCaptureMoveNumbers(input, state, record, 'current', 1)
+  }
+  if (!moveNumbers.length) {
+    throw new Error('没有可截图的手数。请先读取棋谱或给出 moveNumber/moveNumbers。')
+  }
+  const captions = Object.fromEntries(moveNumbers.map((moveNumber, index) => {
+    const prefix = moveNumbers.length > 1 ? `关键手图 ${index + 1}` : '棋盘图'
+    return [moveNumber, `${prefix}: 第 ${moveNumber} 手；请结合这张棋盘图、KataGo 候选点和知识库匹配讲解。`]
+  }))
+  const analyses = moveNumbers
+    .map((moveNumber) => analysisForMoveNumber(state, moveNumber))
+    .filter((analysis): analysis is KataGoMoveAnalysis => Boolean(analysis))
+  const rendered = await state.context.captureBoardImages({
+    requestId: randomUUID(),
+    runId: state.id,
+    gameId,
+    moveNumbers,
+    captions,
+    analyses
+  })
+  if (!rendered.length) {
+    throw new Error('棋盘截图工具没有返回图片。')
+  }
+  const visionEvidence = appendToolCapturedVisionEvidence(state, rendered)
+  state.pendingToolMessages.push(...toolImageMessages(rendered))
+  return {
+    images: rendered.map(stripImageData),
+    visionEvidence
+  }
+}
+
 function dangerousShellCommand(command: string): string | null {
   const normalized = command.trim().toLowerCase()
   const patterns: Array<[RegExp, string]> = [
@@ -1138,10 +1340,13 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
         const prefetched = state.request.prefetchedAnalysis
         const analysis = prefetched?.gameId === gameId && prefetched.moveNumber === moveNumber
           ? prefetched
-          : await analyzePosition(gameId, moveNumber, numberInput(input, 'maxVisits', 520, 40, 3000), {
-              runId: state.id,
-              group: 'teacher'
-            })
+          : await (async () => {
+              pauseInteractiveKataGoWork()
+              return analyzePosition(gameId, moveNumber, numberInput(input, 'maxVisits', 520, 40, 3000), {
+                runId: state.id,
+                group: 'teacher'
+              })
+            })()
         assertTeacherRunActive(state.context)
         state.lastAnalysis = analysis
         state.teachingPacing = buildTeachingPacingAdvice(analysis)
@@ -1199,6 +1404,7 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
           assertTeacherRunActive(state.context)
           issues.push(...extractIssuesFromAnalyses(analyses, game, minWinrateDrop))
         }
+        state.batchIssues = issues
         return {
           studentName,
           analysisMode: 'fast-sweep-plus-key-move-refine',
@@ -1239,6 +1445,7 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
           throw new Error('没有可精读的区间关键手。请先提供 moveRangeSummary 或 moveNumbers。')
         }
         const analyses = []
+        pauseInteractiveKataGoWork()
         for (const moveNumber of selected) {
           assertTeacherRunActive(state.context)
           analyses.push(await analyzePosition(gameId, moveNumber, 500, {
@@ -1258,22 +1465,15 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
       apiName: 'board_captureTeachingImage',
       canonicalName: 'board.captureTeachingImage',
       label: '棋盘截图',
-      description: '确认当前棋盘截图是否已经作为图片输入提供给模型。',
-      parameters: schema({}),
-      execute: async () => {
-        const single = Boolean(state.request.boardImageDataUrl)
-        const multi = (state.request.boardImageDataUrls?.length ?? 0) > 0
-        return {
-          available: single || multi,
-          imageAttachedToConversation: single || multi,
-          imageCount: (state.request.boardImageDataUrls?.length ?? 0) + (single ? 1 : 0),
-          note: state.request.boardImageDataUrls?.length
-            ? `${state.request.boardImageDataUrls.length} 张区间关键手图片已在用户消息中随本轮对话发送。`
-            : state.request.boardImageDataUrl
-              ? '当前棋盘图片已在用户消息中随本轮对话发送。'
-              : '本轮没有棋盘图片。'
-        }
-      }
+      description: '生成当前手、指定手数、整盘 top-loss 或区间 top-loss 的棋盘截图，并把图片作为下一轮多模态输入回填给模型。',
+      parameters: schema({
+        gameId: { type: 'string' },
+        moveNumber: { type: 'number' },
+        moveNumbers: { type: 'array', items: { type: 'number' } },
+        selection: { type: 'string', enum: ['current', 'explicit-moves', 'top-loss', 'move-range-top-loss'] },
+        maxImages: { type: 'number' }
+      }),
+      execute: async (input) => captureTeachingImagesForState(state, input)
     },
     {
       apiName: 'knowledge_searchLocal',
@@ -1289,6 +1489,187 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
         maxResults: { type: 'number' }
       }),
       execute: async (input) => knowledgeBundleForState(state, input)
+    },
+    {
+      apiName: 'knowledge_matchPosition',
+      canonicalName: 'knowledge.matchPosition',
+      label: '匹配棋形',
+      description: '结合当前棋盘、KataGo 候选点、PV 和局部窗口匹配定式、死活、手筋、棋形与概念。',
+      parameters: schema({
+        text: { type: 'string' },
+        moveNumber: { type: 'number' },
+        playedMove: { type: 'string' },
+        candidateMoves: { type: 'array', items: { type: 'string' } },
+        principalVariation: { type: 'array', items: { type: 'string' } },
+        maxResults: { type: 'number' }
+      }),
+      execute: async (input) => knowledgeBundleForState(state, { ...input, maxResults: numberInput(input, 'maxResults', 6, 1, 8) })
+    },
+    {
+      apiName: 'knowledge_searchJoseki',
+      canonicalName: 'knowledge.searchJoseki',
+      label: '检索定式',
+      description: '优先检索本局相关的定式、布局分支、选择条件和常见误区。',
+      parameters: schema({
+        text: { type: 'string' },
+        moveNumber: { type: 'number' },
+        maxResults: { type: 'number' }
+      }),
+      execute: async (input) => {
+        const bundle = await knowledgeBundleForState(state, { ...input, text: `定式 joseki ${stringInput(input, 'text', state.request.prompt)}` })
+        return {
+          ...bundle,
+          knowledgeMatches: bundle.knowledgeMatches.filter((match) => match.matchType === 'joseki').slice(0, numberInput(input, 'maxResults', 4, 1, 8))
+        }
+      }
+    },
+    {
+      apiName: 'knowledge_searchLifeDeath',
+      canonicalName: 'knowledge.searchLifeDeath',
+      label: '检索死活',
+      description: '优先检索本局相关的死活题型、眼形、对杀、劫活和训练题。',
+      parameters: schema({
+        text: { type: 'string' },
+        moveNumber: { type: 'number' },
+        maxResults: { type: 'number' }
+      }),
+      execute: async (input) => {
+        const bundle = await knowledgeBundleForState(state, { ...input, text: `死活 life death ${stringInput(input, 'text', state.request.prompt)}` })
+        return {
+          ...bundle,
+          knowledgeMatches: bundle.knowledgeMatches.filter((match) => match.matchType === 'life_death').slice(0, numberInput(input, 'maxResults', 4, 1, 8))
+        }
+      }
+    },
+    {
+      apiName: 'knowledge_searchTesuji',
+      canonicalName: 'knowledge.searchTesuji',
+      label: '检索手筋',
+      description: '优先检索本局相关的手筋、筋形、攻击防守技巧和训练题。',
+      parameters: schema({
+        text: { type: 'string' },
+        moveNumber: { type: 'number' },
+        maxResults: { type: 'number' }
+      }),
+      execute: async (input) => {
+        const bundle = await knowledgeBundleForState(state, { ...input, text: `手筋 tesuji ${stringInput(input, 'text', state.request.prompt)}` })
+        return {
+          ...bundle,
+          knowledgeMatches: bundle.knowledgeMatches.filter((match) => match.matchType === 'tesuji').slice(0, numberInput(input, 'maxResults', 4, 1, 8))
+        }
+      }
+    },
+    {
+      apiName: 'knowledge_recommendProblems',
+      canonicalName: 'knowledge.recommendProblems',
+      label: '推荐训练题',
+      description: '基于当前知识匹配和学生画像推荐 2-4 道相关死活或手筋训练题。',
+      parameters: schema({
+        text: { type: 'string' },
+        moveNumber: { type: 'number' },
+        maxResults: { type: 'number' }
+      }),
+      execute: async (input) => {
+        const bundle = await knowledgeBundleForState(state, input)
+        const maxResults = numberInput(input, 'maxResults', 3, 1, 6)
+        return {
+          recommendedProblems: recommendedProblemsFromMatches(bundle.knowledgeMatches, maxResults, {
+            includeWeakFallback: true,
+            includeJosekiFallback: true,
+            includeDrillFallback: true
+          })
+        }
+      }
+    },
+    {
+      apiName: 'katago_getAnalysisCache',
+      canonicalName: 'katago.getAnalysisCache',
+      label: '读取分析缓存',
+      description: '读取本轮 agent 已经取得的 KataGo 单点、区间或整盘关键手摘要。',
+      parameters: schema({}),
+      execute: async () => ({
+        lastAnalysis: state.lastAnalysis ? compactAnalysis(state.lastAnalysis, state.record) : null,
+        rangeAnalyses: state.rangeAnalyses?.slice(0, 8).map((analysis) => compactAnalysis(analysis, state.record)) ?? [],
+        batchIssues: state.batchIssues.slice(0, 12).map((issue) => ({
+          gameId: issue.game.id,
+          moveNumber: issue.moveNumber,
+          playedMove: issue.playedMove,
+          bestMove: issue.bestMove,
+          winrateLoss: issue.loss,
+          scoreLoss: issue.scoreLead,
+          pv: issue.pv
+        }))
+      })
+    },
+    {
+      apiName: 'katago_getTracePacket',
+      canonicalName: 'katago.getTracePacket',
+      label: '读取搜索证据',
+      description: '获取指定局面的 KataGo tracePacket，解释 policy/value/search/PV/ownership/humanPolicy 信号。',
+      parameters: schema({
+        gameId: { type: 'string' },
+        moveNumber: { type: 'number' },
+        maxVisits: { type: 'number' }
+      }),
+      execute: async (input) => {
+        const gameId = stringInput(input, 'gameId', state.request.gameId)
+        if (!gameId) throw new Error('katago.getTracePacket 需要 gameId。')
+        const record = await ensureSessionRecord(state, gameId)
+        const moveNumber = numberInput(input, 'moveNumber', state.request.moveNumber ?? record?.moves.length ?? 0, 0, record?.moves.length ?? 400)
+        const cached = analysisForMoveNumber(state, moveNumber)
+        if (!cached) {
+          pauseInteractiveKataGoWork()
+        }
+        const analysis = cached ?? await analyzePosition(gameId, moveNumber, numberInput(input, 'maxVisits', 520, 40, 3000), {
+          runId: state.id,
+          group: 'teacher'
+        })
+        state.lastAnalysis = analysis
+        return {
+          gameId,
+          moveNumber,
+          tracePacket: analysis.tracePacket,
+          analysisQuality: analysis.analysisQuality,
+          teachingPacing: buildTeachingPacingAdvice(analysis)
+        }
+      }
+    },
+    {
+      apiName: 'katago_compareMoves',
+      canonicalName: 'katago.compareMoves',
+      label: '比较候选点',
+      description: '比较实战点、指定候选点和 KataGo 一选之间的胜率差、目差差、搜索数、PV 支撑。',
+      parameters: schema({
+        gameId: { type: 'string' },
+        moveNumber: { type: 'number' },
+        moves: { type: 'array', items: { type: 'string' } },
+        maxVisits: { type: 'number' }
+      }),
+      execute: async (input) => {
+        const gameId = stringInput(input, 'gameId', state.request.gameId)
+        if (!gameId) throw new Error('katago.compareMoves 需要 gameId。')
+        const record = await ensureSessionRecord(state, gameId)
+        const moveNumber = numberInput(input, 'moveNumber', state.request.moveNumber ?? record?.moves.length ?? 0, 0, record?.moves.length ?? 400)
+        const analysis = analysisForMoveNumber(state, moveNumber) ?? await analyzePosition(gameId, moveNumber, numberInput(input, 'maxVisits', 520, 40, 3000), {
+          runId: state.id,
+          group: 'teacher'
+        })
+        state.lastAnalysis = analysis
+        const requested = new Set(arrayInput(input, 'moves').map((move) => move.toUpperCase()))
+        const playerColor = analysis.currentMove?.color ?? 'B'
+        const top = analysis.before.topMoves[0]
+        return {
+          gameId,
+          moveNumber,
+          playedMove: compactPlayedMoveForColor(analysis.playedMove, playerColor),
+          bestMove: top ? compactCandidateForColor(top, playerColor, 1) : null,
+          requestedMoves: analysis.before.topMoves
+            .filter((candidate) => requested.size === 0 || requested.has(candidate.move.toUpperCase()))
+            .slice(0, requested.size ? 12 : 6)
+            .map((candidate, index) => compactCandidateForColor(candidate, playerColor, index + 1)),
+          tracePacket: analysis.tracePacket
+        }
+      }
     },
     {
       apiName: 'studentProfile_read',
@@ -1552,11 +1933,14 @@ async function executeAgentToolCall(
   call: ChatToolCall,
   tools: Map<string, TeacherAgentToolDefinition>,
   state: TeacherAgentSessionState
-): Promise<string> {
+): Promise<{ toolResult: string; followupMessages: ChatMessage[] }> {
   assertTeacherRunActive(state.context)
   const tool = tools.get(call.function.name)
   if (!tool) {
-    return compactToolResult({ ok: false, error: `Unknown tool: ${call.function.name}` })
+    return {
+      toolResult: compactToolResult({ ok: false, error: `Unknown tool: ${call.function.name}` }),
+      followupMessages: []
+    }
   }
   const log = startTool(state.logs, tool.canonicalName, tool.label, `调用 ${tool.canonicalName}`)
   emitToolState(state.context, state.logs, `正在执行 ${tool.canonicalName}`)
@@ -1565,7 +1949,11 @@ async function executeAgentToolCall(
     assertTeacherRunActive(state.context)
     finishTool(log, 'done', toolLogDetailFromResult(result))
     emitToolState(state.context, state.logs, `${tool.canonicalName} 已完成`)
-    return compactToolResult({ ok: true, tool: tool.canonicalName, result })
+    const followupMessages = state.pendingToolMessages.splice(0)
+    return {
+      toolResult: compactToolResult({ ok: true, tool: tool.canonicalName, result }),
+      followupMessages
+    }
   } catch (error) {
     if (isCancellationError(error)) {
       finishTool(log, 'skipped', '用户已停止本次分析。')
@@ -1575,7 +1963,11 @@ async function executeAgentToolCall(
     const detail = `工具失败: ${String(error)}`
     finishTool(log, 'error', detail)
     emitToolState(state.context, state.logs, detail)
-    return compactToolResult({ ok: false, tool: tool.canonicalName, error: String(error) })
+    state.pendingToolMessages.splice(0)
+    return {
+      toolResult: compactToolResult({ ok: false, tool: tool.canonicalName, error: String(error) }),
+      followupMessages: []
+    }
   }
 }
 
@@ -1588,7 +1980,7 @@ async function runTeacherAgentSession(
 ): Promise<TeacherRunResult> {
   const visionEvidence = request.visionEvidence ?? buildVisionEvidenceReport(request, intent)
   const visionValidation = validateVisionEvidenceForIntent(visionEvidence, intent)
-  if (!visionValidation.ok) {
+  if (!visionValidation.ok && !allowToolFirstVision(request)) {
     throw new Error(`棋盘图证据不完整：${visionValidation.blockingIssues.join('；')}`)
   }
   const indexedGame = request.gameId ? getGames().find((item) => item.id === request.gameId) : undefined
@@ -1603,6 +1995,8 @@ async function runTeacherAgentSession(
     context,
     studentName,
     profile,
+    batchIssues: [],
+    pendingToolMessages: [],
     knowledge: [],
     knowledgeMatches: [],
     recommendedProblems: [],
@@ -1645,13 +2039,14 @@ async function runTeacherAgentSession(
         tool_calls: result.toolCalls
       })
       for (const call of result.toolCalls) {
-        const toolResult = await executeAgentToolCall(call, toolMap, state)
+        const { toolResult, followupMessages } = await executeAgentToolCall(call, toolMap, state)
         messages.push({
           role: 'tool',
           name: call.function.name,
           tool_call_id: call.id,
           content: toolResult
         })
+        messages.push(...followupMessages)
       }
       continue
     }
@@ -1668,10 +2063,11 @@ async function runTeacherAgentSession(
   if (!finalText) {
     throw new Error('LLM 未生成最终回答。')
   }
-  const visionIssues = verifyVisionEvidenceMarkdown(finalText, visionEvidence)
+  const finalVisionEvidence = state.request.visionEvidence ?? visionEvidence
+  const visionIssues = verifyVisionEvidenceMarkdown(finalText, finalVisionEvidence)
   if (visionIssues.some((issue) => issue.severity === 'error')) {
     messages.push({ role: 'assistant', content: finalText })
-    messages.push({ role: 'user', content: `${buildVisionEvidenceRepairNote(visionIssues)}\n\n${formatVisionEvidenceForPrompt(visionEvidence)}` })
+    messages.push({ role: 'user', content: `${buildVisionEvidenceRepairNote(visionIssues)}\n\n${formatVisionEvidenceForPrompt(finalVisionEvidence)}` })
     const repair = await streamOpenAICompatibleToolTurn(settings, messages, tools, 2048, (delta) => {
       emitAssistantDelta(context, delta)
     }, context?.signal)
@@ -1682,7 +2078,7 @@ async function runTeacherAgentSession(
       throw new Error('LLM 在棋盘图证据修正阶段没有返回可展示文本。')
     }
     finalText = repair.text.trim()
-    const repairedIssues = verifyVisionEvidenceMarkdown(finalText, visionEvidence)
+    const repairedIssues = verifyVisionEvidenceMarkdown(finalText, finalVisionEvidence)
     if (repairedIssues.some((issue) => issue.severity === 'error')) {
       throw new Error(`棋盘图证据校验失败：${repairedIssues.map((issue) => issue.message).join('；')}`)
     }
@@ -1705,7 +2101,7 @@ async function runTeacherAgentSession(
     knowledgeMatches: state.knowledgeMatches,
     recommendedProblems: state.recommendedProblems,
     teachingPacing: state.teachingPacing,
-    visionEvidence,
+    visionEvidence: finalVisionEvidence,
     studentProfile: state.profile
   })
   const artifact = state.agentArtifact ?? runtimeArtifact
@@ -1718,7 +2114,7 @@ async function runTeacherAgentSession(
     knowledgeMatches: state.knowledgeMatches,
     recommendedProblems: state.recommendedProblems,
     teachingPacing: state.teachingPacing,
-    visionEvidence,
+    visionEvidence: finalVisionEvidence,
     studentProfile: state.profile,
     structured,
     artifact
@@ -1734,7 +2130,7 @@ async function runTeacherAgentSession(
     knowledgeMatches: state.knowledgeMatches,
     recommendedProblems: state.recommendedProblems,
     teachingPacing: state.teachingPacing,
-    visionEvidence,
+    visionEvidence: finalVisionEvidence,
     studentProfile: state.profile,
     structured,
     structuredResult: structured,
@@ -1743,7 +2139,7 @@ async function runTeacherAgentSession(
   }
 }
 
-export async function runTeacherTask(request: TeacherRunRequest, onProgress?: TeacherProgressEmitter): Promise<TeacherRunResult> {
+export async function runTeacherTask(request: TeacherRunRequest, onProgress?: TeacherProgressEmitter, options: RunTeacherTaskOptions = {}): Promise<TeacherRunResult> {
   const id = request.runId || randomUUID()
   const activeRun = {
     abortController: new AbortController(),
@@ -1754,6 +2150,7 @@ export async function runTeacherTask(request: TeacherRunRequest, onProgress?: Te
   const appSettings = getSettings()
   const normalizedRequest: TeacherRunRequest = {
     ...request,
+    toolPolicy: request.toolPolicy ?? 'auto',
     moveRange: parsedRange,
     coachLevel: normalizeCoachLevel(request.coachLevel ?? appSettings.defaultCoachLevel),
     studentAgeRange: normalizeStudentAgeRange(request.studentAgeRange ?? appSettings.defaultStudentAgeRange),
@@ -1775,7 +2172,8 @@ export async function runTeacherTask(request: TeacherRunRequest, onProgress?: Te
   const context: TeacherRunContext = {
     runId: id,
     emit: onProgress,
-    signal: activeRun.abortController.signal
+    signal: activeRun.abortController.signal,
+    captureBoardImages: options.captureBoardImages
   }
 
   try {

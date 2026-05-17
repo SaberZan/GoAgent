@@ -30,6 +30,8 @@ import type {
   StudentBindingSuggestion,
   StudentProfile,
   ReleaseReadinessResult,
+  TeacherBoardImageRenderRequest,
+  TeacherBoardImageRenderResponse,
   TeacherChatMessage,
   TeacherSession,
   TeacherRunCancelRequest,
@@ -109,6 +111,21 @@ const api = {
     const listener = (_event: Electron.IpcRendererEvent, payload: TeacherRunProgress): void => handler(payload)
     ipcRenderer.on('teacher:run-progress', listener)
     return () => ipcRenderer.removeListener('teacher:run-progress', listener)
+  },
+  onTeacherBoardImageRequest: (handler: (payload: TeacherBoardImageRenderRequest) => Promise<TeacherBoardImageRenderResponse> | TeacherBoardImageRenderResponse): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: TeacherBoardImageRenderRequest): void => {
+      Promise.resolve(handler(payload))
+        .then((response) => ipcRenderer.send('teacher:board-image-render-response', response))
+        .catch((error) => {
+          ipcRenderer.send('teacher:board-image-render-response', {
+            requestId: payload.requestId,
+            ok: false,
+            error: String(error)
+          } satisfies TeacherBoardImageRenderResponse)
+        })
+    }
+    ipcRenderer.on('teacher:board-image-render-request', listener)
+    return () => ipcRenderer.removeListener('teacher:board-image-render-request', listener)
   },
   testLlmSettings: (payload: LlmSettingsTestRequest): Promise<LlmSettingsTestResult> => ipcRenderer.invoke('llm:test', payload),
   listLlmModels: (payload: LlmModelsListRequest): Promise<LlmModelsListResult> => ipcRenderer.invoke('llm:list-models', payload),

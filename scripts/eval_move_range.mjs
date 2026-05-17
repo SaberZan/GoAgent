@@ -44,9 +44,10 @@ for (const token of [
 const app = readFileSync(join(root, 'src/renderer/src/App.tsx'), 'utf8')
 for (const token of [
   'handleTimelineRangeSelect',
-  'buildMoveRangeSummary',
-  'boardImageDataUrls',
-  'moveRangeSummary',
+  'runTeacherTaskWithStream',
+  "mode: 'move-range'",
+  'onTeacherBoardImageRequest',
+  'renderTeacherBoardImages',
   'validateMoveRange'
 ]) {
   if (!app.includes(token)) failures.push(`App missing ${token}`)

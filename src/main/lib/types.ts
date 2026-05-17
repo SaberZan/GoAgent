@@ -51,11 +51,13 @@ export interface TtsSynthesisResult {
 
 export type VisionEvidenceImageRole = 'current-board' | 'range-key-move' | 'variation' | 'unknown'
 export type VisionEvidenceDetail = 'high' | 'auto' | 'low'
+export type VisionEvidenceSource = 'initial-attachment' | 'tool-capture'
 
 export interface VisionEvidenceImage {
   id: string
   index: number
   role: VisionEvidenceImageRole
+  source?: VisionEvidenceSource
   moveNumber?: number
   mimeType: 'image/png' | 'image/jpeg' | 'unknown'
   bytes: number
@@ -72,6 +74,7 @@ export interface VisionEvidenceReport {
   attached: boolean
   imageCount: number
   providerSupportsVision: boolean | 'unknown'
+  source?: VisionEvidenceSource
   images: VisionEvidenceImage[]
   warnings: string[]
   blockingIssues: string[]
@@ -375,7 +378,51 @@ export type TeacherTerminologyDensity = 'low' | 'medium' | 'high'
 export type TeacherExplanationPace = 'brief' | 'standard' | 'detailed'
 export type TeacherVariationDetail = 'few' | 'moderate' | 'many'
 export type TeacherRunMode = 'current-move' | 'freeform' | 'move-range'
+export type TeacherToolPolicy = 'auto'
 export type TeacherToolStatus = 'running' | 'done' | 'error' | 'skipped'
+
+export type BoardImageCaptureSelection = 'current' | 'explicit-moves' | 'top-loss' | 'move-range-top-loss'
+
+export interface AgentToolImageResult {
+  imageId: string
+  gameId: string
+  moveNumber: number
+  caption: string
+  mimeType: 'image/png' | 'image/jpeg' | 'unknown'
+  bytes: number
+  width?: number
+  height?: number
+  hash?: string
+  source: VisionEvidenceSource
+}
+
+export interface AgentToolEvidenceRef {
+  id: string
+  kind: 'katago' | 'knowledge' | 'board-image' | 'sgf' | 'student-profile'
+  label: string
+  moveNumber?: number
+  confidence?: string
+}
+
+export interface TeacherBoardImageRenderRequest {
+  requestId: string
+  runId: string
+  gameId: string
+  moveNumbers: number[]
+  captions?: Record<number, string>
+  analyses?: KataGoMoveAnalysis[]
+}
+
+export interface TeacherBoardImageRenderImage extends AgentToolImageResult {
+  dataUrl: string
+}
+
+export interface TeacherBoardImageRenderResponse {
+  requestId: string
+  ok: boolean
+  images?: TeacherBoardImageRenderImage[]
+  error?: string
+}
 
 export interface TeacherToolLog {
   id: string
@@ -880,6 +927,7 @@ export interface MoveRangeReviewSummary {
 export interface TeacherRunRequest {
   runId?: string
   mode?: TeacherRunMode
+  toolPolicy?: TeacherToolPolicy
   prompt: string
   gameId?: string
   moveNumber?: number

@@ -6,6 +6,8 @@ QQ 群：1030632742，欢迎一起交流、提建议、完善 GoAgent。
 
 > v0.4.2 provides the Windows NVIDIA edition as `GoAgent-0.4.2-win-x64-nvidia-portable.zip`. The NVIDIA installer is not attached in this local release because the NSIS package is too large for reliable local compression; use the portable ZIP for NVIDIA runtime.
 
+> macOS packages are signed with an Apple Developer ID certificate. Notarization is not attached to this local release because Apple notarization waiting did not complete in time, so Gatekeeper may still ask for confirmation on first launch.
+
 ## 中文
 
 ### 下载前先选版本
@@ -17,6 +19,8 @@ QQ 群：1030632742，欢迎一起交流、提建议、完善 GoAgent。
 | Windows 普通版，OpenCL 推荐包 | `GoAgent-0.4.2-win-x64.exe` 或 `GoAgent-0.4.2-win-x64-portable.zip` |
 | Windows NVIDIA 专版 | `GoAgent-0.4.2-win-x64-nvidia-portable.zip` |
 | 校验文件 | `SHA256SUMS.txt` |
+
+macOS 安装包已使用 Apple Developer ID 签名；本机发布时 Apple 公证等待未及时完成，所以首次打开仍可能出现 Gatekeeper 提示。
 
 ### 本版重点
 

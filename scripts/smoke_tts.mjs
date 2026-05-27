@@ -199,8 +199,11 @@ function requireFile(path, label) {
 }
 
 requireFile(join(assetRoot, 'manifest.json'), 'Kokoro manifest')
-requireFile(join(assetRoot, 'onnx', 'model_int8.onnx'), 'Kokoro model')
-requireFile(join(assetRoot, 'onnx', 'model_quantized.onnx'), 'Kokoro runtime model')
+const smokeManifest = JSON.parse(readFileSync(join(assetRoot, 'manifest.json'), 'utf8'))
+requireFile(join(assetRoot, smokeManifest.modelFile || 'onnx/model_quantized.onnx'), 'Kokoro model')
+if (smokeManifest.runtimeModelFile && smokeManifest.runtimeModelFile !== smokeManifest.modelFile) {
+  requireFile(join(assetRoot, smokeManifest.runtimeModelFile), 'Kokoro runtime model')
+}
 requireFile(join(assetRoot, 'voices', 'zf_001.bin'), 'Kokoro default voice')
 
 async function strictSynthesizeSmoke() {

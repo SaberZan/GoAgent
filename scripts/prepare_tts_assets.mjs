@@ -9,7 +9,6 @@ const revision = '6cc0f0d2ebe369a68b0df87c2b65c1af8c0ac3e3'
 const base = `https://huggingface.co/onnx-community/Kokoro-82M-v1.1-zh-ONNX/resolve/${revision}`
 
 const assets = [
-  ['onnx/model_int8.onnx', 'onnx/model_int8.onnx'],
   // kokoro-js resolves q8 models to this filename at runtime.
   ['onnx/model_quantized.onnx', 'onnx/model_quantized.onnx'],
   ['config.json', 'config.json'],

@@ -5,7 +5,7 @@ import { basename, join } from 'node:path'
 import { appHome } from '@main/lib/store'
 import type { AppSettings, KataGoModelPreset, KataGoModelPresetId } from '@main/lib/types'
 
-export const DEFAULT_KATAGO_MODEL_PRESET: KataGoModelPresetId = 'official-b18-recommended'
+export const DEFAULT_KATAGO_MODEL_PRESET: KataGoModelPresetId = 'official-b28-strong'
 
 const OFFICIAL_NETWORKS_URL = 'https://katagotraining.org/networks/'
 const OFFICIAL_NETWORK_CDN = 'https://media.katagotraining.org/uploaded/networks/models/kata1/'
@@ -28,7 +28,7 @@ export const KATAGO_MODEL_PRESETS: KataGoModelPreset[] = [
     fileName: 'kata1-b18c384nbt-s9996604416-d4316597426.bin.gz',
     sourceUrl: OFFICIAL_NETWORKS_URL,
     downloadUrl: officialNetworkUrl('kata1-b18c384nbt-s9996604416-d4316597426.bin.gz'),
-    recommended: true
+    recommended: false
   },
   {
     id: 'official-b18-stable',
@@ -88,7 +88,7 @@ export const KATAGO_MODEL_PRESETS: KataGoModelPreset[] = [
     fileName: 'kata1-zhizi-b28c512nbt-muonfd2.bin.gz',
     sourceUrl: OFFICIAL_NETWORKS_URL,
     downloadUrl: officialNetworkUrl('kata1-zhizi-b28c512nbt-muonfd2.bin.gz'),
-    recommended: false
+    recommended: true
   },
   {
     id: 'official-b28-latest',
@@ -211,7 +211,11 @@ function escapeRegExp(value: string): string {
 }
 
 export function getKataGoModelPreset(id?: string): KataGoModelPreset {
-  return KATAGO_MODEL_PRESETS.find((preset) => preset.id === id) ?? KATAGO_MODEL_PRESETS[0]
+  return (
+    KATAGO_MODEL_PRESETS.find((preset) => preset.id === id) ??
+    KATAGO_MODEL_PRESETS.find((preset) => preset.id === DEFAULT_KATAGO_MODEL_PRESET) ??
+    KATAGO_MODEL_PRESETS[0]
+  )
 }
 
 function resourceRoots(): string[] {

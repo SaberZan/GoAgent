@@ -127,7 +127,8 @@
         "from": "data/tts",
         "to": "data/tts",
         "filter": [
-          "**/*"
+          "**/*",
+          "!kokoro/zh-CN/onnx/model_int8.onnx"
         ]
       }
     ],
@@ -164,6 +165,15 @@
     "win": {
       "icon": "assets/icon.ico",
       "artifactName": "${productName}-${version}-${os}-${arch}-portable.${ext}",
+      "files": [
+        "!**/node_modules/onnxruntime-node/bin/napi-v3/darwin/**",
+        "!**/node_modules/onnxruntime-node/bin/napi-v3/linux/**",
+        "!**/node_modules/onnxruntime-node/bin/napi-v3/win32/arm64/**",
+        "!**/node_modules/@img/sharp-darwin-*/*",
+        "!**/node_modules/@img/sharp-libvips-darwin-*/*",
+        "!**/node_modules/@img/sharp-linux-*/*",
+        "!**/node_modules/@img/sharp-libvips-linux-*/*"
+      ],
       "target": [
         {
           "target": "nsis",

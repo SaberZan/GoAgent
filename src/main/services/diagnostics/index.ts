@@ -88,7 +88,7 @@ async function checkKatagoModel(): Promise<DiagnosticCheck> {
       required,
       detail: '未找到默认 KataGo 模型。',
       action: required
-        ? 'P0 安装包应该内置 b18 默认模型；请确认 data/katago/models 中存在默认模型文件。'
+        ? '安装包应该内置默认 KataGo 模型；请确认 data/katago/models 中存在默认模型文件。'
         : '开发环境可先保留 manifest，通过资源准备脚本或 CI release artifact 注入模型。'
     }
   }

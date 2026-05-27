@@ -30,13 +30,13 @@ if (!existsSync(manifestPath)) {
   for (const [key, expected] of [['provider', 'kokoro-bundled'], ['language', 'zh-CN'], ['license', 'Apache-2.0']]) {
     if (manifest[key] !== expected) failures.push(`manifest ${key} must be ${expected}`)
   }
-  const modelPath = join(dir, manifest.modelFile ?? 'onnx/model_int8.onnx')
+  const modelPath = join(dir, manifest.modelFile ?? 'onnx/model_quantized.onnx')
   checkFileSha(modelPath, manifest.modelSha256, 'Kokoro ONNX model')
   if (existsSync(modelPath)) {
     const sizeMb = statSync(modelPath).size / 1024 / 1024
     if (sizeMb < 100 || sizeMb > 180) failures.push(`unexpected Kokoro model size: ${sizeMb.toFixed(1)} MB`)
   }
-  const runtimeModelPath = join(dir, manifest.runtimeModelFile ?? 'onnx/model_quantized.onnx')
+  const runtimeModelPath = join(dir, manifest.runtimeModelFile ?? manifest.modelFile ?? 'onnx/model_quantized.onnx')
   checkFileSha(runtimeModelPath, manifest.runtimeModelSha256, 'Kokoro runtime ONNX model')
   if (existsSync(runtimeModelPath)) {
     const sizeMb = statSync(runtimeModelPath).size / 1024 / 1024

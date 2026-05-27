@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const root = process.cwd()
@@ -10,7 +10,14 @@ if (!existsSync(knowledge)) {
 
 const platform = `${process.platform}-${process.arch}`
 const binary = join(root, 'data', 'katago', 'bin', platform, process.platform === 'win32' ? 'katago.exe' : 'katago')
-const model = join(root, 'data', 'katago', 'models', 'kata1-b18c384nbt-s9996604416-d4316597426.bin.gz')
+const manifestPath = join(root, 'data', 'katago', 'manifest.json')
+const manifest = existsSync(manifestPath) ? JSON.parse(readFileSync(manifestPath, 'utf8')) : null
+const model = join(
+  root,
+  'data',
+  'katago',
+  manifest?.modelPath ?? join('models', 'kata1-zhizi-b28c512nbt-muonfd2.bin.gz')
+)
 
 console.log(`Knowledge cards: ${knowledge}`)
 console.log(`Expected KataGo binary: ${binary}`)

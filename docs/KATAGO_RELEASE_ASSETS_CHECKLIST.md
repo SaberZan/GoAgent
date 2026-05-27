@@ -3,7 +3,7 @@
 ## P0 策略
 
 - 不把大 binary/model 普通 Git 提交。
-- Release 时准备平台对应 binary 和默认 b18 model。
+- Release 时准备平台对应 binary 和 manifest 指定的默认模型。
 - 安装包必须包含运行所需资源。
 - P0 beta 支持 macOS arm64/x64 和 Windows x64。Windows ARM64 暂不支持。
 - v0.3.7 起发布 Windows NVIDIA 专版，必须复制完整 CUDA/NVIDIA runtime 目录，不能只把普通 Windows 包改名。
@@ -18,11 +18,11 @@ data/katago/
     darwin-x64/katago
     win32-x64/katago.exe
   models/
-    <default-b18-model>.bin.gz
+    <default-model>.bin.gz
   edition.json        # packaging-time metadata, not committed
 ```
 
-Windows NVIDIA 专版允许保留来源模型文件名，例如：
+Windows NVIDIA 专版默认使用 zhizi b28，并允许保留来源模型文件名，例如：
 
 ```text
 data/katago/models/kata1-zhizi-b28c512nbt-muonfd2.bin.gz

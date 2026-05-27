@@ -24,7 +24,7 @@ const defaults: AppSettings = {
   katagoBin: '',
   katagoConfig: '',
   katagoModel: '',
-  katagoModelPreset: 'official-b18-recommended',
+  katagoModelPreset: 'official-b28-strong',
   katagoAnalysisThreads: 0,
   katagoSearchThreadsPerAnalysisThread: 1,
   katagoMaxBatchSize: 32,

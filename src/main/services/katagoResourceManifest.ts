@@ -21,9 +21,9 @@ export function expectedBundledManifest(): KataGoResourceManifest {
   return {
     platformKey,
     binaryRelativePath: join('bin', platformKey, binaryFileName()),
-    defaultModelRelativePath: join('models', 'kata1-b18c384nbt-s9996604416-d4316597426.bin.gz'),
+    defaultModelRelativePath: join('models', 'kata1-zhizi-b28c512nbt-muonfd2.bin.gz'),
     optionalModelRelativePaths: [
-      join('models', 'kata1-zhizi-b28c512nbt-muonfd2.bin.gz')
+      join('models', 'kata1-b18c384nbt-s9996604416-d4316597426.bin.gz')
     ]
   }
 }

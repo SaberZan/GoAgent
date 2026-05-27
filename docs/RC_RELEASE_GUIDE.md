@@ -38,7 +38,7 @@ Release 前必须在 runner 或本地准备：
 data/katago/bin/darwin-arm64/katago
 data/katago/bin/darwin-x64/katago
 data/katago/bin/win32-x64/katago.exe
-data/katago/models/<default-b18-model>.bin.gz
+data/katago/models/<default-model>.bin.gz
 ```
 
 Windows ARM64 暂不支持。不要发布 `win-arm64` 安装包，除非后续补齐 `data/katago/bin/win32-arm64/katago.exe`、manifest 支持和 release 检查。

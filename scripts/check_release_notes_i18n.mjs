@@ -28,6 +28,7 @@ const requiredAssets = [
   `GoAgent-${version}-win-x64-portable.zip`,
   `GoAgent-${version}-win-x64.exe`,
   `GoAgent-${version}-win-x64-nvidia.exe`,
+  `GoAgent-${version}-win-x64-nvidia-portable.zip`,
   'SHA256SUMS.txt'
 ]
 const requiredTopics = [

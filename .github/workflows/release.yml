@@ -285,7 +285,11 @@ jobs:
             echo "Downloading zhizi b28 from ${ZHIZI_B28_URL}"
             curl -fsSL --retry 3 --retry-delay 5 "${ZHIZI_B28_URL}" -o "${target}"
           fi
-          node scripts/prepare_katago_assets.mjs --extra-model="${target}"
+          node scripts/select_default_katago_model.mjs \
+            --model="${target}" \
+            --id=official-b28-strong \
+            --display-name="KataGo zhizi b28 Official Strongest" \
+            --prune
 
       - name: Package desktop app
         shell: bash
@@ -453,7 +457,11 @@ jobs:
             echo "Downloading zhizi b28 from ${ZHIZI_B28_URL}"
             curl -fsSL --retry 3 --retry-delay 5 "${ZHIZI_B28_URL}" -o "${target}"
           fi
-          node scripts/prepare_katago_assets.mjs --extra-model="${target}"
+          node scripts/select_default_katago_model.mjs \
+            --model="${target}" \
+            --id=official-b28-strong \
+            --display-name="KataGo zhizi b28 Official Strongest" \
+            --prune
 
       - name: Package NVIDIA desktop app
         shell: bash
@@ -476,10 +484,9 @@ jobs:
           $releaseDir = Join-Path "release" $version
           $portable = Get-ChildItem -Path $releaseDir -Filter "GoAgent-$version-win-x64-portable.zip" -File | Select-Object -First 1
           $installer = Get-ChildItem -Path $releaseDir -Filter "GoAgent-$version-win-x64.exe" -File | Select-Object -First 1
+          if (-not $portable) { throw "Missing NVIDIA portable ZIP before rename." }
           if (-not $installer) { throw "Missing NVIDIA installer EXE before rename." }
-          if ($portable) {
-            Remove-Item -LiteralPath $portable.FullName -Force
-          }
+          Rename-Item -LiteralPath $portable.FullName -NewName "GoAgent-$version-win-x64-nvidia-portable.zip" -Force
           Rename-Item -LiteralPath $installer.FullName -NewName "GoAgent-$version-win-x64-nvidia.exe" -Force
 
       - name: Upload NVIDIA packaged artifacts
@@ -488,6 +495,7 @@ jobs:
           name: GoAgent-Windows-NVIDIA
           path: |
             release/**/*nvidia*.exe
+            release/**/*nvidia*.zip
           if-no-files-found: error
 
   github-release:
@@ -518,6 +526,7 @@ jobs:
             artifacts/**/GoAgent-*-mac-x64.dmg
             artifacts/**/GoAgent-*-win-x64-portable.zip
             artifacts/**/GoAgent-*-win-x64.exe
+            artifacts/**/GoAgent-*-win-x64-nvidia-portable.zip
             artifacts/**/GoAgent-*-win-x64-nvidia.exe
           )
           if [[ ${#files[@]} -eq 0 ]]; then
@@ -536,6 +545,7 @@ jobs:
             artifacts/**/GoAgent-*-mac-x64.dmg
             artifacts/**/GoAgent-*-win-x64-portable.zip
             artifacts/**/GoAgent-*-win-x64.exe
+            artifacts/**/GoAgent-*-win-x64-nvidia-portable.zip
             artifacts/**/GoAgent-*-win-x64-nvidia.exe
             artifacts/SHA256SUMS.txt
           body_path: docs/RELEASE_NOTES_${{ github.ref_name }}.md

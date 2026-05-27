@@ -1,9 +1,9 @@
 {
   "version": 1,
-  "defaultModelId": "official-b18-recommended",
-  "defaultModelFileName": "kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
-  "defaultModelDisplayName": "KataGo b18 Recommended",
-  "modelPath": "models/kata1-b18c384nbt-s9996604416-d4316597426.bin.gz",
+  "defaultModelId": "official-b28-strong",
+  "defaultModelFileName": "kata1-zhizi-b28c512nbt-muonfd2.bin.gz",
+  "defaultModelDisplayName": "KataGo zhizi b28 Official Strongest",
+  "modelPath": "models/kata1-zhizi-b28c512nbt-muonfd2.bin.gz",
   "modelSha256": "",
   "supportedPlatforms": {
     "darwin-arm64": {

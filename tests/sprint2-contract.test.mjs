@@ -7,8 +7,8 @@ const root = process.cwd()
 
 test('katago manifest includes P0 platform assets', async () => {
   const manifest = JSON.parse(await readFile(join(root, 'data/katago/manifest.json'), 'utf8'))
-  assert.equal(manifest.defaultModelId, 'official-b18-recommended')
-  assert.ok(manifest.modelPath.includes('models/'))
+  assert.equal(manifest.defaultModelId, 'official-b28-strong')
+  assert.match(manifest.modelPath, /^models\/.+\.bin\.gz$/)
   assert.ok(manifest.supportedPlatforms['darwin-arm64'])
   assert.ok(manifest.supportedPlatforms['darwin-x64'])
   assert.ok(manifest.supportedPlatforms['win32-x64'])

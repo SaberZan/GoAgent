@@ -72,7 +72,7 @@ if (mode === 'release') {
   if (winX64Installer.length === 0) failures.push('No Windows x64 installer found')
   if (winX64PortableZip.length === 0) failures.push('No Windows x64 portable ZIP found')
   if (winX64NvidiaInstaller.length === 0) failures.push('No Windows NVIDIA x64 installer found')
-  if (winX64NvidiaPortableZip.length > 0) warnings.push('Windows NVIDIA portable ZIP is no longer published to GitHub releases because it can exceed the 2 GB single-asset limit')
+  if (winX64NvidiaPortableZip.length === 0) failures.push('No Windows NVIDIA x64 portable ZIP found')
   if (winPortableExe.length > 0) failures.push(`Windows portable artifact must be a ZIP, not an EXE: ${winPortableExe.map((file) => file.replace(root + '/', '')).join(', ')}`)
   if (winArm64.length > 0) failures.push(`Windows ARM64 artifacts are not supported for P0 beta: ${winArm64.map((file) => file.replace(root + '/', '')).join(', ')}`)
   if (tiny.length > 0) failures.push(`Artifact too small: ${tiny.map((file) => file.replace(root + '/', '')).join(', ')}`)

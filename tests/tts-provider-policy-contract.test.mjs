@@ -70,8 +70,8 @@ test('Kokoro bundled assets and scripts are wired', () => {
   assert.equal(manifest.provider, 'kokoro-bundled')
   assert.equal(manifest.language, 'zh-CN')
   assert.equal(manifest.license, 'Apache-2.0')
-  assert.match(manifest.modelFile, /model_int8\.onnx/)
-  assert.match(manifest.runtimeModelFile, /model_quantized\.onnx/)
+  assert.match(manifest.modelFile, /model_quantized\.onnx/)
+  assert.equal(manifest.runtimeModelFile, manifest.modelFile)
 })
 
 test('Kokoro zh-CN synthesis does not route Chinese text through the English phonemizer', () => {

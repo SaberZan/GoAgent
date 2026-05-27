@@ -19,16 +19,14 @@ The default bundled Chinese voice pack is based on:
 
 ```text
 onnx-community/Kokoro-82M-v1.1-zh-ONNX
-onnx/model_int8.onnx
 onnx/model_quantized.onnx
 ```
 
 The expected model size is about 127 MB and the expected SHA256 is recorded in
 `data/tts/kokoro/zh-CN/manifest.json`.
 
-`model_int8.onnx` is kept as the source asset requested by the release manifest.
-`model_quantized.onnx` is the exact filename resolved by `kokoro-js` when the
-selected bundled provider runs with `q8`.
+`model_quantized.onnx` is the packaged runtime model used by the bundled
+provider. GoAgent does not bundle a duplicate ONNX file in release packages.
 
 Large binary assets are not stored in ordinary text patches. Prepare them before
 release packaging:

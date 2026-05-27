@@ -475,20 +475,18 @@ jobs:
               unset "${name}"
             fi
           done
-          pnpm dist:win
+          pnpm build
+          pnpm exec electron-builder --win nsis --publish never
 
       - name: Rename NVIDIA artifacts
         shell: pwsh
         run: |
           $version = node -p "JSON.parse(require('fs').readFileSync('package.json','utf8')).version"
           $releaseDir = Join-Path "release" $version
-          $portable = Get-ChildItem -Path $releaseDir -Filter "GoAgent-$version-win-x64-portable.zip" -File | Select-Object -First 1
           $installer = Get-ChildItem -Path $releaseDir -Filter "GoAgent-$version-win-x64.exe" -File | Select-Object -First 1
           $unpackedDir = Join-Path $releaseDir "win-unpacked"
-          if (-not $portable) { throw "Missing NVIDIA portable ZIP before rename." }
           if (-not $installer) { throw "Missing NVIDIA installer EXE before rename." }
           if (-not (Test-Path $unpackedDir)) { throw "Missing win-unpacked directory for NVIDIA portable recompression." }
-          Remove-Item -LiteralPath $portable.FullName -Force
           Push-Location $releaseDir
           & 7z a -tzip -mx=9 "GoAgent-$version-win-x64-nvidia-portable.zip" ".\win-unpacked\*" | Out-Host
           Pop-Location

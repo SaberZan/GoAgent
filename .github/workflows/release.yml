@@ -484,10 +484,22 @@ jobs:
           $releaseDir = Join-Path "release" $version
           $portable = Get-ChildItem -Path $releaseDir -Filter "GoAgent-$version-win-x64-portable.zip" -File | Select-Object -First 1
           $installer = Get-ChildItem -Path $releaseDir -Filter "GoAgent-$version-win-x64.exe" -File | Select-Object -First 1
+          $unpackedDir = Join-Path $releaseDir "win-unpacked"
           if (-not $portable) { throw "Missing NVIDIA portable ZIP before rename." }
           if (-not $installer) { throw "Missing NVIDIA installer EXE before rename." }
-          Rename-Item -LiteralPath $portable.FullName -NewName "GoAgent-$version-win-x64-nvidia-portable.zip" -Force
+          if (-not (Test-Path $unpackedDir)) { throw "Missing win-unpacked directory for NVIDIA portable recompression." }
+          Remove-Item -LiteralPath $portable.FullName -Force
+          Push-Location $releaseDir
+          & 7z a -tzip -mx=9 "GoAgent-$version-win-x64-nvidia-portable.zip" ".\win-unpacked\*" | Out-Host
+          Pop-Location
           Rename-Item -LiteralPath $installer.FullName -NewName "GoAgent-$version-win-x64-nvidia.exe" -Force
+          $nvidiaPortable = Get-Item (Join-Path $releaseDir "GoAgent-$version-win-x64-nvidia-portable.zip")
+          $nvidiaInstaller = Get-Item (Join-Path $releaseDir "GoAgent-$version-win-x64-nvidia.exe")
+          Write-Host "NVIDIA portable ZIP bytes: $($nvidiaPortable.Length)"
+          Write-Host "NVIDIA installer EXE bytes: $($nvidiaInstaller.Length)"
+          if ($nvidiaPortable.Length -ge 2147483648) {
+            throw "NVIDIA portable ZIP exceeds GitHub's 2 GiB asset limit: $($nvidiaPortable.Length)"
+          }
 
       - name: Upload NVIDIA packaged artifacts
         uses: actions/upload-artifact@v4

@@ -93,6 +93,8 @@ export interface AppSettings {
   katagoBenchmarkThreads: number
   katagoBenchmarkVisitsPerSecond: number
   katagoBenchmarkUpdatedAt: string
+  katagoEngineMode: KataGoEngineMode
+  katagoAnalysisSpeedMode: KataGoAnalysisSpeedMode
   pythonBin: string
   llmBaseUrl: string
   llmApiKey: string
@@ -138,6 +140,8 @@ export interface AppSettings {
   teacherVariationDetail: TeacherVariationDetail
 }
 
+export type KataGoEngineMode = 'auto' | 'persistent' | 'spawn'
+export type KataGoAnalysisSpeedMode = 'auto' | 'fast' | 'balanced' | 'deep'
 export type KataGoModelPresetId = string
 
 export interface KataGoModelPreset {
@@ -658,6 +662,83 @@ export interface AnalysisQuality {
   deepenRecommended: boolean
 }
 
+export type MoveClassificationSeverity = 'good' | 'inaccuracy' | 'mistake' | 'blunder' | 'unclear'
+
+export interface MoveClassification {
+  severity: MoveClassificationSeverity
+  confidence: AnalysisConfidence
+  phase: AnalysisQuality['phase']
+  winrateLoss: number
+  scoreLoss: number
+  shouldTeach: boolean
+  shouldDeepen: boolean
+  reason: string
+  evidenceWarnings: string[]
+}
+
+export type PvConfidenceLevel = 'strong' | 'medium' | 'weak' | 'unstable'
+
+export interface PvConfidenceCandidate {
+  move: string
+  rank: number
+  level: PvConfidenceLevel
+  visits: number
+  pvLength: number
+  pvVisitsTotal?: number
+  reason: string
+}
+
+export interface PvConfidenceReport {
+  overall: PvConfidenceLevel
+  stableMainLine: boolean
+  shouldDeepen: boolean
+  summary: string
+  recommendedWording: string
+  candidates: PvConfidenceCandidate[]
+}
+
+export type AnalysisRuntimeCacheStatus =
+  | 'hit'
+  | 'miss'
+  | 'stale'
+  | 'lower-quality'
+  | 'schema-mismatch'
+  | 'corrupt'
+  | 'written'
+  | 'disabled'
+
+export interface AnalysisRuntimeProfileSummary {
+  intent: string
+  speedMode: KataGoAnalysisSpeedMode
+  maxVisits: number
+  sweepVisits: number
+  refineVisits: number
+  refineTopN: number
+  cacheTier: string
+  includeOwnership: boolean
+  includePolicy: boolean
+  reason: string[]
+}
+
+export interface AnalysisRuntimeEvidence {
+  cacheStatus: AnalysisRuntimeCacheStatus
+  cacheTier: string
+  cacheKey?: string
+  cacheReason: string
+  adaptiveProfile: AnalysisRuntimeProfileSummary
+  teachingReadiness?: {
+    level: string
+    canTeachNow: boolean
+    canUseInFinalReport: boolean
+    shouldDeepen: boolean
+    safeWording: string
+    warnings: string[]
+    blockingIssues: string[]
+  }
+  evidenceBundleVersion?: number
+  generatedAt: string
+}
+
 export interface HumanWinrateCalibration {
   aiWinrate?: number
   humanWinrateEstimate?: number
@@ -713,6 +794,9 @@ export interface KataGoMoveAnalysis {
   }
   judgement: 'good_move' | 'inaccuracy' | 'mistake' | 'blunder' | 'unknown'
   analysisQuality?: AnalysisQuality
+  moveClassification?: MoveClassification
+  pvConfidence?: PvConfidenceReport
+  runtimeEvidence?: AnalysisRuntimeEvidence
   humanCalibration?: HumanWinrateCalibration
   ownershipSummary?: OwnershipDeltaSummary
   tacticalSignals?: TacticalSignal[]

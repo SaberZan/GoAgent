@@ -47,6 +47,7 @@ import { parseStructuredTeacherResult } from './teacher/structuredResultParser'
 import { classifyTeacherIntent, type TeacherIntent } from './teacher/intentClassifier'
 import { buildTeachingPacingAdvice } from './teacher/teachingEvidence'
 import { buildTeacherArtifact, validateTeachingArtifact } from './teacher/teachingArtifact'
+import { buildTeachingEvidenceBundle, formatTeachingEvidenceBundleForPrompt } from './teacher/evidenceBundle'
 import { scoreLeadForColor, scoreSummaryFromBlackLead } from './teacher/scorePerspective'
 import {
   buildTeacherPersonaInstruction,
@@ -344,6 +345,8 @@ function systemPrompt(level: CoachUserLevel): string {
     '如果 KataGo 结果包含 tracePacket，优先使用 tracePacket.searchSummary、candidateComparison、policySearchDelta、pvSupport、ownershipSummary、humanPolicySignals 和 shallowSearchTree 来解释“为什么”。',
     'tracePacket 是给老师的搜索证据摘要，不要把原始 MCTS/搜索字段生硬堆给学生；请翻译成“自然但被搜索否定”“不直观但搜索支持”“PV 支撑弱所以只能参考”等教学语言。',
     '如果 tracePacket 的置信度或 PV 支撑不足，必须降级措辞，不能说唯一、必杀、必败或绝对。',
+    '如果工具结果包含 runtimeEvidence.teachingReadiness，必须遵守其中的 level、shouldDeepen、safeWording、warnings 和 blockingIssues。',
+    '如果 runtimeEvidence.cacheStatus 是 hit，可以说明这是已缓存证据；如果是 written/miss/lower-quality，要说明当前证据是本次分析或仍需加深。',
     '讲胜负、领先、落后和目数时，优先使用工具结果里的 teacherScore.text；没有 teacherScore 时再使用 scoreSummary.text/leader/leadPoints。blackScoreLead 是黑棋为正，负数表示白棋领先，不要自己用裸 scoreLead 符号猜胜负。',
     '内部核验时仍可用 scoreSummary.leader 和 scoreSummary.leadPoints 判断方向和数字，但对学生优先输出 teacherScore.text 这种简洁说法。',
     '棋谱的 result / game.result / rawResult 是终局记录，不是 KataGo 当前目差；Fox 数字结果还有平台口径换算，只有 resultSummary.displayLeadPoints / comparisonLeadPoints 才能和 KataGo/LizzieYzy 风格的目差比较。',
@@ -980,6 +983,7 @@ function compactAnalysis(
   record?: ReturnType<typeof readGameRecord>
 ): JsonObject {
   const teachingPacing = buildTeachingPacingAdvice(analysis)
+  const teachingEvidenceBundle = buildTeachingEvidenceBundle({ analysis })
   const playerColor = analysis.currentMove?.color ?? 'B'
   const afterSideToMoveColor = analysis.currentMove ? oppositeColor(analysis.currentMove.color) : playerColor
   return {
@@ -1019,7 +1023,11 @@ function compactAnalysis(
     },
     playedMove: compactPlayedMoveForColor(analysis.playedMove, playerColor),
     analysisQuality: analysis.analysisQuality,
+    moveClassification: analysis.moveClassification,
+    pvConfidence: analysis.pvConfidence,
     tracePacket: analysis.tracePacket,
+    teachingEvidenceBundle,
+    teachingEvidenceSummary: formatTeachingEvidenceBundleForPrompt(teachingEvidenceBundle),
     humanCalibration: analysis.humanCalibration,
     ownershipSummary: analysis.ownershipSummary,
     tacticalSignals: analysis.tacticalSignals,

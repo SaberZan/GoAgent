@@ -4,6 +4,18 @@ All notable changes to GoAgent will be documented here.
 
 This project follows semantic versioning once public releases begin.
 
+## 0.4.3 - Adaptive Analysis Runtime and Review Evidence
+
+### Added
+
+- Wired the adaptive analysis runtime into KataGo position, streaming position, and quick game analysis paths.
+- Added main-side analysis cache metadata, adaptive analysis profiles, teaching readiness gates, and runtime evidence so teacher output can distinguish cache hits, lower-quality evidence, and cases that should be deepened.
+- Added move classification 2.0, PV confidence, evidence bundles, timeline review models, and board variation playback helpers as the foundation for sharper review interactions.
+
+### Maintained
+
+- Keeps the v0.4.2 Tool-first Agent flow, Vision Evidence Chain, KataGo Trace Translator, local knowledge tools, TTS provider policy, and release artifact smoke checks.
+
 ## 0.4.1 - Hotfix: freeform chat unblocked + KataGo timeout buffer
 
 ### Fixed

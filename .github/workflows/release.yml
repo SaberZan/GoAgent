@@ -476,9 +476,10 @@ jobs:
           $releaseDir = Join-Path "release" $version
           $portable = Get-ChildItem -Path $releaseDir -Filter "GoAgent-$version-win-x64-portable.zip" -File | Select-Object -First 1
           $installer = Get-ChildItem -Path $releaseDir -Filter "GoAgent-$version-win-x64.exe" -File | Select-Object -First 1
-          if (-not $portable) { throw "Missing NVIDIA portable ZIP before rename." }
           if (-not $installer) { throw "Missing NVIDIA installer EXE before rename." }
-          Rename-Item -LiteralPath $portable.FullName -NewName "GoAgent-$version-win-x64-nvidia-portable.zip" -Force
+          if ($portable) {
+            Remove-Item -LiteralPath $portable.FullName -Force
+          }
           Rename-Item -LiteralPath $installer.FullName -NewName "GoAgent-$version-win-x64-nvidia.exe" -Force
 
       - name: Upload NVIDIA packaged artifacts
@@ -487,7 +488,6 @@ jobs:
           name: GoAgent-Windows-NVIDIA
           path: |
             release/**/*nvidia*.exe
-            release/**/*nvidia*.zip
           if-no-files-found: error
 
   github-release:
@@ -518,7 +518,6 @@ jobs:
             artifacts/**/GoAgent-*-mac-x64.dmg
             artifacts/**/GoAgent-*-win-x64-portable.zip
             artifacts/**/GoAgent-*-win-x64.exe
-            artifacts/**/GoAgent-*-win-x64-nvidia-portable.zip
             artifacts/**/GoAgent-*-win-x64-nvidia.exe
           )
           if [[ ${#files[@]} -eq 0 ]]; then
@@ -537,7 +536,6 @@ jobs:
             artifacts/**/GoAgent-*-mac-x64.dmg
             artifacts/**/GoAgent-*-win-x64-portable.zip
             artifacts/**/GoAgent-*-win-x64.exe
-            artifacts/**/GoAgent-*-win-x64-nvidia-portable.zip
             artifacts/**/GoAgent-*-win-x64-nvidia.exe
             artifacts/SHA256SUMS.txt
           body_path: docs/RELEASE_NOTES_${{ github.ref_name }}.md

@@ -23,7 +23,6 @@ const requiredWorkflowFragments = [
   '--copy-runtime-dir',
   '--preserve-model-name',
   'RUNNER_OS',
-  'GoAgent-*-win-x64-nvidia-portable.zip',
   'GoAgent-*-win-x64-nvidia.exe',
   'GoAgent-*-mac-arm64.dmg',
   'GoAgent-*-mac-x64.dmg',

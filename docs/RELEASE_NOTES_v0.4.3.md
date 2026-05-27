@@ -4,7 +4,7 @@ GoAgent v0.4.3 adds the adaptive analysis runtime: KataGo analysis now carries c
 
 QQ 群：1030632742，欢迎一起交流、提建议、完善 GoAgent。
 
-> v0.4.3 provides the Windows NVIDIA edition as both [GoAgent-0.4.3-win-x64-nvidia.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia.exe) and [GoAgent-0.4.3-win-x64-nvidia-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia-portable.zip).
+> v0.4.3 provides the Windows NVIDIA edition as [GoAgent-0.4.3-win-x64-nvidia.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia.exe). The NVIDIA portable ZIP is not attached because it can exceed GitHub's 2 GB single-asset upload limit.
 
 > macOS packages are signed with an Apple Developer ID certificate. This local release did not complete Apple notarization because notarize credentials were not available to electron-builder, so first launch may still show a Gatekeeper warning.
 
@@ -16,12 +16,9 @@ QQ 群：1030632742，欢迎一起交流、提建议、完善 GoAgent。
 | --- | --- |
 | macOS Apple Silicon（M1/M2/M3/M4） | [GoAgent-0.4.3-mac-arm64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.dmg) |
 | macOS Intel | [GoAgent-0.4.3-mac-x64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.dmg) |
-| macOS Apple Silicon 备用 ZIP / 自动更新包 | [GoAgent-0.4.3-mac-arm64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.zip) |
-| macOS Intel 备用 ZIP / 自动更新包 | [GoAgent-0.4.3-mac-x64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.zip) |
 | Windows x64 安装版，普通用户推荐 | [GoAgent-0.4.3-win-x64.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64.exe) |
 | Windows x64 免安装版 | [GoAgent-0.4.3-win-x64-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-portable.zip) |
 | Windows x64 NVIDIA 专版安装版 | [GoAgent-0.4.3-win-x64-nvidia.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia.exe) |
-| Windows x64 NVIDIA 专版免安装包 | [GoAgent-0.4.3-win-x64-nvidia-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia-portable.zip) |
 | 校验文件 | [SHA256SUMS.txt](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/SHA256SUMS.txt) |
 
 macOS 安装包已使用 Apple Developer ID 签名；本机打包时 electron-builder 没有拿到 Apple 公证参数，因此本版未完成 notarization，首次打开仍可能出现 Gatekeeper 提示。
@@ -48,12 +45,9 @@ macOS 安装包已使用 Apple Developer ID 签名；本机打包时 electron-bu
 | --- | --- |
 | macOS Apple Silicon（M1/M2/M3/M4） | [GoAgent-0.4.3-mac-arm64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.dmg) |
 | macOS Intel | [GoAgent-0.4.3-mac-x64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.dmg) |
-| macOS Apple Silicon 備用 ZIP / 自動更新包 | [GoAgent-0.4.3-mac-arm64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.zip) |
-| macOS Intel 備用 ZIP / 自動更新包 | [GoAgent-0.4.3-mac-x64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.zip) |
 | Windows x64 安裝版，一般用戶推薦 | [GoAgent-0.4.3-win-x64.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64.exe) |
 | Windows x64 免安裝版 | [GoAgent-0.4.3-win-x64-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-portable.zip) |
 | Windows x64 NVIDIA 專版安裝版 | [GoAgent-0.4.3-win-x64-nvidia.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia.exe) |
-| Windows x64 NVIDIA 專版免安裝包 | [GoAgent-0.4.3-win-x64-nvidia-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia-portable.zip) |
 | 校驗檔 | [SHA256SUMS.txt](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/SHA256SUMS.txt) |
 
 ### 本版重點
@@ -75,12 +69,9 @@ macOS 安装包已使用 Apple Developer ID 签名；本机打包时 electron-bu
 | --- | --- |
 | macOS Apple Silicon | [GoAgent-0.4.3-mac-arm64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.dmg) |
 | macOS Intel | [GoAgent-0.4.3-mac-x64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.dmg) |
-| macOS Apple Silicon ZIP / auto-update package | [GoAgent-0.4.3-mac-arm64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.zip) |
-| macOS Intel ZIP / auto-update package | [GoAgent-0.4.3-mac-x64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.zip) |
 | Windows x64 installer, recommended for most users | [GoAgent-0.4.3-win-x64.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64.exe) |
 | Windows x64 portable ZIP | [GoAgent-0.4.3-win-x64-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-portable.zip) |
 | Windows x64 NVIDIA installer | [GoAgent-0.4.3-win-x64-nvidia.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia.exe) |
-| Windows x64 NVIDIA portable ZIP | [GoAgent-0.4.3-win-x64-nvidia-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia-portable.zip) |
 | Checksums | [SHA256SUMS.txt](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/SHA256SUMS.txt) |
 
 ### Why update
@@ -102,12 +93,9 @@ macOS 安装包已使用 Apple Developer ID 签名；本机打包时 electron-bu
 | --- | --- |
 | macOS Apple Silicon | [GoAgent-0.4.3-mac-arm64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.dmg) |
 | macOS Intel | [GoAgent-0.4.3-mac-x64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.dmg) |
-| macOS Apple Silicon ZIP / 自動更新用 | [GoAgent-0.4.3-mac-arm64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.zip) |
-| macOS Intel ZIP / 自動更新用 | [GoAgent-0.4.3-mac-x64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.zip) |
 | Windows x64 インストーラー | [GoAgent-0.4.3-win-x64.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64.exe) |
 | Windows x64 ポータブル ZIP | [GoAgent-0.4.3-win-x64-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-portable.zip) |
 | Windows x64 NVIDIA インストーラー | [GoAgent-0.4.3-win-x64-nvidia.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia.exe) |
-| Windows x64 NVIDIA ポータブル ZIP | [GoAgent-0.4.3-win-x64-nvidia-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia-portable.zip) |
 | チェックサム | [SHA256SUMS.txt](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/SHA256SUMS.txt) |
 
 ### 主な変更
@@ -127,12 +115,9 @@ macOS 安装包已使用 Apple Developer ID 签名；本机打包时 electron-bu
 | --- | --- |
 | macOS Apple Silicon | [GoAgent-0.4.3-mac-arm64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.dmg) |
 | macOS Intel | [GoAgent-0.4.3-mac-x64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.dmg) |
-| macOS Apple Silicon ZIP / 자동 업데이트 패키지 | [GoAgent-0.4.3-mac-arm64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.zip) |
-| macOS Intel ZIP / 자동 업데이트 패키지 | [GoAgent-0.4.3-mac-x64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.zip) |
 | Windows x64 설치 프로그램 | [GoAgent-0.4.3-win-x64.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64.exe) |
 | Windows x64 포터블 ZIP | [GoAgent-0.4.3-win-x64-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-portable.zip) |
 | Windows x64 NVIDIA 설치 프로그램 | [GoAgent-0.4.3-win-x64-nvidia.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia.exe) |
-| Windows x64 NVIDIA 포터블 ZIP | [GoAgent-0.4.3-win-x64-nvidia-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia-portable.zip) |
 | 체크섬 | [SHA256SUMS.txt](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/SHA256SUMS.txt) |
 
 ### 이번 버전
@@ -152,12 +137,9 @@ macOS 安装包已使用 Apple Developer ID 签名；本机打包时 electron-bu
 | --- | --- |
 | macOS Apple Silicon | [GoAgent-0.4.3-mac-arm64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.dmg) |
 | macOS Intel | [GoAgent-0.4.3-mac-x64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.dmg) |
-| macOS Apple Silicon ZIP / auto-update | [GoAgent-0.4.3-mac-arm64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.zip) |
-| macOS Intel ZIP / auto-update | [GoAgent-0.4.3-mac-x64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.zip) |
 | Windows x64 installer | [GoAgent-0.4.3-win-x64.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64.exe) |
 | Windows x64 portable ZIP | [GoAgent-0.4.3-win-x64-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-portable.zip) |
 | Windows x64 NVIDIA installer | [GoAgent-0.4.3-win-x64-nvidia.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia.exe) |
-| Windows x64 NVIDIA portable ZIP | [GoAgent-0.4.3-win-x64-nvidia-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia-portable.zip) |
 | Checksums | [SHA256SUMS.txt](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/SHA256SUMS.txt) |
 
 ### จุดสำคัญของรุ่นนี้
@@ -177,12 +159,9 @@ macOS 安装包已使用 Apple Developer ID 签名；本机打包时 electron-bu
 | --- | --- |
 | macOS Apple Silicon | [GoAgent-0.4.3-mac-arm64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.dmg) |
 | macOS Intel | [GoAgent-0.4.3-mac-x64.dmg](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.dmg) |
-| macOS Apple Silicon ZIP / auto-update | [GoAgent-0.4.3-mac-arm64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-arm64.zip) |
-| macOS Intel ZIP / auto-update | [GoAgent-0.4.3-mac-x64.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-mac-x64.zip) |
 | Windows x64 installer | [GoAgent-0.4.3-win-x64.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64.exe) |
 | Windows x64 portable ZIP | [GoAgent-0.4.3-win-x64-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-portable.zip) |
 | Windows x64 NVIDIA installer | [GoAgent-0.4.3-win-x64-nvidia.exe](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia.exe) |
-| Windows x64 NVIDIA portable ZIP | [GoAgent-0.4.3-win-x64-nvidia-portable.zip](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/GoAgent-0.4.3-win-x64-nvidia-portable.zip) |
 | Checksums | [SHA256SUMS.txt](https://github.com/wimi321/GoAgent/releases/download/v0.4.3/SHA256SUMS.txt) |
 
 ### Điểm mới

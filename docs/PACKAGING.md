@@ -58,7 +58,9 @@ The job scans the extracted archive, finds `katago.exe`, copies the whole runtim
 
 ```text
 GoAgent-<version>-win-x64-nvidia.exe
-GoAgent-<version>-win-x64-nvidia-portable.7z
+GoAgent-<version>-win-x64-nvidia-portable.7z.001
+GoAgent-<version>-win-x64-nvidia-portable.7z.002
+GoAgent-<version>-win-x64-nvidia-portable.7z.003
 ```
 
 This keeps the NVIDIA package honest: it is not the standard Windows package with a new filename.

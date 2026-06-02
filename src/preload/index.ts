@@ -42,7 +42,9 @@ import type {
   TtsAssetStatus,
   TtsSynthesisRequest,
   TtsSynthesisResult,
-  TtsVoice
+  TtsVoice,
+  ZhiziCloudLoginRequest,
+  ZhiziCloudLoginResult
 } from '@main/lib/types'
 import type { DiagnosticsReport } from '@main/services/diagnostics/types'
 import type { AnalysisSchedulerStats } from '@main/services/analysis/scheduler'
@@ -134,6 +136,7 @@ const api = {
   getSavedLlmApiKey: (): Promise<{ hasKey: boolean; apiKey: string }> => ipcRenderer.invoke('llm:get-saved-api-key'),
   getSavedIkatagoPassword: (): Promise<{ hasPassword: boolean; password: string }> => ipcRenderer.invoke('ikatago:get-saved-password'),
   getSavedZhiziToken: (): Promise<{ hasToken: boolean; token: string }> => ipcRenderer.invoke('zhizi:get-saved-token'),
+  loginZhiziCloudPassword: (payload: ZhiziCloudLoginRequest): Promise<ZhiziCloudLoginResult> => ipcRenderer.invoke('zhizi:login-password', payload),
   inspectTtsAssets: (): Promise<TtsAssetStatus> => ipcRenderer.invoke('tts:inspect-assets'),
   listTtsVoices: (): Promise<TtsVoice[]> => ipcRenderer.invoke('tts:list-voices'),
   synthesizeTts: (payload: TtsSynthesisRequest): Promise<TtsSynthesisResult> => ipcRenderer.invoke('tts:synthesize', payload),

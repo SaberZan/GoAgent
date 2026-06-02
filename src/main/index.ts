@@ -2,7 +2,7 @@ import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell, type Conte
 import { isAbsolute, relative, resolve, join } from 'node:path'
 import { appHome, findGame, getGames, getIkatagoPassword, getSettings, getTtsCustomApiKey, getTtsVolcengineAccessToken, getTtsVolcengineApiKey, getZhiziToken, hasIkatagoPassword, hasLlmApiKey, hasTtsCustomApiKey, hasTtsVolcengineAccessToken, hasTtsVolcengineApiKey, hasZhiziToken, replaceSettings, setSettings, upsertGames } from './lib/store'
 import { BRAND_NAME } from '@shared/brand'
-import type { AnalyzeGameQuickRequest, AnalyzePositionRequest, AppSettings, DashboardData, FoxSyncRequest, KataGoAssetInstallRequest, KataGoBenchmarkRequest, KataGoCancelAnalysisRequest, LibraryDeleteRequest, LlmModelsListRequest, LlmSettingsTestRequest, ReviewRequest, TeacherBoardImageRenderImage, TeacherBoardImageRenderRequest, TeacherBoardImageRenderResponse, TeacherChatMessage, TeacherRunCancelRequest, TeacherRunRequest } from './lib/types'
+import type { AnalyzeGameQuickRequest, AnalyzePositionRequest, AppSettings, DashboardData, FoxSyncRequest, KataGoAssetInstallRequest, KataGoBenchmarkRequest, KataGoCancelAnalysisRequest, LibraryDeleteRequest, LlmModelsListRequest, LlmSettingsTestRequest, ReviewRequest, TeacherBoardImageRenderImage, TeacherBoardImageRenderRequest, TeacherBoardImageRenderResponse, TeacherChatMessage, TeacherRunCancelRequest, TeacherRunRequest, ZhiziCloudLoginRequest, ZhiziCloudLoginResult } from './lib/types'
 import { importSgfFile, readGameRecord } from './services/sgf'
 import { ensureFoxGameDownloaded, syncFoxGames } from './services/fox'
 import { runReview } from './services/review'
@@ -30,6 +30,7 @@ import {
 } from './services/studentProfile'
 import { archiveTeacherSession, createTeacherSession, deleteTeacherSession, getActiveTeacherSession, listTeacherSessions, updateTeacherSessionMessages } from './services/teacherSession'
 import { clearTtsCache, inspectTtsAssets, listTtsVoices, synthesizeTts, testTtsSettings } from './services/tts'
+import { loginZhiziCloudByPassword } from './services/zhiziCloudAuth'
 
 let mainWindow: BrowserWindow | null = null
 type DesktopCommand =
@@ -462,6 +463,19 @@ app.whenReady().then(() => {
     hasToken: hasZhiziToken(),
     token: getZhiziToken()
   }))
+  ipcMain.handle('zhizi:login-password', async (_event, payload: ZhiziCloudLoginRequest): Promise<ZhiziCloudLoginResult> => {
+    const result = await loginZhiziCloudByPassword(payload)
+    setSettings({
+      zhiziUsername: payload.phone.trim(),
+      zhiziToken: result.token
+    })
+    return {
+      ok: true,
+      message: result.message,
+      hasToken: true,
+      dashboard: await dashboard()
+    }
+  })
   ipcMain.handle('tts:inspect-assets', async () => inspectTtsAssets())
   ipcMain.handle('tts:list-voices', async () => listTtsVoices())
   ipcMain.handle('tts:synthesize', async (_event, payload) => synthesizeTts(payload))

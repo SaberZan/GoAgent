@@ -90,6 +90,7 @@ const emptyDashboard: DashboardData = {
     ikatagoUseWhenLocalSlow: false,
     ikatagoSlowThresholdVisitsPerSecond: 120,
     zhiziClientBin: '',
+    zhiziUsername: '',
     zhiziToken: '',
     zhiziExtraArgs: '',
     zhiziUseWhenLocalSlow: false,
@@ -1410,6 +1411,7 @@ export function App(): ReactElement {
         ikatagoUseWhenLocalSlow: formData.get('ikatagoUseWhenLocalSlow') === 'on',
         ikatagoSlowThresholdVisitsPerSecond: Number(formData.get('ikatagoSlowThresholdVisitsPerSecond') ?? dashboard.settings.ikatagoSlowThresholdVisitsPerSecond),
         zhiziClientBin: String(formData.get('zhiziClientBin') ?? dashboard.settings.zhiziClientBin),
+        zhiziUsername: String(formData.get('zhiziUsername') ?? dashboard.settings.zhiziUsername),
         zhiziToken: String(formData.get('zhiziToken') ?? ''),
         zhiziExtraArgs: String(formData.get('zhiziExtraArgs') ?? dashboard.settings.zhiziExtraArgs),
         zhiziUseWhenLocalSlow: formData.get('zhiziUseWhenLocalSlow') === 'on',
@@ -3925,6 +3927,10 @@ function SettingsDrawer({
   const [savedZhiziToken, setSavedZhiziToken] = useState('')
   const [showZhiziToken, setShowZhiziToken] = useState(false)
   const [zhiziTokenMessage, setZhiziTokenMessage] = useState('')
+  const [zhiziUsernameInput, setZhiziUsernameInput] = useState(dashboard.settings.zhiziUsername)
+  const [zhiziLoginPassword, setZhiziLoginPassword] = useState('')
+  const [zhiziLoginBusy, setZhiziLoginBusy] = useState(false)
+  const [zhiziLoginMessage, setZhiziLoginMessage] = useState('')
   const [autoSaveBusy, setAutoSaveBusy] = useState(false)
   const [autoSaveTick, setAutoSaveTick] = useState(0)
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -4023,6 +4029,10 @@ function SettingsDrawer({
   }, [dashboard.settings.katagoModelPreset])
 
   useEffect(() => {
+    setZhiziUsernameInput(dashboard.settings.zhiziUsername)
+  }, [dashboard.settings.zhiziUsername])
+
+  useEffect(() => {
     setSelectedLlmModel(dashboard.settings.llmModel)
   }, [dashboard.settings.llmModel])
 
@@ -4090,6 +4100,31 @@ function SettingsDrawer({
       setShowZhiziToken(true)
     } catch (cause) {
       setZhiziTokenMessage(`读取智子云 token 失败：${String(cause)}`)
+    }
+  }
+
+  async function loginZhiziCloud(): Promise<void> {
+    setZhiziLoginMessage('')
+    const phone = zhiziUsernameInput.trim()
+    const password = zhiziLoginPassword.trim()
+    if (!phone || !password) {
+      setZhiziLoginMessage('请输入智子云账号和密码。')
+      return
+    }
+    setZhiziLoginBusy(true)
+    try {
+      const result = await window.goagent.loginZhiziCloudPassword({ phone, password })
+      if (result.dashboard) {
+        onDashboardUpdated(result.dashboard)
+      }
+      setZhiziLoginPassword('')
+      setSavedZhiziToken('')
+      setShowZhiziToken(false)
+      setZhiziLoginMessage(result.message)
+    } catch (cause) {
+      setZhiziLoginMessage(`智子云登录失败：${String(cause).replace(/^Error:\\s*/, '')}`)
+    } finally {
+      setZhiziLoginBusy(false)
     }
   }
 
@@ -4305,9 +4340,49 @@ function SettingsDrawer({
               onBlur={(event) => autoSave({ zhiziClientBin: event.target.value }, 0)}
             />
           </label>
+          <label>
+            <span>智子云账号</span>
+            <input
+              name="zhiziUsername"
+              value={zhiziUsernameInput}
+              placeholder="手机号"
+              inputMode="tel"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              onChange={(event) => {
+                setZhiziUsernameInput(event.target.value)
+                autoSave({ zhiziUsername: event.target.value })
+              }}
+            />
+          </label>
+          <label>
+            <span>智子云密码</span>
+            <input
+              type="password"
+              value={zhiziLoginPassword}
+              placeholder="只用于本次登录，成功后保存 token"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              onChange={(event) => setZhiziLoginPassword(event.target.value)}
+            />
+          </label>
+          <div className="settings-actions settings-actions--compact">
+            <button
+              className="primary-button"
+              type="button"
+              disabled={busy !== '' || zhiziLoginBusy || !zhiziUsernameInput.trim() || !zhiziLoginPassword.trim()}
+              onClick={() => void loginZhiziCloud()}
+            >
+              {zhiziLoginBusy ? '正在登录智子云...' : '登录并连接智子云'}
+            </button>
+            <small>登录成功后，GoAgent 会保存 token 并启动 zz-ikatago --token；后续只需要打开 GoAgent。</small>
+          </div>
+          {zhiziLoginMessage ? <div className="test-message">{zhiziLoginMessage}</div> : null}
           <div className="llm-api-key-field">
             <label>
-              <span>Token（可选）</span>
+              <span>高级：Token（可选）</span>
               <div className="llm-secret-input-row">
                 <input
                   name="zhiziToken"

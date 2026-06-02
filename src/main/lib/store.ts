@@ -43,6 +43,7 @@ const defaults: AppSettings = {
   ikatagoUseWhenLocalSlow: false,
   ikatagoSlowThresholdVisitsPerSecond: 120,
   zhiziClientBin: '',
+  zhiziUsername: '',
   zhiziToken: '',
   zhiziExtraArgs: '',
   zhiziUseWhenLocalSlow: false,

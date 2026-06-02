@@ -6,6 +6,7 @@ import { promisify } from 'node:util'
 import type { AppSettings, SystemProfile } from '@main/lib/types'
 import { hydrateKataGoSettings, KATAGO_MODEL_PRESETS, resolveKataGoRuntime } from './katagoRuntime'
 import { ikatagoClientConfigured, shouldPreferIKataGoEngine } from './ikatagoClientEngine'
+import { shouldPreferZhiziGtpEngine, zhiziGtpConfigured } from './zhiziGtpEngine'
 
 const execFileAsync = promisify(execFile)
 
@@ -101,14 +102,16 @@ async function detectCliproxy(): Promise<Pick<SystemProfile, 'proxyBaseUrl' | 'p
 
 export async function detectSystemProfile(settings?: AppSettings): Promise<SystemProfile> {
   const katago = resolveKataGoRuntime(settings)
+  const zhiziReady = settings ? shouldPreferZhiziGtpEngine(settings, katago.ready) && zhiziGtpConfigured(settings) : false
+  const zhiziMissing = settings?.katagoEngineMode === 'zhizi' && !zhiziGtpConfigured(settings)
   const ikatagoReady = settings ? shouldPreferIKataGoEngine(settings, katago.ready) && ikatagoClientConfigured(settings) : false
   const proxy = await detectCliproxy()
   return {
-    katagoBin: ikatagoReady && settings ? settings.ikatagoClientBin : katago.katagoBin,
+    katagoBin: zhiziReady && settings ? settings.zhiziClientBin : ikatagoReady && settings ? settings.ikatagoClientBin : katago.katagoBin,
     katagoConfig: katago.katagoConfig,
     katagoModel: katago.katagoModel,
-    katagoReady: ikatagoReady || katago.ready,
-    katagoStatus: ikatagoReady ? 'iKataGo Remote Ready' : katago.status,
+    katagoReady: zhiziMissing ? false : zhiziReady || ikatagoReady || katago.ready,
+    katagoStatus: zhiziMissing ? 'Zhizi Cloud Missing' : zhiziReady ? 'Zhizi Cloud Ready' : ikatagoReady ? 'iKataGo Remote Ready' : katago.status,
     katagoModelPreset: katago.modelPreset.id,
     katagoModelPresets: KATAGO_MODEL_PRESETS,
     proxyBaseUrl: proxy.proxyBaseUrl,

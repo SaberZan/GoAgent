@@ -211,7 +211,7 @@ data/katago/
 
 大型 KataGo binary/model 不作为普通 Git 文件提交。请阅读 [data/katago/README.md](./data/katago/README.md) 和 [docs/KATAGO_ASSETS.md](./docs/KATAGO_ASSETS.md)。
 
-如果本机算力不够，可以配置 [iKataGo Remote Engine](./docs/IKATAGO_REMOTE_ENGINE.md)。GoAgent 通过本地 `ikatago-client -- analysis` 连接你自己的远程 GPU 服务；未显式启用时不会把棋局发送到远程。
+如果本机算力不够，可以配置 [iKataGo Remote Engine](./docs/IKATAGO_REMOTE_ENGINE.md) 或 [智子云远程算力](./docs/ZHIZI_CLOUD_ENGINE.md)。iKataGo 通过本地 `ikatago-client -- analysis` 连接你自己的远程 GPU 服务；智子云通过 `zz-ikatago` 的 GTP / `kata-analyze` 输出接入智子围棋电脑版远程算力。未显式启用远程引擎时，GoAgent 不会把棋局发送到远程。
 
 ## 隐私与安全
 

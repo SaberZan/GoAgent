@@ -89,6 +89,10 @@ const emptyDashboard: DashboardData = {
     ikatagoExtraArgs: '',
     ikatagoUseWhenLocalSlow: false,
     ikatagoSlowThresholdVisitsPerSecond: 120,
+    zhiziClientBin: '',
+    zhiziToken: '',
+    zhiziExtraArgs: '',
+    zhiziUseWhenLocalSlow: false,
     pythonBin: 'python',
     llmBaseUrl: 'https://api.openai.com/v1',
     llmApiKey: '',
@@ -1405,6 +1409,10 @@ export function App(): ReactElement {
         ikatagoExtraArgs: String(formData.get('ikatagoExtraArgs') ?? dashboard.settings.ikatagoExtraArgs),
         ikatagoUseWhenLocalSlow: formData.get('ikatagoUseWhenLocalSlow') === 'on',
         ikatagoSlowThresholdVisitsPerSecond: Number(formData.get('ikatagoSlowThresholdVisitsPerSecond') ?? dashboard.settings.ikatagoSlowThresholdVisitsPerSecond),
+        zhiziClientBin: String(formData.get('zhiziClientBin') ?? dashboard.settings.zhiziClientBin),
+        zhiziToken: String(formData.get('zhiziToken') ?? ''),
+        zhiziExtraArgs: String(formData.get('zhiziExtraArgs') ?? dashboard.settings.zhiziExtraArgs),
+        zhiziUseWhenLocalSlow: formData.get('zhiziUseWhenLocalSlow') === 'on',
         reviewLanguage: normalizeUiLocale(String(formData.get('reviewLanguage') ?? dashboard.settings.reviewLanguage)),
         llmBaseUrl: String(formData.get('llmBaseUrl') ?? ''),
         llmApiKey: String(formData.get('llmApiKey') ?? ''),
@@ -3914,6 +3922,9 @@ function SettingsDrawer({
   const [savedIkatagoPassword, setSavedIkatagoPassword] = useState('')
   const [showIkatagoPassword, setShowIkatagoPassword] = useState(false)
   const [ikatagoPasswordMessage, setIkatagoPasswordMessage] = useState('')
+  const [savedZhiziToken, setSavedZhiziToken] = useState('')
+  const [showZhiziToken, setShowZhiziToken] = useState(false)
+  const [zhiziTokenMessage, setZhiziTokenMessage] = useState('')
   const [autoSaveBusy, setAutoSaveBusy] = useState(false)
   const [autoSaveTick, setAutoSaveTick] = useState(0)
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -4065,6 +4076,23 @@ function SettingsDrawer({
     }
   }
 
+  async function revealSavedZhiziToken(): Promise<void> {
+    setZhiziTokenMessage('')
+    try {
+      const result = await window.goagent.getSavedZhiziToken()
+      if (!result.hasToken || !result.token) {
+        setSavedZhiziToken('')
+        setShowZhiziToken(false)
+        setZhiziTokenMessage('还没有保存智子云 token。')
+        return
+      }
+      setSavedZhiziToken(result.token)
+      setShowZhiziToken(true)
+    } catch (cause) {
+      setZhiziTokenMessage(`读取智子云 token 失败：${String(cause)}`)
+    }
+  }
+
   async function saveTtsSettings(next: Partial<AppSettings>): Promise<void> {
     const updated = await window.goagent.updateSettings(next)
     onDashboardUpdated(updated)
@@ -4137,6 +4165,7 @@ function SettingsDrawer({
             <option value="persistent">常驻引擎：低延迟，失败不回退</option>
             <option value="spawn">传统流程：每批分析单独启动</option>
             <option value="ikatago">iKataGo 远程算力：连接云端 GPU</option>
+            <option value="zhizi">智子云远程算力：zz-ikatago</option>
           </select>
         </label>
         <label>
@@ -4259,6 +4288,72 @@ function SettingsDrawer({
               defaultValue={dashboard.settings.ikatagoSlowThresholdVisitsPerSecond}
               onBlur={(event) => autoSave({ ikatagoSlowThresholdVisitsPerSecond: Number(event.target.value || 120) }, 0)}
             />
+          </label>
+        </div>
+        <div className="settings-subsection">
+          <h4>智子云远程算力</h4>
+          <p>适合已经安装并登录“智子围棋电脑版”的用户。GoAgent 会通过本地 zz-ikatago 启动远程 KataGo GTP，再用 kata-analyze 生成候选点、胜率、目差和 PV；只有选择智子云模式，或开启“本地慢时自动使用”，才会把局面发送到智子云。</p>
+          <label>
+            <span>zz-ikatago 路径</span>
+            <input
+              name="zhiziClientBin"
+              defaultValue={dashboard.settings.zhiziClientBin}
+              placeholder={navigator.platform.toLowerCase().includes('win') ? 'D:\\Zhizi\\zz-ikatago.exe' : '/Applications/智子围棋电脑版.app/Contents/Resources/data/zz-ikatago'}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              onBlur={(event) => autoSave({ zhiziClientBin: event.target.value }, 0)}
+            />
+          </label>
+          <div className="llm-api-key-field">
+            <label>
+              <span>Token（可选）</span>
+              <div className="llm-secret-input-row">
+                <input
+                  name="zhiziToken"
+                  type={showZhiziToken ? 'text' : 'password'}
+                  defaultValue={showZhiziToken ? savedZhiziToken : ''}
+                  placeholder="已登录智子客户端时通常无需填写"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  onBlur={(event) => {
+                    const value = event.target.value
+                    if (value.trim()) autoSave({ zhiziToken: value }, 0)
+                  }}
+                />
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => showZhiziToken ? setShowZhiziToken(false) : void revealSavedZhiziToken()}
+                  disabled={busy !== ''}
+                >
+                  {showZhiziToken ? t('hide') : t('showKey')}
+                </button>
+              </div>
+            </label>
+            {zhiziTokenMessage ? <small>{zhiziTokenMessage}</small> : <small>Token 保存在 GoAgent 本地加密存储中；不填写时使用智子客户端自己的登录状态。</small>}
+          </div>
+          <label>
+            <span>附加参数</span>
+            <input
+              name="zhiziExtraArgs"
+              defaultValue={dashboard.settings.zhiziExtraArgs}
+              placeholder="例如 --platform all；留空使用智子客户端默认远程配置"
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              onBlur={(event) => autoSave({ zhiziExtraArgs: event.target.value }, 0)}
+            />
+          </label>
+          <label className="settings-inline-toggle">
+            <input
+              name="zhiziUseWhenLocalSlow"
+              type="checkbox"
+              defaultChecked={dashboard.settings.zhiziUseWhenLocalSlow}
+              onChange={(event) => autoSave({ zhiziUseWhenLocalSlow: event.target.checked }, 0)}
+            />
+            <span>自动模式下，本机测速低于阈值时使用智子云</span>
           </label>
         </div>
       </section>

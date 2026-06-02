@@ -103,6 +103,10 @@ export interface AppSettings {
   ikatagoExtraArgs: string
   ikatagoUseWhenLocalSlow: boolean
   ikatagoSlowThresholdVisitsPerSecond: number
+  zhiziClientBin: string
+  zhiziToken: string
+  zhiziExtraArgs: string
+  zhiziUseWhenLocalSlow: boolean
   pythonBin: string
   llmBaseUrl: string
   llmApiKey: string
@@ -148,7 +152,7 @@ export interface AppSettings {
   teacherVariationDetail: TeacherVariationDetail
 }
 
-export type KataGoEngineMode = 'auto' | 'persistent' | 'spawn' | 'ikatago'
+export type KataGoEngineMode = 'auto' | 'persistent' | 'spawn' | 'ikatago' | 'zhizi'
 export type KataGoAnalysisSpeedMode = 'auto' | 'fast' | 'balanced' | 'deep'
 export type KataGoModelPresetId = string
 

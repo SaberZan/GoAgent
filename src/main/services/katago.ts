@@ -17,6 +17,11 @@ import {
   queryIKataGoAnalysisBatch,
   shouldPreferIKataGoEngine
 } from './ikatagoClientEngine'
+import {
+  cancelZhiziGtpAnalysis,
+  queryZhiziGtpAnalysisBatch,
+  shouldPreferZhiziGtpEngine
+} from './zhiziGtpEngine'
 import { normalizeSgfKomiForAnalysis } from './sgfScoring'
 import { buildKataGoTracePacket } from './teacher/katagoTraceTranslator'
 import { classifyMoveAnalysis } from './analysis/classifier'
@@ -136,6 +141,7 @@ export function cancelKataGoAnalysis(filter: { runId?: string; group?: KataGoAna
   let cancelled = 0
   cancelled += cancelPersistentKataGoAnalysis(filter).cancelled
   cancelled += cancelIKataGoAnalysis(filter).cancelled
+  cancelled += cancelZhiziGtpAnalysis(filter).cancelled
   for (const [id, entry] of activeKataGoProcesses.entries()) {
     const matchesRun = filter.runId ? id === filter.runId : true
     const matchesGroup = filter.group ? entry.group === filter.group : true
@@ -504,6 +510,29 @@ async function queryKataGoBatch(
     group: options.group,
     queryCount: queries.length
   })
+  const zhiziPreferred = shouldPreferZhiziGtpEngine(settings, runtime.ready)
+  if (zhiziPreferred) {
+    try {
+      const results = await queryZhiziGtpAnalysisBatch({
+        settings,
+        queries: queries.map(buildKataGoPayload),
+        runId: options.runId,
+        group: options.group,
+        timeoutMs: Math.max(240_000, queries.length * 9000),
+        resolvePartialAfterMs: options.resolvePartialAfterMs,
+        onResponse: onResponse as ((response: Record<string, unknown>) => void) | undefined
+      })
+      engineLease.finish('done')
+      return results as Map<string, KataGoResponse>
+    } catch (error) {
+      const status = String(error).includes('已取消') || String(error).includes('cancel') ? 'cancelled' : 'error'
+      if (status === 'cancelled' || settings.katagoEngineMode === 'zhizi' || !runtime.ready) {
+        engineLease.finish(status)
+        throw error
+      }
+      console.warn('Zhizi cloud GTP engine failed; falling back to local KataGo.', error)
+    }
+  }
   const ikatagoPreferred = shouldPreferIKataGoEngine(settings, runtime.ready)
   if (ikatagoPreferred) {
     try {

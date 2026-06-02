@@ -42,6 +42,10 @@ const defaults: AppSettings = {
   ikatagoExtraArgs: '',
   ikatagoUseWhenLocalSlow: false,
   ikatagoSlowThresholdVisitsPerSecond: 120,
+  zhiziClientBin: '',
+  zhiziToken: '',
+  zhiziExtraArgs: '',
+  zhiziUseWhenLocalSlow: false,
   pythonBin: defaultPythonBin(),
   llmBaseUrl: 'https://api.openai.com/v1',
   llmApiKey: '',
@@ -98,7 +102,7 @@ type SecretValue =
   | { mode: 'local-v1'; value: string; iv: string; tag: string }
   | { mode: 'plain'; value: string }
 
-export const secretStore = new Store<{ llmApiKey?: SecretValue; ttsCustomApiKey?: SecretValue; ttsVolcengineApiKey?: SecretValue; ttsVolcengineAccessToken?: SecretValue; ikatagoPassword?: SecretValue }>({
+export const secretStore = new Store<{ llmApiKey?: SecretValue; ttsCustomApiKey?: SecretValue; ttsVolcengineApiKey?: SecretValue; ttsVolcengineAccessToken?: SecretValue; ikatagoPassword?: SecretValue; zhiziToken?: SecretValue }>({
   name: 'secrets',
   cwd: appHome,
   defaults: {}
@@ -183,6 +187,10 @@ export function hasIkatagoPassword(): boolean {
   return decryptSecret(secretStore.get('ikatagoPassword')).trim().length > 0
 }
 
+export function hasZhiziToken(): boolean {
+  return decryptSecret(secretStore.get('zhiziToken')).trim().length > 0
+}
+
 function saveLlmApiKey(value: string): void {
   const trimmed = value.trim()
   if (trimmed) {
@@ -218,6 +226,13 @@ function saveIkatagoPassword(value: string): void {
   }
 }
 
+function saveZhiziToken(value: string): void {
+  const trimmed = value.trim()
+  if (trimmed) {
+    secretStore.set('zhiziToken', encryptSecret(trimmed))
+  }
+}
+
 function migratePlaintextSecrets(settings: AppSettings): AppSettings {
   const sanitized: AppSettings = { ...settings }
   let changed = false
@@ -246,6 +261,11 @@ function migratePlaintextSecrets(settings: AppSettings): AppSettings {
     sanitized.ikatagoPassword = ''
     changed = true
   }
+  if (sanitized.zhiziToken.trim()) {
+    saveZhiziToken(sanitized.zhiziToken)
+    sanitized.zhiziToken = ''
+    changed = true
+  }
   if (changed) {
     settingsStore.store = sanitized
   }
@@ -260,7 +280,8 @@ export function getSettings(): AppSettings {
     ttsCustomApiKey: decryptSecret(secretStore.get('ttsCustomApiKey')),
     ttsVolcengineApiKey: decryptSecret(secretStore.get('ttsVolcengineApiKey')),
     ttsVolcengineAccessToken: decryptSecret(secretStore.get('ttsVolcengineAccessToken')),
-    ikatagoPassword: decryptSecret(secretStore.get('ikatagoPassword'))
+    ikatagoPassword: decryptSecret(secretStore.get('ikatagoPassword')),
+    zhiziToken: decryptSecret(secretStore.get('zhiziToken'))
   }
 }
 
@@ -280,12 +301,16 @@ export function setSettings(next: Partial<AppSettings>): AppSettings {
   if (typeof next.ikatagoPassword === 'string') {
     saveIkatagoPassword(next.ikatagoPassword)
   }
+  if (typeof next.zhiziToken === 'string') {
+    saveZhiziToken(next.zhiziToken)
+  }
   const {
     llmApiKey: _llmApiKey,
     ttsCustomApiKey: _ttsCustomApiKey,
     ttsVolcengineApiKey: _ttsVolcengineApiKey,
     ttsVolcengineAccessToken: _ttsVolcengineAccessToken,
     ikatagoPassword: _ikatagoPassword,
+    zhiziToken: _zhiziToken,
     ...safeNext
   } = next
   settingsStore.set(safeNext)
@@ -308,7 +333,10 @@ export function replaceSettings(next: AppSettings): AppSettings {
   if (next.ikatagoPassword.trim()) {
     saveIkatagoPassword(next.ikatagoPassword)
   }
-  settingsStore.store = { ...next, llmApiKey: '', ttsCustomApiKey: '', ttsVolcengineApiKey: '', ttsVolcengineAccessToken: '', ikatagoPassword: '' }
+  if (next.zhiziToken.trim()) {
+    saveZhiziToken(next.zhiziToken)
+  }
+  settingsStore.store = { ...next, llmApiKey: '', ttsCustomApiKey: '', ttsVolcengineApiKey: '', ttsVolcengineAccessToken: '', ikatagoPassword: '', zhiziToken: '' }
   return getSettings()
 }
 
@@ -326,6 +354,10 @@ export function getTtsVolcengineAccessToken(): string {
 
 export function getIkatagoPassword(): string {
   return decryptSecret(secretStore.get('ikatagoPassword'))
+}
+
+export function getZhiziToken(): string {
+  return decryptSecret(secretStore.get('zhiziToken'))
 }
 
 export function getGames(): LibraryGame[] {

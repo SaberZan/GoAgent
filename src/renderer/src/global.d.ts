@@ -104,6 +104,7 @@ declare global {
       listLlmModels: (payload: LlmModelsListRequest) => Promise<LlmModelsListResult>
       getSavedLlmApiKey: () => Promise<{ hasKey: boolean; apiKey: string }>
       getSavedIkatagoPassword: () => Promise<{ hasPassword: boolean; password: string }>
+      getSavedZhiziToken: () => Promise<{ hasToken: boolean; token: string }>
       inspectTtsAssets: () => Promise<TtsAssetStatus>
       listTtsVoices: () => Promise<TtsVoice[]>
       synthesizeTts: (payload: TtsSynthesisRequest) => Promise<TtsSynthesisResult>

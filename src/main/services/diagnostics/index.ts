@@ -4,6 +4,7 @@ import { basename, join } from 'node:path'
 import { appHome, getSettings, hasLlmApiKey } from '@main/lib/store'
 import { resolveKataGoRuntime } from '../katagoRuntime'
 import { ikatagoClientConfigured, shouldPreferIKataGoEngine } from '../ikatagoClientEngine'
+import { shouldPreferZhiziGtpEngine, zhiziGtpConfigured } from '../zhiziGtpEngine'
 import { probeOpenAICompatibleProvider } from '../llm/openaiCompatibleProvider'
 import { inspectKataGoAssets } from '../katago/katagoAssets'
 import type { DiagnosticCheck, DiagnosticsReport, DiagnosticsOverall } from './types'
@@ -41,6 +42,25 @@ async function checkWritableHome(): Promise<DiagnosticCheck> {
 async function checkKatagoBinary(): Promise<DiagnosticCheck> {
   const settings = getSettings()
   const runtime = resolveKataGoRuntime(settings)
+  if (settings.katagoEngineMode === 'zhizi' && !zhiziGtpConfigured(settings)) {
+    return {
+      id: 'katago-binary',
+      title: 'KataGo 引擎',
+      status: 'fail',
+      required: true,
+      detail: '已选择智子云远程算力，但还没有填写 zz-ikatago 客户端路径。',
+      action: '在设置的“智子云远程算力”中填写 zz-ikatago 路径，或把引擎模式改回自动。'
+    }
+  }
+  if (shouldPreferZhiziGtpEngine(settings, runtime.ready) && zhiziGtpConfigured(settings)) {
+    return {
+      id: 'katago-binary',
+      title: 'KataGo 引擎',
+      status: 'pass',
+      required: false,
+      detail: `使用智子云远程算力: ${basename(settings.zhiziClientBin)}`
+    }
+  }
   if (shouldPreferIKataGoEngine(settings, runtime.ready) && ikatagoClientConfigured(settings)) {
     return {
       id: 'katago-binary',
@@ -91,6 +111,24 @@ async function checkKatagoBinary(): Promise<DiagnosticCheck> {
 async function checkKatagoModel(): Promise<DiagnosticCheck> {
   const settings = getSettings()
   const runtime = resolveKataGoRuntime(settings)
+  if (settings.katagoEngineMode === 'zhizi' && !zhiziGtpConfigured(settings)) {
+    return {
+      id: 'katago-model',
+      title: 'KataGo 默认模型',
+      status: 'warn',
+      required: false,
+      detail: '智子云路径尚未配置，暂时无法确认远程模型。'
+    }
+  }
+  if (shouldPreferZhiziGtpEngine(settings, runtime.ready) && zhiziGtpConfigured(settings)) {
+    return {
+      id: 'katago-model',
+      title: 'KataGo 默认模型',
+      status: 'pass',
+      required: false,
+      detail: '智子云远程 KataGo 负责模型和配置，GoAgent 不要求本机模型。'
+    }
+  }
   if (shouldPreferIKataGoEngine(settings, runtime.ready) && ikatagoClientConfigured(settings)) {
     return {
       id: 'katago-model',
@@ -125,6 +163,24 @@ async function checkKatagoModel(): Promise<DiagnosticCheck> {
 async function checkBundledKataGoAssets(): Promise<DiagnosticCheck> {
   const settings = getSettings()
   const runtime = resolveKataGoRuntime(settings)
+  if (settings.katagoEngineMode === 'zhizi' && !zhiziGtpConfigured(settings)) {
+    return {
+      id: 'katago-assets',
+      title: '内置 KataGo 资源',
+      status: 'warn',
+      required: false,
+      detail: '已选择智子云模式，本机内置资源不是首要问题；请先填写 zz-ikatago 路径。'
+    }
+  }
+  if (shouldPreferZhiziGtpEngine(settings, runtime.ready) && zhiziGtpConfigured(settings)) {
+    return {
+      id: 'katago-assets',
+      title: '内置 KataGo 资源',
+      status: 'pass',
+      required: false,
+      detail: '当前使用智子云远程算力，本机内置资源不是必需项。'
+    }
+  }
   if (shouldPreferIKataGoEngine(settings, runtime.ready) && ikatagoClientConfigured(settings)) {
     return {
       id: 'katago-assets',

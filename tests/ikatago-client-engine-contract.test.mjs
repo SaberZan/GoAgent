@@ -16,7 +16,7 @@ test('iKataGo remote engine is a first-class KataGo engine mode', async () => {
   const katago = await text('src/main/services/katago.ts')
   const persistent = await text('src/main/services/katagoPersistentEngine.ts')
 
-  assert.match(types, /KataGoEngineMode = 'auto' \| 'persistent' \| 'spawn' \| 'ikatago'/)
+  assert.match(types, /KataGoEngineMode = 'auto' \| 'persistent' \| 'spawn' \| 'ikatago' \| 'zhizi'/)
   assert.match(types, /ikatagoClientBin: string/)
   assert.match(types, /ikatagoUseWhenLocalSlow: boolean/)
   assert.match(store, /ikatagoPlatform: 'all'/)

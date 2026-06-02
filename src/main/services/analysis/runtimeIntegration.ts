@@ -106,7 +106,10 @@ function runtimeFingerprints(): { modelFingerprint: string; configFingerprint: s
       settings.ikatagoClientBin,
       settings.ikatagoPlatform,
       settings.ikatagoUsername,
-      settings.ikatagoExtraArgs
+      settings.ikatagoExtraArgs,
+      settings.zhiziClientBin,
+      settings.zhiziExtraArgs,
+      settings.zhiziToken ? 'zhizi-token-configured' : 'zhizi-token-empty'
     ].join('\n')),
     configFingerprint: sha256([
       settings.katagoAnalysisThreads,
@@ -115,6 +118,7 @@ function runtimeFingerprints(): { modelFingerprint: string; configFingerprint: s
       settings.katagoCacheSizePowerOfTwo,
       settings.ikatagoUseWhenLocalSlow,
       settings.ikatagoSlowThresholdVisitsPerSecond,
+      settings.zhiziUseWhenLocalSlow,
       fileFingerprint(settings.katagoConfig, { readSmallFiles: true })
     ].join('\n'))
   }

@@ -107,11 +107,11 @@ export async function detectSystemProfile(settings?: AppSettings): Promise<Syste
   const ikatagoReady = settings ? shouldPreferIKataGoEngine(settings, katago.ready) && ikatagoClientConfigured(settings) : false
   const proxy = await detectCliproxy()
   return {
-    katagoBin: zhiziReady && settings ? settings.zhiziClientBin : ikatagoReady && settings ? settings.ikatagoClientBin : katago.katagoBin,
+    katagoBin: zhiziReady ? 'zhizi-cloud-socket' : ikatagoReady && settings ? settings.ikatagoClientBin : katago.katagoBin,
     katagoConfig: katago.katagoConfig,
     katagoModel: katago.katagoModel,
     katagoReady: zhiziMissing ? false : zhiziReady || ikatagoReady || katago.ready,
-    katagoStatus: zhiziMissing ? 'Zhizi Cloud Missing' : zhiziReady ? 'Zhizi Cloud Ready' : ikatagoReady ? 'iKataGo Remote Ready' : katago.status,
+    katagoStatus: zhiziMissing ? 'Zhizi Cloud Login Required' : zhiziReady ? 'Zhizi Cloud Direct Ready' : ikatagoReady ? 'iKataGo Remote Ready' : katago.status,
     katagoModelPreset: katago.modelPreset.id,
     katagoModelPresets: KATAGO_MODEL_PRESETS,
     proxyBaseUrl: proxy.proxyBaseUrl,

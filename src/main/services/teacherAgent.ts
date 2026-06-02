@@ -743,7 +743,7 @@ function safeSettingsSummaryForAgent(settings: ReturnType<typeof getSettings>): 
     katagoModelPreset: settings.katagoModelPreset,
     katagoEngineMode: settings.katagoEngineMode,
     ikatagoConfigured: Boolean(settings.ikatagoClientBin && settings.ikatagoUsername && settings.ikatagoPassword),
-    zhiziConfigured: Boolean(settings.zhiziClientBin),
+    zhiziConfigured: Boolean(settings.zhiziToken),
     katagoBinaryConfigured: Boolean(settings.katagoBin),
     katagoConfigConfigured: Boolean(settings.katagoConfig),
     katagoModelConfigured: Boolean(settings.katagoModel),

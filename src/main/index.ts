@@ -471,7 +471,7 @@ app.whenReady().then(() => {
     })
     return {
       ok: true,
-      message: result.message,
+      message: `${result.message} GoAgent 可直接连接智子云。`,
       hasToken: true,
       dashboard: await dashboard()
     }

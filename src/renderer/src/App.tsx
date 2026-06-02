@@ -4200,7 +4200,7 @@ function SettingsDrawer({
             <option value="persistent">常驻引擎：低延迟，失败不回退</option>
             <option value="spawn">传统流程：每批分析单独启动</option>
             <option value="ikatago">iKataGo 远程算力：连接云端 GPU</option>
-            <option value="zhizi">智子云远程算力：zz-ikatago</option>
+            <option value="zhizi">智子云远程算力：直连</option>
           </select>
         </label>
         <label>
@@ -4327,19 +4327,7 @@ function SettingsDrawer({
         </div>
         <div className="settings-subsection">
           <h4>智子云远程算力</h4>
-          <p>适合已经安装并登录“智子围棋电脑版”的用户。GoAgent 会通过本地 zz-ikatago 启动远程 KataGo GTP，再用 kata-analyze 生成候选点、胜率、目差和 PV；只有选择智子云模式，或开启“本地慢时自动使用”，才会把局面发送到智子云。</p>
-          <label>
-            <span>zz-ikatago 路径</span>
-            <input
-              name="zhiziClientBin"
-              defaultValue={dashboard.settings.zhiziClientBin}
-              placeholder={navigator.platform.toLowerCase().includes('win') ? 'D:\\Zhizi\\zz-ikatago.exe' : '/Applications/智子围棋电脑版.app/Contents/Resources/data/zz-ikatago'}
-              autoCapitalize="off"
-              autoCorrect="off"
-              spellCheck={false}
-              onBlur={(event) => autoSave({ zhiziClientBin: event.target.value }, 0)}
-            />
-          </label>
+          <p>不需要单独安装或启动智子围棋电脑版。输入智子云账号密码后，GoAgent 会直连智子云远程 KataGo GTP，用 kata-analyze 生成候选点、胜率、目差和 PV；只有选择智子云模式，或开启“本地慢时自动使用”，才会把局面发送到智子云。</p>
           <label>
             <span>智子云账号</span>
             <input
@@ -4377,7 +4365,7 @@ function SettingsDrawer({
             >
               {zhiziLoginBusy ? '正在登录智子云...' : '登录并连接智子云'}
             </button>
-            <small>登录成功后，GoAgent 会保存 token 并启动 zz-ikatago --token；后续只需要打开 GoAgent。</small>
+            <small>登录成功后，GoAgent 会保存 token；后续只需要打开 GoAgent，不需要启动其它应用。</small>
           </div>
           {zhiziLoginMessage ? <div className="test-message">{zhiziLoginMessage}</div> : null}
           <div className="llm-api-key-field">
@@ -4407,8 +4395,20 @@ function SettingsDrawer({
                 </button>
               </div>
             </label>
-            {zhiziTokenMessage ? <small>{zhiziTokenMessage}</small> : <small>Token 保存在 GoAgent 本地加密存储中；不填写时使用智子客户端自己的登录状态。</small>}
+            {zhiziTokenMessage ? <small>{zhiziTokenMessage}</small> : <small>Token 保存在 GoAgent 本地加密存储中；普通用户只需要上面的账号密码登录。</small>}
           </div>
+          <label>
+            <span>高级：zz-ikatago 路径（兼容旧连接器，可不填）</span>
+            <input
+              name="zhiziClientBin"
+              defaultValue={dashboard.settings.zhiziClientBin}
+              placeholder={navigator.platform.toLowerCase().includes('win') ? 'D:\\Zhizi\\zz-ikatago.exe' : '/Applications/智子围棋电脑版.app/Contents/Resources/data/zz-ikatago'}
+              autoCapitalize="off"
+              autoCorrect="off"
+              spellCheck={false}
+              onBlur={(event) => autoSave({ zhiziClientBin: event.target.value }, 0)}
+            />
+          </label>
           <label>
             <span>附加参数</span>
             <input

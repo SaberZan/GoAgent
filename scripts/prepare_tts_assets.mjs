@@ -22,6 +22,17 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function retryDelayMs(response, attempt) {
+  const retryAfter = response?.headers?.get?.('retry-after')
+  const retryAfterSeconds = retryAfter ? Number(retryAfter) : NaN
+  if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+    return Math.min(90_000, retryAfterSeconds * 1000)
+  }
+  const baseDelay = Math.min(60_000, 1500 * 2 ** Math.max(0, attempt - 1))
+  const jitter = Math.floor(Math.random() * 900)
+  return baseDelay + jitter
+}
+
 async function download(url, output) {
   mkdirSync(dirname(output), { recursive: true })
   if (existsSync(output)) {
@@ -30,17 +41,20 @@ async function download(url, output) {
   }
   const partial = `${output}.part`
   let lastError
-  for (let attempt = 1; attempt <= 5; attempt += 1) {
+  const maxAttempts = Number(process.env.GOAGENT_TTS_DOWNLOAD_ATTEMPTS ?? 10)
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
       rmSync(partial, { force: true })
-      console.log(`[prepare-tts-assets] downloading ${url} (attempt ${attempt}/5)`)
+      console.log(`[prepare-tts-assets] downloading ${url} (attempt ${attempt}/${maxAttempts})`)
       const response = await fetch(url, {
         headers: {
           'User-Agent': 'GoAgent-release-assets/1.0'
         }
       })
       if (!response.ok || !response.body) {
-        throw new Error(`HTTP ${response.status}`)
+        const error = new Error(`HTTP ${response.status}`)
+        error.response = response
+        throw error
       }
       await pipeline(response.body, createWriteStream(partial))
       renameSync(partial, output)
@@ -48,9 +62,14 @@ async function download(url, output) {
     } catch (error) {
       lastError = error
       rmSync(partial, { force: true })
-      if (attempt < 5) {
-        console.warn(`[prepare-tts-assets] retrying ${url}: ${error instanceof Error ? error.message : String(error)}`)
-        await sleep(1500 * attempt)
+      if (attempt < maxAttempts) {
+        const delay = retryDelayMs(error?.response, attempt)
+        console.warn(
+          `[prepare-tts-assets] retrying ${url} in ${Math.round(delay / 1000)}s: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        )
+        await sleep(delay)
       }
     }
   }

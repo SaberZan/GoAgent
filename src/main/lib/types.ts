@@ -276,6 +276,22 @@ export interface GameMove {
   pass: boolean
 }
 
+export interface TrialMove {
+  color: StoneColor
+  row: number
+  col: number
+  gtp: string
+  moveNumber: number
+}
+
+export interface TrialBranchSummary {
+  active: boolean
+  baseMoveNumber: number
+  moves: TrialMove[]
+  nextColor: StoneColor
+  branchHash: string
+}
+
 export interface BoardSetupStone {
   color: StoneColor
   point: string
@@ -465,6 +481,8 @@ export interface TeacherBoardImageRenderRequest {
   moveNumbers: number[]
   captions?: Record<number, string>
   analyses?: KataGoMoveAnalysis[]
+  boardContext?: 'mainline' | 'trial'
+  trialBranch?: TrialBranchSummary
 }
 
 export interface TeacherBoardImageRenderImage extends AgentToolImageResult {
@@ -819,6 +837,7 @@ export interface KataGoMoveAnalysis {
   gameId: string
   moveNumber: number
   boardSize: number
+  trialContext?: TrialBranchSummary
   currentMove?: GameMove
   before: {
     winrate: number
@@ -1065,6 +1084,8 @@ export interface TeacherRunRequest {
   prompt: string
   gameId?: string
   moveNumber?: number
+  boardContext?: 'mainline' | 'trial'
+  trialBranch?: TrialBranchSummary
   playerName?: string
   coachLevel?: CoachUserLevel
   studentAgeRange?: StudentAgeRange
@@ -1108,10 +1129,21 @@ export interface AnalyzePositionRequest {
   reportDuringSearchEvery?: number
 }
 
+export interface AnalyzeTrialPositionRequest {
+  gameId: string
+  baseMoveNumber: number
+  trialMoves: TrialMove[]
+  maxVisits?: number
+  runId?: string
+  group?: KataGoAnalysisGroup
+  reportDuringSearchEvery?: number
+}
+
 export interface AnalyzePositionProgress {
   runId?: string
   gameId: string
   moveNumber: number
+  trialBranchHash?: string
   analysis: KataGoMoveAnalysis
   isFinal: boolean
 }
@@ -1132,7 +1164,7 @@ export interface AnalyzeGameQuickProgress {
   totalPositions: number
 }
 
-export type KataGoAnalysisGroup = 'quick' | 'live' | 'single' | 'batch' | 'teacher'
+export type KataGoAnalysisGroup = 'quick' | 'live' | 'single' | 'batch' | 'teacher' | 'trial'
 
 export interface KataGoCancelAnalysisRequest {
   runId?: string

@@ -4,6 +4,7 @@ import type {
   AnalyzeGameQuickProgress,
   AnalyzePositionRequest,
   AnalyzePositionProgress,
+  AnalyzeTrialPositionRequest,
   DashboardData,
   FoxSyncResponse,
   FoxSyncRequest,
@@ -76,6 +77,7 @@ declare global {
       startReview: (payload: ReviewRequest) => Promise<ReviewResult>
       analyzePosition: (payload: AnalyzePositionRequest) => Promise<KataGoMoveAnalysis>
       analyzePositionStream: (payload: AnalyzePositionRequest) => Promise<KataGoMoveAnalysis>
+      analyzeTrialPositionStream: (payload: AnalyzeTrialPositionRequest) => Promise<KataGoMoveAnalysis | null>
       analyzeGameQuick: (payload: AnalyzeGameQuickRequest) => Promise<KataGoMoveAnalysis[]>
       cancelKataGoAnalysis: (payload: KataGoCancelAnalysisRequest) => Promise<KataGoCancelAnalysisResult>
       getAnalysisSchedulerStats: () => Promise<AnalysisSchedulerStats>

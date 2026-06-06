@@ -44,6 +44,16 @@ import { GoBoardV2 } from './features/board/GoBoardV2'
 import type { KeyMoveSummary } from './features/board/KeyMoveNavigator'
 import { WinrateTimelineV2 } from './features/board/WinrateTimelineV2'
 import { boardPointLabel, parseBoardPoint, type BoardPoint, type RenderKeyMove } from './features/board/boardGeometry'
+import {
+  addTrialMove,
+  clearTrialMoves,
+  createTrialBranch,
+  deriveTrialRecord,
+  emptyTrialBranch,
+  trialBranchSummary,
+  undoTrialMove,
+  type TrialBranch
+} from './features/board/trialBranch'
 import { DiagnosticsGate } from './features/diagnostics/DiagnosticsGate'
 import { UiGallery } from './features/gallery/UiGallery'
 import { StudentBindingDialog } from './features/student/StudentBindingDialog'
@@ -776,6 +786,8 @@ export function App(): ReactElement {
   const [record, setRecord] = useState<GameRecord | null>(null)
   const [moveNumber, setMoveNumber] = useState(0)
   const [analysis, setAnalysis] = useState<KataGoMoveAnalysis | null>(null)
+  const [trialBranch, setTrialBranch] = useState<TrialBranch>(() => emptyTrialBranch())
+  const [trialAnalysis, setTrialAnalysis] = useState<KataGoMoveAnalysis | null>(null)
   const [evaluations, setEvaluations] = useState<EvaluationByMove>({})
   const [timelineIssueColor, setTimelineIssueColor] = useState<TimelineIssueColor>('B')
   const [foxKeyword, setFoxKeyword] = useState('')
@@ -809,10 +821,13 @@ export function App(): ReactElement {
   const [katagoAssets, setKatagoAssets] = useState<KataGoAssetStatus | null>(null)
   const graphRunId = useRef('')
   const liveAnalysisRunId = useRef('')
+  const trialAnalysisRunId = useRef('')
+  const trialAnalysisCacheRef = useRef<Record<string, KataGoMoveAnalysis>>({})
   const autoAnalysisRequestId = useRef('')
   const userPausedLiveAnalysisRef = useRef(false)
   const moveNumberRef = useRef(moveNumber)
   const recordRef = useRef<GameRecord | null>(record)
+  const trialBranchRef = useRef(trialBranch)
   const jumpToMoveRef = useRef<(next: number) => void>(() => {})
   const teacherBusyRef = useRef(false)
   const activeTeacherRunRef = useRef<ActiveTeacherRunUi | null>(null)
@@ -1051,6 +1066,14 @@ export function App(): ReactElement {
     const active = analysis?.moveNumber === moveNumber ? analysis : null
     return preferAnalysis(cached, active)
   }, [analysis, evaluations, moveNumber])
+  const trialRecord = useMemo(
+    () => record && trialBranch.active ? deriveTrialRecord(record, trialBranch) : null,
+    [record, trialBranch]
+  )
+  const boardRecord = trialRecord ?? record
+  const boardMoveNumber = trialRecord ? trialRecord.moves.length : moveNumber
+  const boardAnalysis = trialBranch.active ? trialAnalysis : currentAnalysis
+  const displayBoardKeyMoveMarks = trialBranch.active ? [] : currentBoardKeyMoveMarks
 
   useEffect(() => {
     if (selectedGame && !selectedId) {
@@ -1061,7 +1084,8 @@ export function App(): ReactElement {
   useEffect(() => {
     moveNumberRef.current = moveNumber
     recordRef.current = record
-  }, [moveNumber, record])
+    trialBranchRef.current = trialBranch
+  }, [moveNumber, record, trialBranch])
 
   useEffect(() => {
     jumpToMoveRef.current = jumpToMove
@@ -1077,9 +1101,14 @@ export function App(): ReactElement {
     if (!selectedGame) {
       setRecord(null)
       setCurrentStudent(null)
+      setTrialBranch(emptyTrialBranch())
+      setTrialAnalysis(null)
       return
     }
     pauseLiveAnalysis('切换棋谱，准备精读')
+    setTrialBranch(emptyTrialBranch())
+    setTrialAnalysis(null)
+    trialAnalysisCacheRef.current = {}
     void loadBoundPlayer(selectedGame.id)
     void loadRecord(selectedGame.id)
   }, [selectedGame?.id])
@@ -1092,7 +1121,7 @@ export function App(): ReactElement {
   useEffect(() => {
     const dispose = window.goagent.onTeacherBoardImageRequest((payload) => renderTeacherBoardImages(payload))
     return () => dispose()
-  }, [record, selectedGame?.id, evaluations, analysis])
+  }, [record, selectedGame?.id, evaluations, analysis, trialAnalysis, trialBranch])
 
   const arrowDebounceRef = useRef(0)
   useEffect(() => {
@@ -1105,6 +1134,12 @@ export function App(): ReactElement {
       if (event.key === 'Escape') {
         setCommandPaletteOpen(false)
         setSettingsOpen(false)
+        if (trialBranchRef.current.active) {
+          event.preventDefault()
+          setTrialBranch(emptyTrialBranch())
+          setTrialAnalysis(null)
+          void window.goagent.cancelKataGoAnalysis({ group: 'trial' })
+        }
       }
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) {
         return
@@ -1119,6 +1154,13 @@ export function App(): ReactElement {
       }
       const rec = recordRef.current
       if (!rec || teacherBusyRef.current) return
+      if ((event.key === 'Backspace' || event.key === 'Delete') && trialBranchRef.current.active) {
+        event.preventDefault()
+        setTrialBranch((current) => undoTrialMove(rec, current))
+        setTrialAnalysis(null)
+        void window.goagent.cancelKataGoAnalysis({ group: 'trial' })
+        return
+      }
       let nextMove = -1
       if (event.key === 'ArrowLeft') {
         event.preventDefault()
@@ -1680,21 +1722,24 @@ export function App(): ReactElement {
       const targetRecord = record?.game.id === payload.gameId
         ? record
         : await window.goagent.getGameRecord(payload.gameId)
+      const payloadTrialBranch = payload.boardContext === 'trial' ? coerceTrialBranch(payload.trialBranch) : null
+      const renderRecord = payloadTrialBranch?.active ? deriveTrialRecord(targetRecord, payloadTrialBranch) : targetRecord
       const analysisMap = new Map((payload.analyses ?? []).map((item) => [item.moveNumber, item]))
       const uniqueMoveNumbers = payload.moveNumbers
-        .map((item) => Math.max(0, Math.min(targetRecord.moves.length, Math.round(item))))
+        .map((item) => Math.max(0, Math.min(renderRecord.moves.length, Math.round(item))))
         .filter((item, index, all) => all.indexOf(item) === index)
         .slice(0, 6)
       const images = await Promise.all(uniqueMoveNumbers.map(async (targetMove, index) => {
         const cached = analysisMap.get(targetMove)
-          ?? (selectedGame?.id === payload.gameId ? analysisForMove(targetMove) : null)
-          ?? (selectedGame?.id === payload.gameId && analysis?.moveNumber === targetMove ? analysis : null)
-        const dataUrl = await renderBoardPng(targetRecord, targetMove, cached ?? null)
+          ?? (payloadTrialBranch?.active && trialAnalysis?.trialContext?.branchHash === payloadTrialBranch.branchHash ? trialAnalysis : null)
+          ?? (!payloadTrialBranch?.active && selectedGame?.id === payload.gameId ? analysisForMove(targetMove) : null)
+          ?? (!payloadTrialBranch?.active && selectedGame?.id === payload.gameId && analysis?.moveNumber === targetMove ? analysis : null)
+        const dataUrl = await renderBoardPng(renderRecord, targetMove, cached ?? null)
         return {
           imageId: `tool-board-${payload.requestId}-${index + 1}`,
           gameId: payload.gameId,
           moveNumber: targetMove,
-          caption: payload.captions?.[targetMove] ?? `棋盘图 ${index + 1}: 第 ${targetMove} 手。`,
+          caption: payload.captions?.[targetMove] ?? `${payloadTrialBranch?.active ? '试下分支图' : '棋盘图'} ${index + 1}: 第 ${targetMove} 手。`,
           mimeType: 'image/png' as const,
           bytes: dataUrlByteLength(dataUrl),
           width: 1000,
@@ -1769,6 +1814,11 @@ export function App(): ReactElement {
 
   function jumpToMove(next: number): void {
     const targetMove = record ? Math.max(0, Math.min(record.moves.length, Math.round(next))) : next
+    if (trialBranch.active) {
+      setTrialBranch(emptyTrialBranch())
+      setTrialAnalysis(null)
+      void cancelKataGoWork({ group: 'trial' })
+    }
     if (liveAnalysis.running) {
       pauseLiveAnalysis('切换手数，准备继续分析')
     }
@@ -1777,6 +1827,159 @@ export function App(): ReactElement {
     if (record && selectedGame && !userPausedLiveAnalysisRef.current) {
       queueAutoLiveAnalysis(selectedGame.id, record, targetMove)
     }
+  }
+
+  function trialCacheKey(gameId: string, branch: TrialBranch): string {
+    return `${gameId}:${branch.branchHash}:${dashboard.settings.katagoModelPreset || dashboard.settings.katagoModel || 'model'}`
+  }
+
+  async function analyzeTrialBranch(nextBranch: TrialBranch, options: { force?: boolean } = {}): Promise<KataGoMoveAnalysis | null> {
+    if (!record || !selectedGame || !nextBranch.active || nextBranch.moves.length === 0) {
+      setTrialAnalysis(null)
+      return null
+    }
+    const cacheKey = trialCacheKey(selectedGame.id, nextBranch)
+    if (!options.force && trialAnalysisCacheRef.current[cacheKey]) {
+      const cached = trialAnalysisCacheRef.current[cacheKey]
+      setTrialAnalysis(cached)
+      setLiveAnalysis((current) => ({
+        ...current,
+        running: false,
+        status: `试下缓存 · ${nextBranch.moves.length} 手`,
+        targetMoveNumber: nextBranch.baseMoveNumber + nextBranch.moves.length
+      }))
+      return cached
+    }
+    const runId = crypto.randomUUID()
+    trialAnalysisRunId.current = runId
+    setError('')
+    setTrialAnalysis(null)
+    setLiveAnalysis((current) => ({
+      ...current,
+      running: true,
+      status: `试下分析 · ${nextBranch.moves[nextBranch.moves.length - 1]?.gtp}`,
+      visits: 0,
+      bestVisits: 0,
+      visitsPerSecond: dashboard.settings.katagoBenchmarkVisitsPerSecond,
+      targetMoveNumber: nextBranch.baseMoveNumber + nextBranch.moves.length,
+      round: 0
+    }))
+    await cancelKataGoWork({ group: 'trial' })
+    const disposeProgress = window.goagent.onAnalyzePositionProgress((progress) => {
+      if (
+        trialAnalysisRunId.current !== runId ||
+        progress.runId !== runId ||
+        progress.gameId !== selectedGame.id ||
+        progress.trialBranchHash !== nextBranch.branchHash
+      ) {
+        return
+      }
+      const nextAnalysis = progress.analysis
+      const totalVisits = candidateVisitsTotal(nextAnalysis)
+      const bestVisits = candidateBestVisits(nextAnalysis)
+      setTrialAnalysis((current) => preferAnalysis(current, nextAnalysis))
+      setLiveAnalysis((current) => ({
+        ...current,
+        running: !progress.isFinal,
+        status: progress.isFinal ? `试下完成 ${formatVisits(totalVisits)}` : `试下搜索 ${formatVisits(totalVisits)} · 一选 ${formatVisits(bestVisits)}`,
+        visits: totalVisits,
+        bestVisits,
+        targetMoveNumber: nextBranch.baseMoveNumber + nextBranch.moves.length
+      }))
+    })
+    try {
+      const final = await window.goagent.analyzeTrialPositionStream({
+        gameId: selectedGame.id,
+        baseMoveNumber: nextBranch.baseMoveNumber,
+        trialMoves: nextBranch.moves,
+        maxVisits: 260,
+        runId,
+        group: 'trial',
+        reportDuringSearchEvery: 0.25
+      })
+      if (trialAnalysisRunId.current !== runId || !final || final.trialContext?.branchHash !== nextBranch.branchHash) {
+        return null
+      }
+      trialAnalysisCacheRef.current[cacheKey] = final
+      setTrialAnalysis(final)
+      setLiveAnalysis((current) => ({
+        ...current,
+        running: false,
+        status: `试下完成 ${formatVisits(candidateVisitsTotal(final))}`,
+        visits: candidateVisitsTotal(final),
+        bestVisits: candidateBestVisits(final),
+        targetMoveNumber: nextBranch.baseMoveNumber + nextBranch.moves.length
+      }))
+      return final
+    } catch (cause) {
+      if (trialAnalysisRunId.current !== runId || isAnalysisCancellationMessage(String(cause))) {
+        return null
+      }
+      const message = kataGoRuntimeErrorMessage(cause) || String(cause)
+      setError(`试下分析失败: ${message}`)
+      setLiveAnalysis((current) => ({
+        ...current,
+        running: false,
+        status: message
+      }))
+      return null
+    } finally {
+      disposeProgress()
+    }
+  }
+
+  function enterTrialMode(): void {
+    if (!record) return
+    const next = createTrialBranch(record, moveNumber)
+    setTrialBranch(next)
+    setTrialAnalysis(null)
+    pauseLiveAnalysis('试下中，主线精读暂停')
+  }
+
+  function exitTrialMode(): void {
+    setTrialBranch(emptyTrialBranch())
+    setTrialAnalysis(null)
+    void cancelKataGoWork({ group: 'trial' })
+    setLiveAnalysis((current) => ({
+      ...current,
+      running: false,
+      status: '已恢复主线',
+      targetMoveNumber: moveNumber,
+      visitsPerSecond: 0
+    }))
+  }
+
+  function clearTrialBranch(): void {
+    if (!record || !trialBranch.active) return
+    const next = clearTrialMoves(record, trialBranch)
+    setTrialBranch(next)
+    setTrialAnalysis(null)
+    void cancelKataGoWork({ group: 'trial' })
+  }
+
+  function undoTrialBranch(): void {
+    if (!record || !trialBranch.active) return
+    const next = undoTrialMove(record, trialBranch)
+    setTrialBranch(next)
+    setTrialAnalysis(null)
+    if (next.moves.length > 0) {
+      void analyzeTrialBranch(next)
+    } else {
+      void cancelKataGoWork({ group: 'trial' })
+    }
+  }
+
+  function playTrialPoint(point: BoardPoint): void {
+    if (!record) return
+    const base = trialBranch.active ? trialBranch : createTrialBranch(record, moveNumber)
+    const next = addTrialMove(record, base, point)
+    setTrialBranch(next)
+    if (next.error) {
+      setError(`试下失败：${next.error}`)
+      return
+    }
+    setTrialAnalysis(null)
+    void analyzeTrialBranch(next)
   }
 
   function flashBoardCoordinate(label: string): void {
@@ -2197,15 +2400,23 @@ export function App(): ReactElement {
     if (!record || !selectedGame || busy !== '') {
       return
     }
-    const targetMove = Math.max(0, Math.min(record.moves.length, Math.round(targetMoveNumber)))
+    const useTrial = trialBranch.active && trialBranch.moves.length > 0
+    const trialEvidence = useTrial
+      ? (trialAnalysis ?? await analyzeTrialBranch(trialBranch))
+      : null
+    const targetMove = useTrial
+      ? trialBranch.baseMoveNumber + trialBranch.moves.length
+      : Math.max(0, Math.min(record.moves.length, Math.round(targetMoveNumber)))
     if (liveAnalysis.running) {
       pauseLiveAnalysis('老师讲解中，暂停精读')
     }
-    setMoveNumber(targetMove)
-    setAnalysis(analysisForMove(targetMove))
+    if (!useTrial) {
+      setMoveNumber(targetMove)
+      setAnalysis(analysisForMove(targetMove))
+    }
     setBusy('teacher')
     setError('')
-    const ask = `分析第 ${targetMove} 手`
+    const ask = useTrial ? `分析当前试下分支（第 ${targetMove} 手）` : `分析第 ${targetMove} 手`
     appendMessage({ role: 'student', content: ask })
     const assistantMessageId = appendMessage({ role: 'teacher', content: '', status: 'running', toolLogs: [] })
     const runId = crypto.randomUUID()
@@ -2216,12 +2427,16 @@ export function App(): ReactElement {
         prompt: ask,
         gameId: selectedGame.id,
         moveNumber: targetMove,
+        boardContext: useTrial ? 'trial' : 'mainline',
+        trialBranch: useTrial ? trialBranchSummary(trialBranch) : undefined,
         playerName,
-        prefetchedAnalysis: analysisForMove(targetMove) ?? undefined
+        prefetchedAnalysis: (useTrial ? trialEvidence : analysisForMove(targetMove)) ?? undefined
       }, assistantMessageId, runId)
-      if (result.analysis) {
+      if (result.analysis && !useTrial) {
         setAnalysis(result.analysis)
         rememberEvaluation(result.analysis, { force: true })
+      } else if (result.analysis && useTrial) {
+        setTrialAnalysis(result.analysis)
       }
     } catch (cause) {
       if (/老师任务已停止|KataGo 分析已取消|AbortError|已取消/i.test(String(cause))) {
@@ -2275,7 +2490,11 @@ export function App(): ReactElement {
     appendMessage({ role: 'student', content: text })
     const assistantMessageId = appendMessage({ role: 'teacher', content: '', status: 'running', toolLogs: [] })
     const quickNeedsBoardImage = !isRecentGamesReviewPrompt(text) && (isCurrentMoveReviewPrompt(text) || isWholeGameReviewPrompt(text))
+    const useTrial = trialBranch.active && trialBranch.moves.length > 0 && !isRecentGamesReviewPrompt(text)
     try {
+      const trialEvidence = useTrial && isCurrentMoveReviewPrompt(text)
+        ? (trialAnalysis ?? await analyzeTrialBranch(trialBranch))
+        : trialAnalysis
       if (quickNeedsBoardImage && !selectedGame) {
         throw new Error('请先加载棋谱，再做这项复盘。')
       }
@@ -2283,13 +2502,19 @@ export function App(): ReactElement {
         mode: isCurrentMoveReviewPrompt(text) ? 'current-move' : 'freeform',
         prompt: text,
         gameId: selectedGame?.id,
-        moveNumber,
+        moveNumber: useTrial ? trialBranch.baseMoveNumber + trialBranch.moves.length : moveNumber,
+        boardContext: useTrial ? 'trial' : 'mainline',
+        trialBranch: useTrial ? trialBranchSummary(trialBranch) : undefined,
         playerName,
-        prefetchedAnalysis: isCurrentMoveReviewPrompt(text) ? (analysisForMove(moveNumber) ?? undefined) : undefined
+        prefetchedAnalysis: isCurrentMoveReviewPrompt(text)
+          ? ((useTrial ? trialEvidence : analysisForMove(moveNumber)) ?? undefined)
+          : (useTrial ? trialEvidence ?? undefined : undefined)
       }, assistantMessageId)
-      if (result.analysis) {
+      if (result.analysis && !useTrial) {
         setAnalysis((current) => preferAnalysis(current, result.analysis))
         rememberEvaluation(result.analysis)
+      } else if (result.analysis && useTrial) {
+        setTrialAnalysis(result.analysis)
       }
     } catch (cause) {
       updateMessage(assistantMessageId, (message) => ({
@@ -2352,21 +2577,30 @@ export function App(): ReactElement {
       const selectedRangeText = moveRange ? `分析${describeMoveRange(moveRange)}` : ''
       const range = parsedRange ?? (text === selectedRangeText ? moveRange : null)
       const wantsMoveRange = range !== null
+      const useTrial = trialBranch.active && trialBranch.moves.length > 0 && !wantsRecentGames && !wantsMoveRange && !wantsGameReview
+      const trialEvidence = useTrial
+        ? (trialAnalysis ?? await analyzeTrialBranch(trialBranch))
+        : null
       if (wantsCurrentMove) {
         if (!selectedGame) {
           throw new Error('请先加载棋谱，再分析当前手。')
         }
+        const targetMove = useTrial ? trialBranch.baseMoveNumber + trialBranch.moves.length : moveNumber
         const result = await runTeacherTaskWithStream({
           mode: 'current-move',
           prompt: text,
           gameId: selectedGame.id,
-          moveNumber,
+          moveNumber: targetMove,
+          boardContext: useTrial ? 'trial' : 'mainline',
+          trialBranch: useTrial ? trialBranchSummary(trialBranch) : undefined,
           playerName,
-          prefetchedAnalysis: analysisForMove(moveNumber) ?? undefined
+          prefetchedAnalysis: (useTrial ? trialEvidence : analysisForMove(moveNumber)) ?? undefined
         }, assistantMessageId, runId)
-        if (result.analysis) {
+        if (result.analysis && !useTrial) {
           setAnalysis(result.analysis)
           rememberEvaluation(result.analysis, { force: true })
+        } else if (result.analysis && useTrial) {
+          setTrialAnalysis(result.analysis)
         }
       } else if (wantsMoveRange && record && selectedGame) {
         if (!range) {
@@ -2406,8 +2640,11 @@ export function App(): ReactElement {
           mode: 'freeform',
           prompt: text,
           gameId: selectedGame?.id,
-          moveNumber,
-          playerName
+          moveNumber: useTrial ? trialBranch.baseMoveNumber + trialBranch.moves.length : moveNumber,
+          boardContext: useTrial ? 'trial' : 'mainline',
+          trialBranch: useTrial ? trialBranchSummary(trialBranch) : undefined,
+          playerName,
+          prefetchedAnalysis: useTrial ? trialEvidence ?? undefined : undefined
         }, assistantMessageId, runId)
       }
     } catch (cause) {
@@ -2491,13 +2728,17 @@ export function App(): ReactElement {
             {record ? (
               <BoardContextBar
                 title={selectedGame ? boardGameTitle(selectedGame) : t('noGameSelected')}
-                record={record}
-                moveNumber={moveNumber}
-                analysis={currentAnalysis}
+                record={boardRecord ?? record}
+                moveNumber={boardMoveNumber}
+                analysis={boardAnalysis}
                 liveAnalysis={liveAnalysis}
                 disabled={liveAnalysisDisabled}
+                trialBranch={trialBranch}
                 onStart={() => void startLiveAnalysis()}
                 onPause={() => pauseLiveAnalysis(t('pausedFineReview'), true)}
+                onToggleTrial={trialBranch.active ? exitTrialMode : enterTrialMode}
+                onUndoTrial={undoTrialBranch}
+                onClearTrial={clearTrialBranch}
                 t={t}
               />
             ) : (
@@ -2513,8 +2754,18 @@ export function App(): ReactElement {
           <section className="board-stage">
             {record ? (
               <div className="board-table board-table--v2">
-                {record.boardSize >= 2 ? (
-                  <GoBoardV2 record={record} moveNumber={moveNumber} analysis={currentAnalysis} keyMoves={currentBoardKeyMoveMarks} flashPoint={boardFlash} t={t} />
+                {boardRecord && boardRecord.boardSize >= 2 ? (
+                  <GoBoardV2
+                    record={boardRecord}
+                    moveNumber={boardMoveNumber}
+                    analysis={boardAnalysis}
+                    keyMoves={displayBoardKeyMoveMarks}
+                    flashPoint={boardFlash}
+                    trialBranch={trialBranch.active ? trialBranch : null}
+                    onPointClick={trialBranch.active ? playTrialPoint : undefined}
+                    onPointContextMenu={trialBranch.active ? undoTrialBranch : undefined}
+                    t={t}
+                  />
                 ) : (
                   <GoBoard record={record} moveNumber={moveNumber} analysis={currentAnalysis} />
                 )}
@@ -4836,8 +5087,12 @@ function BoardContextBar({
   analysis,
   liveAnalysis,
   disabled,
+  trialBranch,
   onStart,
   onPause,
+  onToggleTrial,
+  onUndoTrial,
+  onClearTrial,
   t
 }: {
   title: string
@@ -4846,8 +5101,12 @@ function BoardContextBar({
   analysis: KataGoMoveAnalysis | null
   liveAnalysis: LiveAnalysisState
   disabled: boolean
+  trialBranch: TrialBranch
   onStart: () => void
   onPause: () => void
+  onToggleTrial: () => void
+  onUndoTrial: () => void
+  onClearTrial: () => void
   t: UiTranslator
 }): ReactElement {
   const current = moveNumber > 0 ? record.moves[moveNumber - 1] : undefined
@@ -4856,7 +5115,7 @@ function BoardContextBar({
   const isCurrentLiveTarget = liveAnalysis.targetMoveNumber === moveNumber
   const totalVisits = isCurrentLiveTarget ? liveAnalysis.visits : candidateVisitsTotal(analysis)
   const bestVisits = isCurrentLiveTarget ? liveAnalysis.bestVisits : candidateBestVisits(analysis)
-  const finalRecordScore = moveNumber === record.moves.length ? gameResultLeadForUi(record.game, t) : null
+  const finalRecordScore = !trialBranch.active && moveNumber === record.moves.length ? gameResultLeadForUi(record.game, t) : null
   const status = isCurrentLiveTarget
     ? liveAnalysis.status
     : (analysis ? t('analysisSearched', { visits: formatVisits(totalVisits) }) : t('analysisWaiting'))
@@ -4894,9 +5153,37 @@ function BoardContextBar({
       <div className="analysis-control-strip" aria-label="KataGo live analysis control">
         <button
           type="button"
+          className={`analysis-mini-button ${trialBranch.active ? 'is-active' : ''}`}
+          onClick={onToggleTrial}
+          disabled={disabled && !trialBranch.active}
+        >
+          {trialBranch.active ? '恢复' : '试下'}
+        </button>
+        {trialBranch.active ? (
+          <>
+            <button
+              type="button"
+              className="analysis-mini-button"
+              onClick={onUndoTrial}
+              disabled={trialBranch.moves.length === 0}
+            >
+              撤销
+            </button>
+            <button
+              type="button"
+              className="analysis-mini-button"
+              onClick={onClearTrial}
+              disabled={trialBranch.moves.length === 0}
+            >
+              清空
+            </button>
+          </>
+        ) : null}
+        <button
+          type="button"
           className={`analysis-toggle-button ${liveAnalysis.running ? 'is-running' : ''}`}
           onClick={liveAnalysis.running ? onPause : onStart}
-          disabled={!liveAnalysis.running && disabled}
+          disabled={trialBranch.active || (!liveAnalysis.running && disabled)}
         >
           <span className="analysis-toggle-button__dot" />
           {liveAnalysis.running ? t('pauseAnalysis') : t('startAnalysis')}
@@ -5521,6 +5808,40 @@ function dataUrlByteLength(dataUrl: string): number {
   const clean = base64.replace(/\s+/g, '')
   const padding = clean.endsWith('==') ? 2 : clean.endsWith('=') ? 1 : 0
   return Math.max(0, Math.floor((clean.length * 3) / 4) - padding)
+}
+
+function coerceTrialBranch(input: unknown): TrialBranch | null {
+  if (typeof input !== 'object' || input === null) {
+    return null
+  }
+  const raw = input as Record<string, unknown>
+  const active = raw.active === true
+  const rawMoves = Array.isArray(raw.moves) ? raw.moves : []
+  const moves = rawMoves.flatMap((move, index) => {
+    if (typeof move !== 'object' || move === null) return []
+    const item = move as Record<string, unknown>
+    const col = typeof item.col === 'number' ? item.col : typeof item.x === 'number' ? item.x : NaN
+    const row = typeof item.row === 'number' ? item.row : typeof item.y === 'number' ? item.y : NaN
+    const color: StoneColor = item.color === 'W' ? 'W' : 'B'
+    const gtp = typeof item.gtp === 'string' ? item.gtp : ''
+    if (!Number.isFinite(row) || !Number.isFinite(col) || !gtp) return []
+    return [{
+      x: Math.round(col),
+      y: Math.round(row),
+      row: Math.round(row),
+      col: Math.round(col),
+      color,
+      gtp,
+      moveNumber: typeof item.moveNumber === 'number' ? item.moveNumber : index + 1
+    }]
+  })
+  return {
+    active,
+    baseMoveNumber: typeof raw.baseMoveNumber === 'number' ? raw.baseMoveNumber : 0,
+    moves,
+    nextColor: raw.nextColor === 'W' ? 'W' : 'B',
+    branchHash: typeof raw.branchHash === 'string' ? raw.branchHash : 'trial:unknown'
+  }
 }
 
 async function dataUrlSha256(dataUrl: string): Promise<string> {

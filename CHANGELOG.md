@@ -4,6 +4,22 @@ All notable changes to GoAgent will be documented here.
 
 This project follows semantic versioning once public releases begin.
 
+## 0.4.11 - Try Move Trial Branches
+
+### Added
+
+- Added a temporary try-move mode for exploring variations without modifying the original SGF.
+- Added trial branch state, legal move handling, undo/clear/exit interactions, and distinct trial-stone rendering.
+- Added trial KataGo analysis through a dedicated IPC path so candidate points, PV and teacher evidence can follow the temporary branch without polluting mainline cache or winrate data.
+- Added teacher context and board-image handling so current-move teaching and freeform questions can explicitly distinguish trial branches from real game moves.
+
+### Verified
+
+- `pnpm test`
+- `pnpm typecheck`
+- `pnpm build`
+- `pnpm check:teacher-quality`
+
 ## 0.4.3 - Adaptive Analysis Runtime and Review Evidence
 
 ### Added

@@ -65,7 +65,7 @@ test('Board overlays display candidate values from the side-to-move perspective'
   assert.match(app, /displayScoreLeadForColor\(candidate\.scoreLead, color\)/)
   assert.match(app, /const currentAnalysis = useMemo/)
   assert.match(app, /analysis\?\.moveNumber === moveNumber/)
-  assert.match(app, /<GoBoardV2 record=\{record\} moveNumber=\{moveNumber\} analysis=\{currentAnalysis\}/)
+  assert.match(app, /<GoBoardV2[\s\S]*record=\{boardRecord\}[\s\S]*moveNumber=\{boardMoveNumber\}[\s\S]*analysis=\{boardAnalysis\}/)
   assert.match(app, /<GoBoard record=\{record\} moveNumber=\{moveNumber\} analysis=\{currentAnalysis\}/)
 
   assert.match(geometry, /Math\.max\(0, Math\.min\(100, value\)\) \/ 100/)

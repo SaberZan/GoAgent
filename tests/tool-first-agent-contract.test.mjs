@@ -44,7 +44,7 @@ test('main and renderer provide a request-response bridge for tool-generated boa
   assert.match(main, /teacher:board-image-render-response/)
   assert.match(preload, /onTeacherBoardImageRequest/)
   assert.match(app, /renderTeacherBoardImages/)
-  assert.match(app, /renderBoardPng\(targetRecord, targetMove/)
+  assert.match(app, /renderBoardPng\(renderRecord, targetMove/)
   assert.match(app, /dataUrlSha256/)
 })
 

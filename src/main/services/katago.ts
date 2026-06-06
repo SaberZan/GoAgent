@@ -1,7 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { findGame, getSettings } from '@main/lib/store'
-import type { AnalysisQuality, GameMove, KataGoAnalysisGroup, KataGoCandidate, KataGoMoveAnalysis } from '@main/lib/types'
+import type { AnalysisQuality, GameMove, KataGoAnalysisGroup, KataGoCandidate, KataGoMoveAnalysis, TrialBranchSummary, TrialMove } from '@main/lib/types'
 import { readGameRecord } from './sgf'
 import { resolveKataGoRuntime } from './katagoRuntime'
 import { ensureFoxGameDownloaded } from './fox'
@@ -158,6 +158,26 @@ export function cancelKataGoAnalysis(filter: { runId?: string; group?: KataGoAna
 
 function moveHistory(moves: GameMove[]): Array<[string, string]> {
   return moves.map((move) => [move.color, move.pass ? 'pass' : move.gtp])
+}
+
+function stableTrialBranchHash(baseMoveNumber: number, trialMoves: TrialMove[]): string {
+  const hash = createHash('sha256')
+    .update(`${baseMoveNumber}\n${trialMoves.map((move) => `${move.color}:${move.gtp}:${move.row}:${move.col}`).join('\n')}`)
+    .digest('hex')
+    .slice(0, 16)
+  return `trial:${baseMoveNumber}:${hash}`
+}
+
+function gameMovesFromTrial(baseMoveNumber: number, trialMoves: TrialMove[]): GameMove[] {
+  return trialMoves.map((move, index) => ({
+    moveNumber: baseMoveNumber + index + 1,
+    color: move.color,
+    point: move.gtp,
+    row: Number.isFinite(move.row) ? Math.round(move.row) : null,
+    col: Number.isFinite(move.col) ? Math.round(move.col) : null,
+    gtp: move.gtp,
+    pass: false
+  }))
 }
 
 function initialStonesFromRecord(record: ReturnType<typeof readGameRecord>): Array<[GameMove['color'], string]> {
@@ -936,7 +956,8 @@ function buildMoveAnalysis(
   afterSideToMove: GameMove['color'],
   beforeResponse: KataGoResponse,
   afterResponse: KataGoResponse,
-  actualResponse?: KataGoResponse
+  actualResponse?: KataGoResponse,
+  trialContext?: TrialBranchSummary
 ): KataGoMoveAnalysis {
   const beforeRoot = root(beforeResponse, beforeSideToMove)
   const afterRoot = root(afterResponse, afterSideToMove)
@@ -952,6 +973,7 @@ function buildMoveAnalysis(
     gameId,
     moveNumber,
     boardSize,
+    trialContext,
     currentMove,
     before: {
       ...beforeRoot,
@@ -1105,6 +1127,162 @@ export async function analyzePositionWithProgress(
     throw new Error(`KataGo 没有返回完整局面分析: before=${Boolean(beforeResponse)} after=${Boolean(afterResponse)}`)
   }
   const final = buildMoveAnalysis(gameId, moveNumber, record.boardSize, currentMove, beforeSideToMove, afterSideToMove, beforeResponse, afterResponse, responses.get(actualId))
+  onProgress?.(final, true)
+  return final
+}
+
+export async function analyzeTrialPositionWithProgress(
+  input: {
+    gameId: string
+    baseMoveNumber: number
+    trialMoves: TrialMove[]
+    maxVisits?: number
+    runId?: string
+    group?: KataGoAnalysisGroup
+    reportDuringSearchEvery?: number
+  },
+  onProgress?: (analysis: KataGoMoveAnalysis, isFinal: boolean) => void
+): Promise<KataGoMoveAnalysis> {
+  const indexedGame = findGame(input.gameId)
+  if (!indexedGame) {
+    throw new Error(`找不到棋谱: ${input.gameId}`)
+  }
+  const game = await ensureFoxGameDownloaded(indexedGame)
+  const record = readGameRecord(game)
+  const baseMoveNumber = Math.max(0, Math.min(record.moves.length, Math.round(input.baseMoveNumber)))
+  const trialMoves = input.trialMoves
+    .filter((move) => move.color === 'B' || move.color === 'W')
+    .map((move) => ({
+      ...move,
+      row: Math.round(move.row),
+      col: Math.round(move.col),
+      gtp: String(move.gtp || '').toUpperCase()
+    }))
+  if (trialMoves.length === 0) {
+    throw new Error('试下分支还没有落子。')
+  }
+  const maxVisits = effectiveVisitsForSpeedMode(input.maxVisits ?? 260, 'position')
+  const baseMoves = record.moves.slice(0, baseMoveNumber)
+  const trialGameMoves = gameMovesFromTrial(baseMoveNumber, trialMoves)
+  const allMoves = [...baseMoves, ...trialGameMoves]
+  const currentMove = trialGameMoves[trialGameMoves.length - 1]
+  const beforeMoves = allMoves.slice(0, -1)
+  const afterMoves = allMoves
+  const komi = analysisKomiForRecord(record)
+  const rootInitialStones = initialStonesFromRecord(record)
+  const rootInitialPlayer = initialPlayerFromRecord(record)
+  const branchHash = stableTrialBranchHash(baseMoveNumber, trialMoves)
+  const trialContext: TrialBranchSummary = {
+    active: true,
+    baseMoveNumber,
+    moves: trialMoves,
+    nextColor: sideToMoveAt(allMoves, allMoves.length),
+    branchHash
+  }
+  const deepEvidence = maxVisits >= 500
+  const beforeId = `${input.gameId}-trial-before-${branchHash}`
+  const afterId = `${input.gameId}-trial-after-${branchHash}`
+  const actualId = `${input.gameId}-trial-actual-${branchHash}`
+  const beforeSideToMove = currentMove.color
+  const afterSideToMove = sideToMoveAt(allMoves, allMoves.length)
+  const beforeVisits = Math.max(60, Math.min(maxVisits, Math.round(maxVisits * 0.72)))
+  const afterVisits = Math.max(80, maxVisits)
+  let latestBefore: KataGoResponse | undefined
+  let latestAfter: KataGoResponse | undefined
+  let latestActual: KataGoResponse | undefined
+
+  const queries: AnalysisQuery[] = [
+    {
+      id: beforeId,
+      moves: moveHistory(beforeMoves),
+      boardSize: record.boardSize,
+      initialStones: rootInitialStones,
+      initialPlayer: rootInitialPlayer,
+      includeOwnership: deepEvidence,
+      includeMovesOwnership: deepEvidence,
+      includePolicy: true,
+      includePVVisits: true,
+      komi,
+      maxVisits: beforeVisits,
+      reportDuringSearchEvery: input.reportDuringSearchEvery ?? 0.25
+    },
+    {
+      id: afterId,
+      moves: moveHistory(afterMoves),
+      boardSize: record.boardSize,
+      initialStones: rootInitialStones,
+      initialPlayer: rootInitialPlayer,
+      includeOwnership: deepEvidence,
+      includePolicy: true,
+      includePVVisits: true,
+      komi,
+      maxVisits: afterVisits,
+      reportDuringSearchEvery: input.reportDuringSearchEvery ?? 0.25
+    }
+  ]
+  const actualQuery = forcePlayedMoveQuery(
+    actualId,
+    beforeMoves,
+    currentMove,
+    record.boardSize,
+    komi,
+    Math.max(80, Math.min(maxVisits, 260)),
+    input.reportDuringSearchEvery ?? 0.25,
+    undefined,
+    rootInitialStones,
+    rootInitialPlayer
+  )
+  if (actualQuery) {
+    actualQuery.includePVVisits = true
+    actualQuery.includePolicy = true
+    queries.push(actualQuery)
+  }
+
+  const buildTrialAnalysis = (before: KataGoResponse, after: KataGoResponse, actual?: KataGoResponse): KataGoMoveAnalysis =>
+    buildMoveAnalysis(
+      input.gameId,
+      baseMoveNumber + trialMoves.length,
+      record.boardSize,
+      currentMove,
+      beforeSideToMove,
+      afterSideToMove,
+      before,
+      after,
+      actual,
+      trialContext
+    )
+
+  let responses: Map<string, KataGoResponse>
+  try {
+    responses = await queryKataGoBatch(queries, (response) => {
+      if (response.id === beforeId) latestBefore = response
+      if (response.id === afterId) latestAfter = response
+      if (response.id === actualId) latestActual = response
+      if (latestBefore?.rootInfo && latestAfter?.rootInfo) {
+        const partial = buildTrialAnalysis(latestBefore, latestAfter, latestActual)
+        onProgress?.(partial, !latestBefore.isDuringSearch && !latestAfter.isDuringSearch && !latestActual?.isDuringSearch)
+      }
+    }, {
+      runId: input.runId,
+      group: input.group ?? 'trial',
+      replaceGroup: false,
+      resolvePartialAfterMs: 1200
+    })
+  } catch (error) {
+    if ((String(error).includes('已取消') || String(error).includes('KataGo 分析超时')) && latestBefore?.rootInfo && latestAfter?.rootInfo) {
+      const partial = buildTrialAnalysis(latestBefore, latestAfter, latestActual)
+      onProgress?.(partial, true)
+      return partial
+    }
+    throw error
+  }
+
+  const beforeResponse = responses.get(beforeId) ?? latestBefore
+  const afterResponse = responses.get(afterId) ?? latestAfter
+  if (!beforeResponse || !afterResponse) {
+    throw new Error(`KataGo 没有返回完整试下分析: before=${Boolean(beforeResponse)} after=${Boolean(afterResponse)}`)
+  }
+  const final = buildTrialAnalysis(beforeResponse, afterResponse, responses.get(actualId) ?? latestActual)
   onProgress?.(final, true)
   return final
 }

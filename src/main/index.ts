@@ -2,14 +2,14 @@ import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell, type Conte
 import { isAbsolute, relative, resolve, join } from 'node:path'
 import { appHome, findGame, getGames, getIkatagoPassword, getSettings, getTtsCustomApiKey, getTtsVolcengineAccessToken, getTtsVolcengineApiKey, getZhiziToken, hasIkatagoPassword, hasLlmApiKey, hasTtsCustomApiKey, hasTtsVolcengineAccessToken, hasTtsVolcengineApiKey, hasZhiziToken, replaceSettings, setSettings, upsertGames } from './lib/store'
 import { BRAND_NAME } from '@shared/brand'
-import type { AnalyzeGameQuickRequest, AnalyzePositionRequest, AppSettings, DashboardData, FoxSyncRequest, KataGoAssetInstallRequest, KataGoBenchmarkRequest, KataGoCancelAnalysisRequest, LibraryDeleteRequest, LlmModelsListRequest, LlmSettingsTestRequest, ReviewRequest, TeacherBoardImageRenderImage, TeacherBoardImageRenderRequest, TeacherBoardImageRenderResponse, TeacherChatMessage, TeacherRunCancelRequest, TeacherRunRequest, ZhiziCloudConnectionTestResult, ZhiziCloudLoginCodeRequest, ZhiziCloudLoginRequest, ZhiziCloudLoginResult, ZhiziCloudSendCodeRequest, ZhiziCloudSendCodeResult } from './lib/types'
+import type { AnalyzeGameQuickRequest, AnalyzePositionRequest, AnalyzeTrialPositionRequest, AppSettings, DashboardData, FoxSyncRequest, KataGoAssetInstallRequest, KataGoBenchmarkRequest, KataGoCancelAnalysisRequest, LibraryDeleteRequest, LlmModelsListRequest, LlmSettingsTestRequest, ReviewRequest, TeacherBoardImageRenderImage, TeacherBoardImageRenderRequest, TeacherBoardImageRenderResponse, TeacherChatMessage, TeacherRunCancelRequest, TeacherRunRequest, ZhiziCloudConnectionTestResult, ZhiziCloudLoginCodeRequest, ZhiziCloudLoginRequest, ZhiziCloudLoginResult, ZhiziCloudSendCodeRequest, ZhiziCloudSendCodeResult } from './lib/types'
 import { importSgfFile, readGameRecord } from './services/sgf'
 import { ensureFoxGameDownloaded, syncFoxGames } from './services/fox'
 import { runReview } from './services/review'
 import { applyDetectedDefaults, detectSystemProfile } from './services/systemProfile'
 import { cancelTeacherRun, runTeacherTask } from './services/teacherAgent'
 import { listLlmModels, testLlmSettings } from './services/llm'
-import { analyzeGameQuick, analyzePosition, analyzePositionWithProgress, cancelKataGoAnalysis } from './services/katago'
+import { analyzeTrialPositionWithProgress, cancelKataGoAnalysis } from './services/katago'
 import { benchmarkKataGo } from './services/katagoBenchmark'
 import { getKataGoEnginePoolStats } from './services/katagoEnginePool'
 import { getAnalysisSchedulerStats, runScheduledAnalysis } from './services/analysis/scheduler'
@@ -423,6 +423,36 @@ app.whenReady().then(() => {
           isFinal
         })
       }))
+    } catch (error) {
+      if (/已取消|cancel|replaced|替换|停止/i.test(String(error))) return null
+      throw error
+    }
+  })
+  ipcMain.handle('katago:analyze-trial-position-stream', async (event, payload: AnalyzeTrialPositionRequest) => {
+    const group = payload.group ?? 'trial'
+    try {
+      return await runScheduledAnalysis({
+        runId: payload.runId,
+        group,
+        priority: 'live',
+        description: `Trial position ${payload.gameId}#${payload.baseMoveNumber}+${payload.trialMoves.length}`,
+        replaceGroup: true
+      }, () => analyzeTrialPositionWithProgress({
+        gameId: payload.gameId,
+        baseMoveNumber: payload.baseMoveNumber,
+        trialMoves: payload.trialMoves,
+        maxVisits: payload.maxVisits,
+        runId: payload.runId,
+        group,
+        reportDuringSearchEvery: payload.reportDuringSearchEvery ?? 0.25
+      }, (analysis, isFinal) => safeSendToRenderer(event, 'katago:analyze-position-progress', {
+        runId: payload.runId,
+        gameId: payload.gameId,
+        moveNumber: analysis.moveNumber,
+        trialBranchHash: analysis.trialContext?.branchHash,
+        analysis,
+        isFinal
+      })))
     } catch (error) {
       if (/已取消|cancel|replaced|替换|停止/i.test(String(error))) return null
       throw error

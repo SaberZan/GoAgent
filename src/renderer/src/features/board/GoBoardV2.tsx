@@ -18,6 +18,7 @@ import {
   type RenderVariationMove
 } from './boardGeometry'
 import type { CandidateTooltipMove, CandidateTooltipPosition } from './CandidateTooltip'
+import type { TrialBranch } from './trialBranch'
 import './board-v2.css'
 
 interface GoBoardV2Props {
@@ -27,7 +28,9 @@ interface GoBoardV2Props {
   keyMoves?: RenderKeyMove[]
   flashPoint?: (BoardPoint & { nonce?: number; label?: string }) | null
   compact?: boolean
+  trialBranch?: TrialBranch | null
   onPointClick?: (point: BoardPoint) => void
+  onPointContextMenu?: () => void
   onCandidateHover?: (candidate: RenderCandidate | null) => void
   t?: UiTranslator
 }
@@ -282,7 +285,21 @@ function BoardFlashMark({ point, boardSize }: { point: BoardPoint & { label?: st
   )
 }
 
-export function GoBoardV2({ record, moveNumber, analysis = null, keyMoves = [], flashPoint = null, compact = false, onPointClick, onCandidateHover, t: providedT }: GoBoardV2Props): ReactElement {
+function TrialStoneMark({ move, boardSize }: { move: TrialBranch['moves'][number]; boardSize: number }): ReactElement {
+  const p = xy(move, boardSize)
+  const label = move.moveNumber > 99 ? '99+' : String(move.moveNumber)
+  return (
+    <g className={`ks-trial-stone-mark ks-trial-stone-mark--${move.color}`} transform={`translate(${p.x} ${p.y})`}>
+      <circle className="ks-trial-stone-ring" r="28.4" />
+      <g className="ks-trial-stone-badge" transform="translate(18 -18)">
+        <circle r="10.2" />
+        <text y="0.4">{label}</text>
+      </g>
+    </g>
+  )
+}
+
+export function GoBoardV2({ record, moveNumber, analysis = null, keyMoves = [], flashPoint = null, compact = false, trialBranch = null, onPointClick, onPointContextMenu, onCandidateHover, t: providedT }: GoBoardV2Props): ReactElement {
   const t = providedT ?? ((key: string) => {
     const fallback: Record<string, string> = {
       boardImageLabel: '围棋棋盘',
@@ -295,7 +312,9 @@ export function GoBoardV2({ record, moveNumber, analysis = null, keyMoves = [], 
   const stones = useMemo(() => renderStones(record, moveNumber), [record, moveNumber])
   const candidates = useMemo(() => renderCandidates(analysis, boardSize), [analysis, boardSize])
   const playedMove = useMemo(() => renderPlayedMove(analysis, boardSize), [analysis, boardSize])
-  const variationFirstColor = moveToColor(analysis?.currentMove ?? (moveNumber > 0 ? record.moves[moveNumber - 1] : undefined))
+  const variationFirstColor = analysis?.trialContext?.active
+    ? analysis.trialContext.nextColor
+    : moveToColor(analysis?.currentMove ?? (moveNumber > 0 ? record.moves[moveNumber - 1] : undefined))
   const activeCandidate = hoveredCandidate
   const variationMoves = useMemo(
     () => activeCandidate ? candidateVariationMoves(activeCandidate.renderCandidate, boardSize, variationFirstColor) : [],
@@ -361,20 +380,37 @@ export function GoBoardV2({ record, moveNumber, analysis = null, keyMoves = [], 
     handleCandidateHover(nearest.candidate, tooltipPosition(nearest.point, event.currentTarget))
   }
 
-  function handlePointerDown(event: PointerEvent<SVGSVGElement>): void {
+  function eventBoardPoint(event: PointerEvent<SVGSVGElement>): BoardPoint | null {
+    const matrix = event.currentTarget.getScreenCTM()?.inverse()
+    if (!matrix) {
+      return null
+    }
     if (!onPointClick) {
-      return
+      return null
     }
     const svg = event.currentTarget
     const point = svg.createSVGPoint()
     point.x = event.clientX
     point.y = event.clientY
-    const cursor = point.matrixTransform(svg.getScreenCTM()?.inverse())
+    const cursor = point.matrixTransform(matrix)
     const cell = INNER / (boardSize - 1)
     const x = Math.round((cursor.x - EDGE) / cell)
     const y = Math.round((cursor.y - EDGE) / cell)
     if (x >= 0 && y >= 0 && x < boardSize && y < boardSize) {
-      onPointClick({ x, y })
+      return { x, y }
+    }
+    return null
+  }
+
+  function handlePointerDown(event: PointerEvent<SVGSVGElement>): void {
+    if (event.button === 2) {
+      event.preventDefault()
+      onPointContextMenu?.()
+      return
+    }
+    const point = eventBoardPoint(event)
+    if (point) {
+      onPointClick?.(point)
     }
   }
 
@@ -390,6 +426,7 @@ export function GoBoardV2({ record, moveNumber, analysis = null, keyMoves = [], 
         onMouseMove={handleBoardPointerMove}
         onMouseLeave={() => handleCandidateHover(null)}
         onPointerDown={handlePointerDown}
+        onContextMenu={(event) => event.preventDefault()}
       >
         <defs>
           <linearGradient id="ks-board-wood" x1="0" y1="0" x2="1" y2="1">
@@ -490,6 +527,14 @@ export function GoBoardV2({ record, moveNumber, analysis = null, keyMoves = [], 
             )
           })}
         </g>
+
+        {trialBranch?.active && trialBranch.moves.length > 0 ? (
+          <g className="ks-trial-stones-layer">
+            {trialBranch.moves.map((move) => (
+              <TrialStoneMark key={`${move.moveNumber}-${move.gtp}`} move={move} boardSize={boardSize} />
+            ))}
+          </g>
+        ) : null}
 
         <g className="ks-candidates-layer">
           {candidates.map((candidate) => (

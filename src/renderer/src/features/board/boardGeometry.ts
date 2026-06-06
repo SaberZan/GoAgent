@@ -338,7 +338,8 @@ export function renderCandidates(analysis: KataGoMoveAnalysis | null | undefined
   const afterMoves = Array.isArray(valueOf(valueOf(analysis, 'after'), 'topMoves'))
     ? valueOf(valueOf(analysis, 'after'), 'topMoves') as unknown[]
     : []
-  const isBeforePosition = beforeMoves.length > 0
+  const trialActive = valueOf(valueOf(analysis, 'trialContext'), 'active') === true
+  const isBeforePosition = beforeMoves.length > 0 && !trialActive
   const topMoves = isBeforePosition ? beforeMoves : afterMoves
   const currentColor = analysis.currentMove ? moveToColor(analysis.currentMove) : 'B'
   const displayColor = isBeforePosition ? currentColor : oppositeColor(currentColor)

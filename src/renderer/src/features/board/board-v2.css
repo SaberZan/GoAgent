@@ -96,6 +96,46 @@
   opacity: 0.24;
 }
 
+.ks-trial-stones-layer {
+  pointer-events: none;
+}
+
+.ks-trial-stone-mark {
+  pointer-events: none;
+  filter: drop-shadow(0 2px 5px rgb(20 80 86 / 0.28));
+}
+
+.ks-trial-stone-ring {
+  fill: none;
+  stroke: rgba(31, 181, 174, 0.9);
+  stroke-width: 3.4;
+  stroke-dasharray: 9 5.5;
+  paint-order: stroke;
+}
+
+.ks-trial-stone-mark--B .ks-trial-stone-ring {
+  stroke: rgba(80, 218, 207, 0.94);
+}
+
+.ks-trial-stone-mark--W .ks-trial-stone-ring {
+  stroke: rgba(24, 116, 119, 0.86);
+}
+
+.ks-trial-stone-badge circle {
+  fill: rgba(10, 30, 31, 0.92);
+  stroke: rgba(238, 255, 250, 0.86);
+  stroke-width: 1.1;
+}
+
+.ks-trial-stone-badge text {
+  fill: rgba(241, 255, 250, 0.98);
+  font-size: 7.2px;
+  font-weight: 900;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  letter-spacing: 0;
+}
+
 .ks-previous-move {
   pointer-events: none;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.3));

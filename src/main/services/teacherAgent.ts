@@ -342,6 +342,7 @@ function systemPrompt(level: CoachUserLevel): string {
     '你具备真正的工具调用能力：棋谱、棋盘截图、KataGo、知识库、学生画像、报告和本机工具都应按需调用；不要靠按钮预处理或印象猜局面。',
     '分析当前手、整盘复盘或区间复盘时，必须通过工具取得棋盘图、KataGo 证据和知识库匹配。当前手至少调用 board.captureTeachingImage、katago.analyzePosition、knowledge.matchPosition 或 knowledge.searchLocal；整盘复盘先调用 sgf.readGameRecord、katago.analyzeGameBatch，再截图 3-6 个关键手；区间复盘先精读区间关键手，再截图关键手。',
     '工具结果和 KataGo 是事实依据。',
+    '如果请求或工具结果标记 boardContext=trial / trialContext，说明这是用户临时“试下”的变化分支；讲解时必须明确说“如果这样下/这个试下分支”，不要把它说成实战主线。',
     '如果 KataGo 结果包含 tracePacket，优先使用 tracePacket.searchSummary、candidateComparison、policySearchDelta、pvSupport、ownershipSummary、humanPolicySignals 和 shallowSearchTree 来解释“为什么”。',
     'tracePacket 是给老师的搜索证据摘要，不要把原始 MCTS/搜索字段生硬堆给学生；请翻译成“自然但被搜索否定”“不直观但搜索支持”“PV 支撑弱所以只能参考”等教学语言。',
     '如果 tracePacket 的置信度或 PV 支撑不足，必须降级措辞，不能说唯一、必杀、必败或绝对。',
@@ -831,6 +832,8 @@ function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
     gameId: state.request.gameId,
     game: currentGame ? summarizeGames([currentGame])[0] : undefined,
     moveNumber: state.request.moveNumber,
+    boardContext: state.request.boardContext ?? 'mainline',
+    trialBranch: state.request.trialBranch,
     playerName: state.request.playerName || state.studentName,
     coachLevel: state.request.coachLevel ?? state.profile.userLevel,
     studentAgeRange: state.request.studentAgeRange ?? getSettings().defaultStudentAgeRange,
@@ -856,6 +859,7 @@ function initialAgentUserMessage(state: TeacherAgentSessionState): ChatMessage {
     '你可以自主调用工具获取棋谱、棋盘图、KataGo 数据、知识库和学生画像；不要等待程序替你预处理。',
     'board.captureTeachingImage 是用来看棋盘图片的工具；拿到图后再调用 KataGo、调用知识库，匹配棋形、定式、死活、手筋或常见错误类型。',
     '如果 intent 是 current-move，请调用 board.captureTeachingImage 获取当前手棋盘图，再调用 katago.analyzePosition 和 knowledge.matchPosition/searchLocal 核对事实。',
+    '如果 boardContext=trial，请把本轮当作用户“试下”的变化图：截图和 prefetchedAnalysis 已对应试下分支；讲解时只能说“这个试下分支/如果这样下”，不能说成实战。',
     '如果 intent 是 game-review，请先调用 sgf.readGameRecord 和 katago.analyzeGameBatch 找关键问题手，再调用 board.captureTeachingImage(selection=top-loss,maxImages=3-6) 获取关键手图，最后调用知识库工具讲解。',
     '如果 intent 是 move-range，请调用 katago.analyzeMoveRangeKeyMoves 精读区间关键手，再调用 board.captureTeachingImage(selection=move-range-top-loss,maxImages=3-6) 获取关键手图。',
     '当前手讲解要按工具返回的 teachingDensity 掌握详略：常规定式少讲；定式分支或相似型列关键变化；中盘战、攻杀、转换要讲目的、对方应手、后续变化和实战评价。',
@@ -1179,7 +1183,9 @@ async function captureTeachingImagesForState(state: TeacherAgentSessionState, in
     gameId,
     moveNumbers,
     captions,
-    analyses
+    analyses,
+    boardContext: state.request.boardContext,
+    trialBranch: state.request.trialBranch
   })
   if (!rendered.length) {
     throw new Error('棋盘截图工具没有返回图片。')
@@ -1347,9 +1353,23 @@ function createTeacherAgentTools(state: TeacherAgentSessionState): TeacherAgentT
         const gameId = stringInput(input, 'gameId', state.request.gameId)
         if (!gameId) throw new Error('katago.analyzePosition 需要 gameId。')
         const record = await ensureSessionRecord(state, gameId)
-        const moveNumber = numberInput(input, 'moveNumber', state.request.moveNumber ?? record?.moves.length ?? 0, 0, record?.moves.length ?? 400)
+        const requestTrial = state.request.boardContext === 'trial' && state.request.trialBranch?.active
+        const trialMoveNumber = requestTrial
+          ? state.request.trialBranch!.baseMoveNumber + state.request.trialBranch!.moves.length
+          : undefined
+        const moveNumber = numberInput(
+          input,
+          'moveNumber',
+          state.request.moveNumber ?? trialMoveNumber ?? record?.moves.length ?? 0,
+          0,
+          requestTrial ? trialMoveNumber ?? record?.moves.length ?? 400 : record?.moves.length ?? 400
+        )
         const prefetched = state.request.prefetchedAnalysis
-        const analysis = prefetched?.gameId === gameId && prefetched.moveNumber === moveNumber
+        const prefetchedMatches = prefetched?.gameId === gameId && prefetched.moveNumber === moveNumber && (
+          !requestTrial ||
+          prefetched.trialContext?.branchHash === state.request.trialBranch?.branchHash
+        )
+        const analysis = prefetchedMatches
           ? prefetched
           : await (async () => {
               pauseInteractiveKataGoWork()

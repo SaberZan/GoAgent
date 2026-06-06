@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { createWriteStream, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { pipeline } from 'node:stream/promises'
 
@@ -18,18 +18,43 @@ const assets = [
   ['voices/zm_009.bin', 'voices/zm_009.bin']
 ]
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 async function download(url, output) {
   mkdirSync(dirname(output), { recursive: true })
   if (existsSync(output)) {
     console.log(`[prepare-tts-assets] exists ${output}`)
     return
   }
-  console.log(`[prepare-tts-assets] downloading ${url}`)
-  const response = await fetch(url)
-  if (!response.ok || !response.body) {
-    throw new Error(`Failed to download ${url}: HTTP ${response.status}`)
+  const partial = `${output}.part`
+  let lastError
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    try {
+      rmSync(partial, { force: true })
+      console.log(`[prepare-tts-assets] downloading ${url} (attempt ${attempt}/5)`)
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'GoAgent-release-assets/1.0'
+        }
+      })
+      if (!response.ok || !response.body) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+      await pipeline(response.body, createWriteStream(partial))
+      renameSync(partial, output)
+      return
+    } catch (error) {
+      lastError = error
+      rmSync(partial, { force: true })
+      if (attempt < 5) {
+        console.warn(`[prepare-tts-assets] retrying ${url}: ${error instanceof Error ? error.message : String(error)}`)
+        await sleep(1500 * attempt)
+      }
+    }
   }
-  await pipeline(response.body, createWriteStream(output))
+  throw new Error(`Failed to download ${url}: ${lastError instanceof Error ? lastError.message : String(lastError)}`)
 }
 
 function normalizeTokenizerJson(path) {

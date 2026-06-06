@@ -95,9 +95,61 @@ jobs:
             echo "::notice title=NVIDIA package skipped::Set nvidia_katago_asset_repo, nvidia_katago_asset_release_tag, and nvidia_katago_asset_pattern to publish the Windows NVIDIA edition."
           fi
 
+  prepare-tts-assets:
+    name: Prepare Kokoro TTS assets
+    needs: release-preflight
+    if: needs.release-preflight.outputs.can-package == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Python for Kokoro zh G2P
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Kokoro zh G2P Python dependencies
+        run: python -m pip install -r scripts/requirements-tts.txt
+
+      - name: Download and validate Kokoro TTS assets once
+        shell: bash
+        env:
+          GOAGENT_TTS_ASSETS_STRICT: "1"
+          GOAGENT_TTS_SMOKE_STRICT: "1"
+          GOAGENT_TTS_PYTHON: python
+        run: |
+          pnpm prepare:tts-assets
+          pnpm check:tts-assets
+          pnpm smoke:tts
+
+      - name: Upload Kokoro TTS assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: GoAgent-Kokoro-zh-CN
+          path: data/tts/kokoro/zh-CN
+          if-no-files-found: error
+
   package:
     name: Package ${{ matrix.name }}
-    needs: release-preflight
+    needs:
+      - release-preflight
+      - prepare-tts-assets
     if: needs.release-preflight.outputs.can-package == 'true'
     runs-on: ${{ matrix.os }}
     strategy:
@@ -146,14 +198,19 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Prepare Kokoro TTS assets
+      - name: Download Kokoro TTS assets
+        uses: actions/download-artifact@v4
+        with:
+          name: GoAgent-Kokoro-zh-CN
+          path: data/tts/kokoro/zh-CN
+
+      - name: Validate Kokoro TTS assets
         shell: bash
         env:
           GOAGENT_TTS_ASSETS_STRICT: "1"
           GOAGENT_TTS_SMOKE_STRICT: "1"
           GOAGENT_TTS_PYTHON: python
         run: |
-          pnpm prepare:tts-assets
           pnpm check:tts-assets
           pnpm smoke:tts
 
@@ -347,7 +404,9 @@ jobs:
 
   package-lite:
     name: Package Lite ${{ matrix.name }}
-    needs: release-preflight
+    needs:
+      - release-preflight
+      - prepare-tts-assets
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -389,14 +448,19 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Prepare Kokoro TTS assets
+      - name: Download Kokoro TTS assets
+        uses: actions/download-artifact@v4
+        with:
+          name: GoAgent-Kokoro-zh-CN
+          path: data/tts/kokoro/zh-CN
+
+      - name: Validate Kokoro TTS assets
         shell: bash
         env:
           GOAGENT_TTS_ASSETS_STRICT: "1"
           GOAGENT_TTS_SMOKE_STRICT: "1"
           GOAGENT_TTS_PYTHON: python
         run: |
-          pnpm prepare:tts-assets
           pnpm check:tts-assets
           pnpm smoke:tts
 
@@ -456,7 +520,9 @@ jobs:
 
   package-nvidia-windows:
     name: Package Windows NVIDIA
-    needs: release-preflight
+    needs:
+      - release-preflight
+      - prepare-tts-assets
     if: needs.release-preflight.outputs.can-package == 'true' && needs.release-preflight.outputs.can-package-nvidia == 'true'
     runs-on: windows-latest
 
@@ -489,14 +555,19 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
-      - name: Prepare Kokoro TTS assets
+      - name: Download Kokoro TTS assets
+        uses: actions/download-artifact@v4
+        with:
+          name: GoAgent-Kokoro-zh-CN
+          path: data/tts/kokoro/zh-CN
+
+      - name: Validate Kokoro TTS assets
         shell: bash
         env:
           GOAGENT_TTS_ASSETS_STRICT: "1"
           GOAGENT_TTS_SMOKE_STRICT: "1"
           GOAGENT_TTS_PYTHON: python
         run: |
-          pnpm prepare:tts-assets
           pnpm check:tts-assets
           pnpm smoke:tts
 

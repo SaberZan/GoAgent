@@ -4,6 +4,10 @@ GoAgent v0.4.11 adds the first version of the “try move” experience: you can
 
 QQ 群：1030632742，欢迎一起交流、提建议、完善 GoAgent。
 
+## v0.4 系列延续能力
+
+This release keeps the broader v0.4 foundation: grounded shape recognition engine, local pattern matcher, knowledge source-policy gates, optimized move-range review, quality checks and eval gates, Real Eval / engine silver fixture gate, KataGo engine pool telemetry, Release artifact smoke, student level, student age, teacher persona style settings with evidence boundary, teacher sessions, selective PR #6 integration, Kokoro selected-provider TTS with offline synthesis, Windows OpenCL runtime bundle, KataGo OpenCL adjacent runtime files, GPU vendor OpenCL drivers, and the community contribution path from layiku and wimi321.
+
 ## 中文
 
 ### 下载前先选版本

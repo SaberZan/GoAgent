@@ -8,31 +8,31 @@ const lizzieBaiduCode = '3i8w'
 
 const tools = [
   {
-    audience: '推荐国内用户优先下载',
+    audience: '推荐先点这个',
     title: 'LizzieYzy Next 百度网盘',
-    text: `国内访问更方便，提取码 ${lizzieBaiduCode}。适合大多数国内用户先下载安装。`,
+    text: `国内用户先点这个，提取码 ${lizzieBaiduCode}。大多数棋友下载后就能开始复盘。`,
     platforms: ['Windows', 'macOS', 'Linux'],
     href: lizzieBaidu,
-    cta: '打开百度网盘',
-    qq: '适合大多数国内用户',
+    cta: '百度网盘下载',
+    qq: '适合大多数人',
     featured: true,
     icon: 'cloud'
   },
   {
-    audience: '官方完整记录',
+    audience: '备用下载',
     title: 'LizzieYzy Next GitHub 下载',
-    text: '完整版本记录、多平台安装包和校验信息都保留在 GitHub 下载页，适合归档、回滚和校验。',
+    text: '百度网盘打不开时再点这个。页面是英文也没关系，找最新安装包下载。',
     platforms: ['Windows', 'macOS', 'Linux'],
     href: lizzieReleases,
     cta: '从 GitHub 下载',
-    qq: 'LizzieYzy Next QQ 299419120',
+    qq: '百度网盘打不开时使用',
     featured: false,
     icon: 'github'
   },
   {
-    audience: '实验功能尝鲜',
-    title: 'GoAgent GitHub 下载',
-    text: '实验中的围棋智能体。适合想体验当前手讲解、KataGo 证据解释和 AI 问答工作流的用户。',
+    audience: '想尝鲜再下载',
+    title: 'GoAgent',
+    text: 'GoAgent 是实验围棋智能体，适合想试 AI 讲棋的用户。只想稳定复盘，先不用管它。',
     platforms: ['Windows', 'macOS'],
     href: goAgentReleases,
     cta: '试用 GoAgent',
@@ -45,7 +45,7 @@ const tools = [
 <BaseLayout title="下载 LizzieYzy Next" description="首推下载 LizzieYzy Next 专业围棋复盘工作台；GoAgent 作为实验围棋智能体提供尝鲜版本。" pageKey="download">
   <section class="page-hero">
     <h1>下载 LizzieYzy Next</h1>
-    <p class="lead">大多数用户先下载 LizzieYzy Next：国内用户可以优先用百度网盘，GitHub 下载页保留完整版本记录、校验信息和多平台安装包。</p>
+    <p class="lead">不知道选哪个？国内用户先点百度网盘。打不开再用 GitHub。GoAgent 是实验功能，想尝鲜再下载。</p>
   </section>
   <section class="content-stack">
     <div class="download-list">
@@ -80,8 +80,7 @@ const tools = [
             <p>{tool.text}</p>
             <div class="download-meta">
               {tool.platforms.map((platform) => <span>{platform}</span>)}
-              {tool.featured ? <span>百度网盘</span> : <span>GitHub 下载</span>}
-              {!tool.featured && <span>SHA256</span>}
+              {tool.featured ? <span>百度网盘</span> : <span>备用入口</span>}
             </div>
             <p>{tool.qq}</p>
           </div>
@@ -90,12 +89,12 @@ const tools = [
       ))}
     </div>
     <article class="notice">
-      <h2>校验下载文件</h2>
-      <p>国内下载优先用百度网盘；需要核对版本、文件名或校验值时，请回到 GitHub 下载页查看完整版本记录。首推 LizzieYzy Next；如果你下载的是 GoAgent，请确认自己要试的是实验智能体版本。</p>
+      <h2>下载小提示</h2>
+      <p>普通用户不用研究太多。先装 LizzieYzy Next；百度网盘打不开，再点 GitHub；想试 AI 讲棋，再下载 GoAgent。</p>
       <ul>
-        <li>Windows 可使用 PowerShell 的 Get-FileHash。</li>
-        <li>macOS 可使用 shasum -a 256。</li>
-        <li>如果文件名、版本号或校验值不一致，请回到对应项目的 GitHub 下载页重新下载。</li>
+        <li>国内用户优先用百度网盘，提取码 {lizzieBaiduCode}。</li>
+        <li>GitHub 是备用下载入口，百度网盘打不开时再用。</li>
+        <li>GoAgent 是实验功能，只想稳定复盘可以先不用下载。</li>
       </ul>
     </article>
   </section>

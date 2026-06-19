@@ -14,8 +14,8 @@ const products = [
     label: '首推 · 专业复盘工作台',
     image: '/images/lizzieyzy-next-workbench.jpg',
     alt: 'LizzieYzy Next 全盘分析工作台',
-    summary: '适合绝大多数棋友先安装。打开棋谱，看胜率曲线、目差、候选点和整盘节奏，快速找出真正值得复盘的转折点。',
-    points: ['野狐昵称抓谱', '快速全盘分析', '胜率图与底部概览', 'Windows / macOS / Linux'],
+    summary: '大多数棋友先装这个。打开棋谱，就能看胜率、目差和关键失误，快速知道一盘棋哪里下坏了。',
+    points: ['导入棋谱就能看', '找关键失误', '看胜率和目差', 'Windows / macOS / Linux'],
     primary: '下载 LizzieYzy Next',
     secondary: '查看代码',
     release: lizzieReleases,
@@ -27,8 +27,8 @@ const products = [
     label: '实验项目 · 围棋智能体',
     image: '/images/goagent-workbench.jpg',
     alt: 'GoAgent 围棋讲解工作台',
-    summary: '适合愿意尝鲜的用户。它尝试把棋盘、KataGo 证据、知识库和 AI 问答放在一起，让关键手能被讲成更自然的话。',
-    points: ['当前手讲解实验', 'KataGo 证据链', 'AI 问答工作流', 'Windows / macOS'],
+    summary: '想试 AI 讲棋时再用。它是实验功能，会尝试把局面和 KataGo 结果讲成更容易听懂的话。',
+    points: ['实验功能', 'AI 讲棋', '适合尝鲜', 'Windows / macOS'],
     primary: '试用 GoAgent',
     secondary: '查看代码',
     release: goAgentReleases,
@@ -38,37 +38,37 @@ const products = [
 ]
 
 const workflow = [
-  ['下载 LizzieYzy Next', '先用成熟的 KataGo 复盘工作台打开棋谱，不需要先理解引擎参数。'],
-  ['看清整盘走势', '通过胜率、目差、候选点和底部概览，快速定位真正改变局面的几手棋。'],
-  ['需要讲解再试 GoAgent', '如果想让 AI 用自然语言解释关键手，再尝试 GoAgent 这个实验围棋智能体。']
+  ['先下载 LizzieYzy Next', '不知道选哪个，就先装这个。大多数棋友日常复盘都够用。'],
+  ['打开棋谱看问题', '看胜率、目差和关键失误，快速知道这盘棋哪里下坏了。'],
+  ['想尝鲜再试 GoAgent', '想让 AI 用自然语言讲棋时，再试 GoAgent 这个实验功能。']
 ]
 
 const downloads = [
   {
-    title: 'LizzieYzy Next 百度网盘',
-    text: '国内访问更方便，适合大多数国内用户优先下载。',
+    title: '推荐：LizzieYzy Next 百度网盘',
+    text: `国内用户先点这个，提取码 ${lizzieBaiduCode}。大多数棋友下载后就能开始复盘。`,
     href: lizzieBaidu,
     note: `提取码 ${lizzieBaiduCode}`,
-    cta: '打开百度网盘',
-    label: '推荐国内用户优先下载',
+    cta: '百度网盘下载',
+    label: '推荐先点这个',
     icon: 'cloud',
     featured: true
   },
   {
-    title: 'LizzieYzy Next GitHub 下载',
-    text: '完整版本记录、多平台安装包和校验信息，适合归档和校验。',
+    title: '备用：LizzieYzy Next GitHub 下载',
+    text: '百度网盘打不开时再点这个。页面是英文也没关系，找最新安装包下载。',
     href: lizzieReleases,
-    note: 'LizzieYzy Next QQ 299419120',
+    note: '备用下载',
     cta: '从 GitHub 下载',
     label: '',
     icon: 'github',
     featured: false
   },
   {
-    title: 'GoAgent GitHub 下载',
-    text: '实验围棋智能体，适合想体验 AI 讲棋工作流的用户。',
+    title: '想尝鲜：GoAgent',
+    text: 'GoAgent 是实验围棋智能体，适合想试 AI 讲棋的用户。只想稳定复盘，先不用管它。',
     href: goAgentReleases,
-    note: 'GoAgent QQ 1030632742',
+    note: '实验功能',
     cta: '试用 GoAgent',
     label: '',
     icon: 'agent',
@@ -113,9 +113,12 @@ const jsonLd = {
 >
   <section class="home-hero">
     <div class="hero-copy">
-      <h1>先把一盘棋复盘清楚</h1>
+      <h1>
+        <span>专业复盘工具与智能体，</span>
+        <span>让每一盘棋都成为进步阶梯。</span>
+      </h1>
       <p class="lead">
-        首推 LizzieYzy Next：给棋友用的专业 KataGo 复盘工作台。下载后导入棋谱，先看清胜率、目差、候选点和整盘节奏；想尝试 AI 讲棋，再试 GoAgent。
+        首推 LizzieYzy Next，轻松复盘、深度分析；同时提供实验围棋智能体 GoAgent，探索围棋 AI 的更多可能。
       </p>
       <div class="button-row hero-actions" aria-label="下载入口">
         <a class="button primary" href={lizzieBaidu}>百度网盘下载</a>
@@ -125,9 +128,9 @@ const jsonLd = {
       </div>
       <p class="hero-download-note">国内用户优先百度网盘，提取码 {lizzieBaiduCode}；GitHub 保留完整版本与校验记录。</p>
       <div class="trust-row" aria-label="官网要点">
-        <span>首推复盘工具</span>
-        <span>KataGo 分析</span>
-        <span>Windows / macOS / Linux</span>
+        <span>大多数人先装这个</span>
+        <span>支持 Windows / macOS / Linux</span>
+        <span>GoAgent 是实验功能</span>
       </div>
     </div>
     <figure class="hero-art">
@@ -137,8 +140,8 @@ const jsonLd = {
 
   <section id="products" class="section-block product-section">
     <div class="section-head centered">
-      <h2>大多数用户，先选 LizzieYzy Next</h2>
-      <p>你要的是稳定复盘和快速定位问题手；等你想尝试自然语言讲棋，再把 GoAgent 当作实验工具探索。</p>
+      <h2>不知道怎么选？先装 LizzieYzy Next</h2>
+      <p>先解决复盘问题，再考虑 AI 讲棋。GoAgent 是实验功能，想尝鲜时再试。</p>
     </div>
     <div class="product-grid">
       {products.map((product) => (
@@ -181,8 +184,8 @@ const jsonLd = {
 
   <section id="download" class="section-block download-section">
     <div class="section-head centered">
-      <h2>免费下载</h2>
-      <p>首推 LizzieYzy Next。国内用户可以优先用百度网盘下载，GitHub 下载页保留完整版本和校验记录。</p>
+      <h2>不知道点哪个？按这个顺序</h2>
+      <p>国内用户先点百度网盘；打不开再用 GitHub；GoAgent 是实验功能，想试 AI 讲棋再下载。</p>
     </div>
     <div class="download-list">
       {downloads.map((download) => (

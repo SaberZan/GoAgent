@@ -52,6 +52,8 @@ requireFile('website/public/llms-full.txt')
 requireFile('website/public/ai.txt')
 
 const index = read('website/src/pages/index.astro')
+const downloadPage = read('website/src/pages/download.astro')
+const layout = read('website/src/layouts/BaseLayout.astro')
 const privacy = read('website/src/pages/privacy.astro')
 const deployment = read('website/DEPLOYMENT.md')
 const workflow = read('.github/workflows/deploy-website.yml')
@@ -62,6 +64,7 @@ const llmsFull = read('website/public/llms-full.txt')
 const ai = read('website/public/ai.txt')
 
 if (!index.includes('LizzieYzy Next')) fail('homepage must contain LizzieYzy Next')
+if (!index.includes('专业复盘工具与智能体')) fail('homepage must use the simplified hero headline')
 if (!index.includes('首推')) fail('homepage must present LizzieYzy Next as the recommended product')
 if (!index.includes('实验围棋智能体')) fail('homepage must position GoAgent as an experimental Go agent')
 if (!index.includes('https://pan.baidu.com/s/1wthaL8YwGMxy_u0U7Mabpw?pwd=3i8w')) fail('homepage must link LizzieYzy Next Baidu Netdisk')
@@ -70,8 +73,12 @@ if (!index.includes('百度网盘下载')) fail('homepage hero must expose the B
 if (!index.includes('从 GitHub 下载')) fail('homepage hero must expose the GitHub download button beside Baidu Netdisk')
 if (!index.includes('https://github.com/wimi321/lizzieyzy-next/releases')) fail('homepage must link LizzieYzy Next GitHub download')
 if (!index.includes('https://github.com/wimi321/GoAgent/releases')) fail('homepage must still link GoAgent GitHub download')
-if (!index.includes('QQ 1030632742')) fail('homepage must expose QQ community')
+if (!layout.includes('QQ 1030632742')) fail('site layout must expose QQ community')
 if (index.includes('Trust')) fail('homepage should not include Trust section')
+if (!downloadPage.includes('不知道选哪个？国内用户先点百度网盘')) fail('download page must explain the simplest download choice')
+for (const keyword of ['SHA256', '回滚', '归档']) {
+  if (downloadPage.includes(keyword)) fail(`download page should avoid technical wording: ${keyword}`)
+}
 for (const keyword of ['本地', 'LLM', 'TTS']) {
   if (!privacy.includes(keyword)) fail(`privacy page must contain ${keyword}`)
 }

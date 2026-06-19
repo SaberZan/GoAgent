@@ -216,8 +216,8 @@ main {
 
 .home-hero {
   display: grid;
-  grid-template-columns: minmax(360px, 0.84fr) minmax(540px, 1.16fr);
-  gap: 48px;
+  grid-template-columns: minmax(560px, 0.95fr) minmax(480px, 1.05fr);
+  gap: 40px;
   align-items: center;
   min-height: calc(100vh - 120px);
   padding: 32px 0 64px;
@@ -272,6 +272,16 @@ h3 {
   margin-top: 20px;
 }
 
+.hero-actions {
+  align-items: stretch;
+  gap: 10px;
+}
+
+.hero-actions .button {
+  padding-inline: 14px;
+  font-size: 0.88rem;
+}
+
 .button {
   display: inline-flex;
   align-items: center;
@@ -299,6 +309,15 @@ h3 {
 
 .button.subtle {
   background: transparent;
+}
+
+.hero-download-note {
+  max-width: 650px;
+  margin: 13px 0 0;
+  color: #4c554d;
+  font-size: 0.95rem;
+  font-weight: 720;
+  line-height: 1.7;
 }
 
 .trust-row {
@@ -895,6 +914,12 @@ h3 {
     flex-wrap: wrap;
   }
 
+  .hero-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
   .site-header nav a,
   .header-cta,
   .language-switcher a {
@@ -944,6 +969,8 @@ h3 {
 
   .button {
     width: 100%;
+    min-width: 0;
+    padding-inline: 12px;
   }
 
   .button-row.compact .button {

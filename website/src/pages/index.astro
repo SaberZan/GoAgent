@@ -117,11 +117,13 @@ const jsonLd = {
       <p class="lead">
         首推 LizzieYzy Next：给棋友用的专业 KataGo 复盘工作台。下载后导入棋谱，先看清胜率、目差、候选点和整盘节奏；想尝试 AI 讲棋，再试 GoAgent。
       </p>
-      <div class="button-row">
-        <a class="button primary" href={lizzieReleases}>下载 LizzieYzy Next</a>
-        <a class="button" href="#products">选择适合你的工具</a>
+      <div class="button-row hero-actions" aria-label="下载入口">
+        <a class="button primary" href={lizzieBaidu}>百度网盘下载</a>
+        <a class="button" href={lizzieReleases}>GitHub Releases</a>
+        <a class="button subtle" href="#products">选择适合你的工具</a>
         <a class="button subtle" href={goAgentReleases}>试用 GoAgent</a>
       </div>
+      <p class="hero-download-note">国内用户优先百度网盘，提取码 {lizzieBaiduCode}；GitHub 保留完整版本与校验记录。</p>
       <div class="trust-row" aria-label="官网要点">
         <span>首推复盘工具</span>
         <span>KataGo 分析</span>

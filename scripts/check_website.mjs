@@ -66,6 +66,8 @@ if (!index.includes('首推')) fail('homepage must present LizzieYzy Next as the
 if (!index.includes('实验围棋智能体')) fail('homepage must position GoAgent as an experimental Go agent')
 if (!index.includes('https://pan.baidu.com/s/1wthaL8YwGMxy_u0U7Mabpw?pwd=3i8w')) fail('homepage must link LizzieYzy Next Baidu Netdisk')
 if (!index.includes('提取码')) fail('homepage must show the Baidu Netdisk extraction code label')
+if (!index.includes('百度网盘下载')) fail('homepage hero must expose the Baidu Netdisk download button')
+if (!index.includes('GitHub Releases')) fail('homepage hero must expose GitHub Releases beside Baidu Netdisk')
 if (!index.includes('https://github.com/wimi321/lizzieyzy-next/releases')) fail('homepage must link LizzieYzy Next Releases')
 if (!index.includes('https://github.com/wimi321/GoAgent/releases')) fail('homepage must still link GoAgent Releases')
 if (!index.includes('QQ 1030632742')) fail('homepage must expose QQ community')

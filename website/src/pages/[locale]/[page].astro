@@ -21,12 +21,12 @@ const localeMeta = {
 const localized = {
   'zh-hant': {
     download: {
-      title: '下載 LizzieYzy Next - GitHub Releases',
+      title: '下載 LizzieYzy Next - GitHub 下載頁',
       description: '首推下載 LizzieYzy Next；GoAgent 作為實驗圍棋智能體提供嘗鮮版本。',
       eyebrow: '下載',
       h1: '下載 LizzieYzy Next',
       lead: '大多數用戶先下載 LizzieYzy Next：它是更成熟的全盤復盤工具。GoAgent 保留為實驗圍棋智能體，適合想嘗試 AI 講棋的人。',
-      primary: '打開 LizzieYzy Next Releases',
+      primary: '從 GitHub 下載 LizzieYzy Next',
       secondary: '試用 GoAgent',
       options: [
         ['推薦先下載', 'LizzieYzy Next', '面向日常復盤的專業 KataGo GUI，適合先看清全盤走勢。', '首推'],
@@ -36,9 +36,9 @@ const localized = {
       ],
       checkTitle: '校驗下載文件',
       checkText: '下載前先確認項目名、版本號和文件名。首推 LizzieYzy Next；如果下載 GoAgent，請確認自己要試的是實驗智能體版本。',
-      checkItems: ['Windows 可使用 PowerShell 的 Get-FileHash。', 'macOS 可使用 shasum -a 256。', '如果文件名、版本號或校驗值不一致，請重新從 GitHub Releases 下載。'],
+      checkItems: ['Windows 可使用 PowerShell 的 Get-FileHash。', 'macOS 可使用 shasum -a 256。', '如果文件名、版本號或校驗值不一致，請重新從 GitHub 下載頁下載。'],
       whyTitle: '為什麼不把安裝包放在官網？',
-      whyText: 'Cloudflare Pages 適合靜態官網，不適合作為大型安裝包倉庫。LizzieYzy Next 和 GoAgent 都通過 GitHub Releases 發布，便於校驗和回滾。'
+      whyText: 'Cloudflare Pages 適合靜態官網，不適合作為大型安裝包倉庫。LizzieYzy Next 和 GoAgent 都通過 GitHub 下載頁發布，便於校驗和回滾。'
     },
     docs: {
       title: 'GoAgent 文檔 - 快速開始',
@@ -47,7 +47,7 @@ const localized = {
       h1: '快速開始',
       lead: '這份短文檔幫你把 GoAgent 跑起來，並理解它如何把 KataGo、LLM、知識庫和隱私策略組合起來。',
       steps: [
-        ['安裝 GoAgent', '從 GitHub Releases 下載適合系統的安裝包。Windows 普通用戶選標準版，NVIDIA 用戶可選 NVIDIA 版，Mac 用戶按芯片選 Apple Silicon 或 Intel。'],
+        ['安裝 GoAgent', '從 GitHub 下載頁下載適合系統的安裝包。Windows 普通用戶選標準版，NVIDIA 用戶可選 NVIDIA 版，Mac 用戶按芯片選 Apple Silicon 或 Intel。'],
         ['配置 KataGo', 'GoAgent 以 KataGo 作為事實裁判。應用會提供官方權重選擇、下載狀態、資源診斷和速度測試。'],
         ['配置 LLM', '在設定中填寫自己的 LLM Base URL、API Key 和模型。老師任務會把必要棋盤上下文、KataGo 證據和知識庫結果發給配置的服務。'],
         ['導入 SGF', '可以導入本地 SGF，也可以使用棋譜庫能力管理棋局。'],
@@ -92,18 +92,18 @@ const localized = {
       description: 'GoAgent 近期版本摘要和後續路線。',
       eyebrow: '更新',
       h1: '版本摘要',
-      lead: '完整記錄請查看 GitHub Releases 和倉庫 CHANGELOG。',
+      lead: '完整記錄請查看 GitHub 下載頁和倉庫 CHANGELOG。',
       entries: [['0.3.x', '棋形識別、區間復盤、老師會話、學生設定、知識庫來源策略、質量評測、KataGo engine telemetry 和多語言 UI。'], ['官網', '新增 Cloudflare Pages 靜態官網、多語言頁面、下載頁、隱私頁、FAQ 和網站質量檢查。'], ['後續版本', 'TTS、真實教學評測、常駐 KataGo Engine Pool、自動更新和更完整的視覺 QA。']]
     }
   },
   en: {
     download: {
-      title: 'Download LizzieYzy Next - GitHub Releases',
+      title: 'Download LizzieYzy Next - GitHub download page',
       description: 'Download the recommended LizzieYzy Next review workbench. GoAgent is available as an experimental Go agent.',
       eyebrow: 'Download',
       h1: 'Download LizzieYzy Next',
       lead: 'Most users should start with LizzieYzy Next: the more mature whole-game review tool. GoAgent remains available as an experimental Go agent for AI move explanations.',
-      primary: 'Open LizzieYzy Next Releases',
+      primary: 'Download LizzieYzy Next from GitHub',
       secondary: 'Try GoAgent',
       options: [
         ['Recommended first', 'LizzieYzy Next', 'The practical KataGo GUI for everyday whole-game review.', 'Recommended'],
@@ -113,9 +113,9 @@ const localized = {
       ],
       checkTitle: 'Verify downloads',
       checkText: 'Check the project name, version, and filename before downloading. LizzieYzy Next is recommended first; if you download GoAgent, make sure you want the experimental agent build.',
-      checkItems: ['Windows: use PowerShell Get-FileHash.', 'macOS: use shasum -a 256.', 'If the filename, version, or hash does not match, download again from GitHub Releases.'],
+      checkItems: ['Windows: use PowerShell Get-FileHash.', 'macOS: use shasum -a 256.', 'If the filename, version, or hash does not match, download again from the GitHub download page.'],
       whyTitle: 'Why not host installers on the website?',
-      whyText: 'Cloudflare Pages is good for static websites, not large binary distribution. LizzieYzy Next and GoAgent installers are distributed through GitHub Releases for verification and rollback.'
+      whyText: 'Cloudflare Pages is good for static websites, not large binary distribution. LizzieYzy Next and GoAgent installers are distributed through GitHub download pages for verification and rollback.'
     },
     docs: {
       title: 'GoAgent Guide - Quick Start',
@@ -124,7 +124,7 @@ const localized = {
       h1: 'Quick Start',
       lead: 'This short guide helps you get GoAgent running and understand how it combines KataGo, LLMs, the knowledge base, and privacy controls.',
       steps: [
-        ['Install GoAgent', 'Download the right installer from GitHub Releases. Most Windows users should choose Standard; NVIDIA users can choose the NVIDIA build; Mac users should choose Apple Silicon or Intel.'],
+        ['Install GoAgent', 'Download the right installer from the GitHub download page. Most Windows users should choose Standard; NVIDIA users can choose the NVIDIA build; Mac users should choose Apple Silicon or Intel.'],
         ['Configure KataGo', 'GoAgent uses KataGo as the evidence engine. The app provides model selection, download status, diagnostics, and benchmark tools.'],
         ['Configure an LLM', 'Enter your LLM Base URL, API key, and model in Settings. Teacher tasks send only the needed board context, KataGo evidence, and knowledge matches to the configured service.'],
         ['Import SGF', 'Import local SGF files or manage games from the game library.'],
@@ -169,25 +169,25 @@ const localized = {
       description: 'Recent GoAgent version summary and roadmap.',
       eyebrow: 'Updates',
       h1: 'Version Summary',
-      lead: 'For complete records, see GitHub Releases and the repository changelog.',
+      lead: 'For complete records, see the GitHub download page and the repository changelog.',
       entries: [['0.3.x', 'Shape recognition, range review, teacher sessions, student settings, source policy, quality evaluation, KataGo engine telemetry, and multilingual UI.'], ['Website', 'Added Cloudflare Pages static website, multilingual pages, download page, privacy page, FAQ, and website quality checks.'], ['Next', 'TTS, real teaching evaluation, persistent KataGo Engine Pool, auto update, and deeper visual QA.']]
     }
   },
   ja: {
     download: {
-      title: 'LizzieYzy Next ダウンロード - GitHub Releases',
+      title: 'LizzieYzy Next ダウンロード - GitHub ダウンロードページ',
       description: '推奨の LizzieYzy Next をダウンロードします。GoAgent は実験的な囲碁エージェントとして提供します。',
       eyebrow: 'ダウンロード',
       h1: 'LizzieYzy Next をダウンロード',
       lead: '多くのユーザーはまず LizzieYzy Next を入れてください。より成熟した全局復盤ツールです。GoAgent は AI 解説を試す実験的な囲碁エージェントです。',
-      primary: 'LizzieYzy Next Releases を開く',
+      primary: 'GitHub から LizzieYzy Next をダウンロード',
       secondary: 'GoAgent を試す',
       options: [['まず推奨', 'LizzieYzy Next', '日常の全局復盤に向いた KataGo GUI です。', '推奨'], ['Windows ユーザー', 'Windows 版', 'Windows でのデスクトップ復盤向けです。', 'Windows'], ['macOS ユーザー', 'macOS 版', 'Apple Silicon または Intel Mac 向けです。', 'macOS'], ['Linux ユーザー', 'Linux 版', 'Linux で復盤ワークベンチを使いたいユーザー向けです。', 'Linux']],
       checkTitle: 'ダウンロードの確認',
       checkText: 'ダウンロード前にプロジェクト名、バージョン、ファイル名を確認してください。推奨は LizzieYzy Next です。',
-      checkItems: ['Windows では PowerShell の Get-FileHash を使えます。', 'macOS では shasum -a 256 を使えます。', 'ファイル名、バージョン、ハッシュが違う場合は GitHub Releases から再ダウンロードしてください。'],
+      checkItems: ['Windows では PowerShell の Get-FileHash を使えます。', 'macOS では shasum -a 256 を使えます。', 'ファイル名、バージョン、ハッシュが違う場合は GitHub ダウンロードページから再ダウンロードしてください。'],
       whyTitle: 'なぜ公式サイトに置かないのか',
-      whyText: 'Cloudflare Pages は静的サイト向けで、大きなバイナリ配布には向いていません。LizzieYzy Next と GoAgent は GitHub Releases で配布します。'
+      whyText: 'Cloudflare Pages は静的サイト向けで、大きなバイナリ配布には向いていません。LizzieYzy Next と GoAgent は GitHub ダウンロードページで配布します。'
     },
     docs: {
       title: 'GoAgent ガイド - クイックスタート',
@@ -195,7 +195,7 @@ const localized = {
       eyebrow: 'ガイド',
       h1: 'クイックスタート',
       lead: 'GoAgent を動かし、KataGo、LLM、知識ベース、プライバシー設定がどう組み合わさるかを理解するための短いガイドです。',
-      steps: [['GoAgent をインストール', 'GitHub Releases から環境に合うインストーラを選びます。'], ['KataGo を設定', 'GoAgent は KataGo を根拠エンジンとして使います。モデル選択、診断、速度測定を提供します。'], ['LLM を設定', '設定画面で Base URL、API Key、モデルを入力します。'], ['SGF を読み込む', 'ローカル SGF を読み込み、棋譜ライブラリで管理できます。'], ['現在手を解説', '盤面、候補手、PV、知識マッチ、学生設定を使って説明します。'], ['区間復盤', '一部の手順に絞って戦い、変化、死活、官子を確認します。'], ['学生と先生のスタイル', 'レベル、年齢、説明スタイル、用語密度を調整できます。'], ['TTS 予定', '既定では Kokoro 中国語 ONNX オフライン音声を予定しています。']],
+      steps: [['GoAgent をインストール', 'GitHub ダウンロードページから環境に合うインストーラを選びます。'], ['KataGo を設定', 'GoAgent は KataGo を根拠エンジンとして使います。モデル選択、診断、速度測定を提供します。'], ['LLM を設定', '設定画面で Base URL、API Key、モデルを入力します。'], ['SGF を読み込む', 'ローカル SGF を読み込み、棋譜ライブラリで管理できます。'], ['現在手を解説', '盤面、候補手、PV、知識マッチ、学生設定を使って説明します。'], ['区間復盤', '一部の手順に絞って戦い、変化、死活、官子を確認します。'], ['学生と先生のスタイル', 'レベル、年齢、説明スタイル、用語密度を調整できます。'], ['TTS 予定', '既定では Kokoro 中国語 ONNX オフライン音声を予定しています。']],
       qualityTitle: '解説品質の原則',
       qualityItems: ['KataGo が根拠です。LLM は座標、勝率、PV、定石名を作ってはいけません。', '普通の定石は短く、分岐や戦いは必要に応じて詳しく説明します。', '知識ベースは説明と練習への橋渡しであり、エンジン判断の代わりではありません。']
     },
@@ -220,30 +220,30 @@ const localized = {
       description: 'GoAgent の最近のバージョン概要とロードマップ。',
       eyebrow: '更新',
       h1: 'バージョン概要',
-      lead: '完全な記録は GitHub Releases と CHANGELOG を確認してください。',
+      lead: '完全な記録は GitHub ダウンロードページと CHANGELOG を確認してください。',
       entries: [['0.3.x', '形認識、区間復盤、先生会話、学生設定、知識ソース方針、品質評価、多言語 UI。'], ['公式サイト', 'Cloudflare Pages 静的サイト、多言語ページ、ダウンロード、プライバシー、FAQ、品質チェックを追加。'], ['今後', 'TTS、実教学評価、常駐 KataGo Engine Pool、自動更新、視覚 QA。']]
     }
   },
   ko: {
-    download: { title: 'LizzieYzy Next 다운로드 - GitHub Releases', description: '추천 복기 도구 LizzieYzy Next를 다운로드합니다. GoAgent는 실험 바둑 에이전트로 제공합니다.', eyebrow: '다운로드', h1: 'LizzieYzy Next 다운로드', lead: '대부분의 사용자는 LizzieYzy Next부터 받으면 됩니다. 더 성숙한 전판 복기 도구이며, GoAgent는 AI 설명을 시험하는 실험 에이전트입니다.', primary: 'LizzieYzy Next Releases 열기', secondary: 'GoAgent 시험하기', options: [['추천 먼저', 'LizzieYzy Next', '일상 전판 복기에 적합한 KataGo GUI입니다.', '추천'], ['Windows 사용자', 'Windows 릴리스', 'Windows 데스크톱 복기와 기보 분석에 적합합니다.', 'Windows'], ['macOS 사용자', 'macOS 릴리스', 'Apple Silicon 또는 Intel Mac용입니다.', 'macOS'], ['Linux 사용자', 'Linux 릴리스', 'Linux에서 복기 워크벤치를 쓰려는 사용자를 위한 릴리스입니다.', 'Linux']], checkTitle: '다운로드 검증', checkText: '다운로드 전에 프로젝트명, 버전, 파일명을 확인하세요. 추천은 LizzieYzy Next이며, GoAgent는 실험 에이전트입니다.', checkItems: ['Windows: PowerShell Get-FileHash 사용.', 'macOS: shasum -a 256 사용.', '파일명, 버전, 해시가 다르면 GitHub Releases에서 다시 받으세요.'], whyTitle: '왜 공식 사이트에 설치 파일을 두지 않나요?', whyText: 'Cloudflare Pages는 정적 사이트에 적합하며 큰 바이너리 배포에는 적합하지 않습니다. LizzieYzy Next와 GoAgent는 GitHub Releases에서 배포합니다.' },
-    docs: { title: 'GoAgent 가이드 - 빠른 시작', description: 'GoAgent 설치, KataGo, LLM, SGF, 현재 수 설명, 구간 복기, TTS 사용법.', eyebrow: '가이드', h1: '빠른 시작', lead: 'GoAgent를 실행하고 KataGo, LLM, 지식 베이스, 개인정보 제어가 어떻게 결합되는지 이해하는 짧은 가이드입니다.', steps: [['GoAgent 설치', 'GitHub Releases에서 운영체제에 맞는 설치 파일을 선택합니다.'], ['KataGo 설정', 'GoAgent는 KataGo를 근거 엔진으로 사용합니다. 모델 선택, 진단, 속도 측정을 제공합니다.'], ['LLM 설정', '설정에서 Base URL, API Key, 모델을 입력합니다.'], ['SGF 가져오기', '로컬 SGF를 가져오거나 기보 라이브러리에서 관리합니다.'], ['현재 수 설명', '바둑판, 후보수, PV, 지식 매칭, 학생 설정을 참고합니다.'], ['구간 복기', '특정 구간에 집중해 전투, 전환, 정석 분기, 사활, 끝내기를 봅니다.'], ['학생과 설명 스타일', '수준, 나이, 설명 스타일, 용어 밀도를 조정합니다.'], ['TTS 계획', '기본은 Kokoro 중국어 ONNX 오프라인 음성을 계획합니다.']], qualityTitle: '설명 품질 원칙', qualityItems: ['KataGo가 근거이며 LLM은 좌표, 승률, PV, 정석명을 지어내면 안 됩니다.', '일반 정석은 짧게, 분기와 전투는 필요한 만큼 설명합니다.', '지식 베이스는 설명과 훈련 연결을 돕고 엔진 판단을 대체하지 않습니다.'] },
+    download: { title: 'LizzieYzy Next 다운로드 - GitHub 다운로드 페이지', description: '추천 복기 도구 LizzieYzy Next를 다운로드합니다. GoAgent는 실험 바둑 에이전트로 제공합니다.', eyebrow: '다운로드', h1: 'LizzieYzy Next 다운로드', lead: '대부분의 사용자는 LizzieYzy Next부터 받으면 됩니다. 더 성숙한 전판 복기 도구이며, GoAgent는 AI 설명을 시험하는 실험 에이전트입니다.', primary: 'GitHub에서 LizzieYzy Next 다운로드', secondary: 'GoAgent 시험하기', options: [['추천 먼저', 'LizzieYzy Next', '일상 전판 복기에 적합한 KataGo GUI입니다.', '추천'], ['Windows 사용자', 'Windows 릴리스', 'Windows 데스크톱 복기와 기보 분석에 적합합니다.', 'Windows'], ['macOS 사용자', 'macOS 릴리스', 'Apple Silicon 또는 Intel Mac용입니다.', 'macOS'], ['Linux 사용자', 'Linux 릴리스', 'Linux에서 복기 워크벤치를 쓰려는 사용자를 위한 릴리스입니다.', 'Linux']], checkTitle: '다운로드 검증', checkText: '다운로드 전에 프로젝트명, 버전, 파일명을 확인하세요. 추천은 LizzieYzy Next이며, GoAgent는 실험 에이전트입니다.', checkItems: ['Windows: PowerShell Get-FileHash 사용.', 'macOS: shasum -a 256 사용.', '파일명, 버전, 해시가 다르면 GitHub 다운로드 페이지에서 다시 받으세요.'], whyTitle: '왜 공식 사이트에 설치 파일을 두지 않나요?', whyText: 'Cloudflare Pages는 정적 사이트에 적합하며 큰 바이너리 배포에는 적합하지 않습니다. LizzieYzy Next와 GoAgent는 GitHub 다운로드 페이지에서 배포합니다.' },
+    docs: { title: 'GoAgent 가이드 - 빠른 시작', description: 'GoAgent 설치, KataGo, LLM, SGF, 현재 수 설명, 구간 복기, TTS 사용법.', eyebrow: '가이드', h1: '빠른 시작', lead: 'GoAgent를 실행하고 KataGo, LLM, 지식 베이스, 개인정보 제어가 어떻게 결합되는지 이해하는 짧은 가이드입니다.', steps: [['GoAgent 설치', 'GitHub 다운로드 페이지에서 운영체제에 맞는 설치 파일을 선택합니다.'], ['KataGo 설정', 'GoAgent는 KataGo를 근거 엔진으로 사용합니다. 모델 선택, 진단, 속도 측정을 제공합니다.'], ['LLM 설정', '설정에서 Base URL, API Key, 모델을 입력합니다.'], ['SGF 가져오기', '로컬 SGF를 가져오거나 기보 라이브러리에서 관리합니다.'], ['현재 수 설명', '바둑판, 후보수, PV, 지식 매칭, 학생 설정을 참고합니다.'], ['구간 복기', '특정 구간에 집중해 전투, 전환, 정석 분기, 사활, 끝내기를 봅니다.'], ['학생과 설명 스타일', '수준, 나이, 설명 스타일, 용어 밀도를 조정합니다.'], ['TTS 계획', '기본은 Kokoro 중국어 ONNX 오프라인 음성을 계획합니다.']], qualityTitle: '설명 품질 원칙', qualityItems: ['KataGo가 근거이며 LLM은 좌표, 승률, PV, 정석명을 지어내면 안 됩니다.', '일반 정석은 짧게, 분기와 전투는 필요한 만큼 설명합니다.', '지식 베이스는 설명과 훈련 연결을 돕고 엔진 판단을 대체하지 않습니다.'] },
     privacy: { title: 'GoAgent 개인정보', description: 'GoAgent는 기보, 학생 프로필, 대화, 분석 캐시, 설정을 기본적으로 로컬에 저장합니다.', eyebrow: '개인정보', h1: '개인정보', lead: 'GoAgent는 기본적으로 기보를 사용자 컴퓨터에 보관하도록 설계되었습니다. 공식 사이트에는 기보 업로드 API나 수집 서버가 없습니다.', sections: [['로컬 데이터', ['기보 라이브러리', '학생 프로필', '선생님 대화', '분석 캐시', '앱 설정']], ['제3자 서비스', ['LLM API를 설정하면 사용자가 시작한 작업에 따라 데이터가 전송됩니다.', '사용자 지정 TTS API를 설정하면 읽을 텍스트가 해당 서비스로 전송됩니다.', '기본 Kokoro TTS는 오프라인입니다.']], ['웹사이트', ['goagent.top은 정적 사이트이며 데이터베이스나 기보 업로드 API가 없습니다.']], ['삭제', ['향후 로컬 정리 UI를 제공할 예정입니다. 현재는 앱 데이터 디렉터리를 관리하세요.']]] },
     faq: { title: 'GoAgent FAQ', description: 'GoAgent 다운로드, KataGo, LLM, NVIDIA 빌드, TTS, 개인정보 관련 질문.', eyebrow: 'FAQ', h1: '자주 묻는 질문', lead: '다운로드, 개인정보, KataGo, LLM, TTS 기본 질문입니다.', items: [['GoAgent는 무엇인가요?', 'KataGo, 지식 베이스, 멀티모달 LLM, 품질 검사를 결합한 오픈소스 무료 바둑 AI 에이전트입니다.'], ['일반 AI 채팅과 무엇이 다른가요?', '바둑판, KataGo 근거, PV, 집 차이, 지식 매칭, 학생 설정을 중심으로 설명합니다.'], ['인터넷이 필요한가요?', 'KataGo와 로컬 데이터는 본기기에서 동작합니다. LLM, TTS, 모델 다운로드, 동기화에는 인터넷이 필요합니다.'], ['KataGo는 로컬에서 실행되나요?', '네. 후보수, 승률, 집 차이, PV 근거를 로컬에서 생성합니다.'], ['LLM은 필수인가요?', '자연어 선생님 설명에는 필요합니다. KataGo 분석은 독립적으로 사용할 수 있습니다.'], ['문제는 어디에 제보하나요?', 'GitHub Issues 또는 QQ 그룹 1030632742에서 제보할 수 있습니다.']] },
-    changelog: { title: 'GoAgent 업데이트', description: 'GoAgent 최근 버전 요약과 로드맵.', eyebrow: '업데이트', h1: '버전 요약', lead: '전체 기록은 GitHub Releases와 CHANGELOG를 확인하세요.', entries: [['0.3.x', '형태 인식, 구간 복기, 선생님 대화, 학생 설정, 지식 소스 정책, 품질 평가, 다국어 UI.'], ['웹사이트', 'Cloudflare Pages 정적 사이트, 다국어 페이지, 다운로드, 개인정보, FAQ, 품질 검사 추가.'], ['다음', 'TTS, 실제 교육 평가, 상주 KataGo Engine Pool, 자동 업데이트, 시각 QA.']] }
+    changelog: { title: 'GoAgent 업데이트', description: 'GoAgent 최근 버전 요약과 로드맵.', eyebrow: '업데이트', h1: '버전 요약', lead: '전체 기록은 GitHub 다운로드 페이지와 CHANGELOG를 확인하세요.', entries: [['0.3.x', '형태 인식, 구간 복기, 선생님 대화, 학생 설정, 지식 소스 정책, 품질 평가, 다국어 UI.'], ['웹사이트', 'Cloudflare Pages 정적 사이트, 다국어 페이지, 다운로드, 개인정보, FAQ, 품질 검사 추가.'], ['다음', 'TTS, 실제 교육 평가, 상주 KataGo Engine Pool, 자동 업데이트, 시각 QA.']] }
   },
   th: {
-    download: { title: 'ดาวน์โหลด LizzieYzy Next - GitHub Releases', description: 'ดาวน์โหลด LizzieYzy Next ที่แนะนำ ส่วน GoAgent เป็น agent ทดลองสำหรับคำอธิบายด้วย AI', eyebrow: 'ดาวน์โหลด', h1: 'ดาวน์โหลด LizzieYzy Next', lead: 'ผู้ใช้ส่วนใหญ่ควรเริ่มจาก LizzieYzy Next เพราะเป็นเครื่องมือทบทวนทั้งเกมที่พร้อมกว่า ส่วน GoAgent เหมาะกับการลองคำอธิบายด้วย AI', primary: 'เปิด LizzieYzy Next Releases', secondary: 'ลอง GoAgent', options: [['แนะนำก่อน', 'LizzieYzy Next', 'KataGo GUI สำหรับทบทวนทั้งเกมในชีวิตประจำวัน', 'แนะนำ'], ['ผู้ใช้ Windows', 'Windows release', 'เหมาะกับการทบทวนและวิเคราะห์คีฟูบน Windows', 'Windows'], ['ผู้ใช้ macOS', 'macOS release', 'สำหรับ Mac Apple Silicon หรือ Intel', 'macOS'], ['ผู้ใช้ Linux', 'Linux release', 'สำหรับผู้ใช้ Linux ที่ต้องการพื้นที่ทบทวนเกม', 'Linux']], checkTitle: 'ตรวจสอบไฟล์ดาวน์โหลด', checkText: 'ตรวจชื่อโปรเจกต์ เวอร์ชัน และชื่อไฟล์ก่อนดาวน์โหลด แนะนำ LizzieYzy Next ก่อน ส่วน GoAgent คือ agent ทดลอง', checkItems: ['Windows ใช้ PowerShell Get-FileHash', 'macOS ใช้ shasum -a 256', 'ถ้าชื่อไฟล์ เวอร์ชัน หรือ hash ไม่ตรง ให้ดาวน์โหลดใหม่จาก GitHub Releases'], whyTitle: 'ทำไมไม่เก็บไฟล์ติดตั้งบนเว็บไซต์?', whyText: 'Cloudflare Pages เหมาะกับเว็บสถิต ไม่เหมาะกับไฟล์ไบนารีขนาดใหญ่ LizzieYzy Next และ GoAgent จึงแจกผ่าน GitHub Releases' },
-    docs: { title: 'คู่มือ GoAgent - เริ่มต้นเร็ว', description: 'การติดตั้ง GoAgent, KataGo, LLM, SGF, การอธิบายหมากปัจจุบัน, การทบทวนช่วงเกม และ TTS', eyebrow: 'คู่มือ', h1: 'เริ่มต้นเร็ว', lead: 'คู่มือนี้ช่วยให้เริ่มใช้ GoAgent และเข้าใจการทำงานร่วมกันของ KataGo, LLM, ฐานความรู้ และการตั้งค่าความเป็นส่วนตัว', steps: [['ติดตั้ง GoAgent', 'เลือกไฟล์ติดตั้งที่ตรงกับระบบจาก GitHub Releases'], ['ตั้งค่า KataGo', 'GoAgent ใช้ KataGo เป็นเครื่องมือให้หลักฐาน มีการเลือกโมเดล การวินิจฉัย และทดสอบความเร็ว'], ['ตั้งค่า LLM', 'กรอก Base URL, API Key และโมเดลใน Settings'], ['นำเข้า SGF', 'นำเข้า SGF ในเครื่องหรือจัดการจากคลังเกม'], ['อธิบายหมากปัจจุบัน', 'ใช้กระดาน ตัวเลือก PV การจับคู่ความรู้ และข้อมูลผู้เรียน'], ['ทบทวนช่วงเกม', 'เลือกช่วงเพื่อดูการต่อสู้ การเปลี่ยนรูป joseki สาขา สถานการณ์ชีวิตตาย และ endgame'], ['ตั้งค่าผู้เรียนและสไตล์ครู', 'ปรับระดับ อายุ สไตล์การอธิบาย และความหนาแน่นของศัพท์'], ['แผน TTS', 'ค่าเริ่มต้นวางแผนใช้ Kokoro Chinese ONNX แบบออฟไลน์']], qualityTitle: 'หลักการคุณภาพคำอธิบาย', qualityItems: ['KataGo เป็นหลักฐาน LLM ไม่ควรแต่งพิกัด อัตราชนะ PV หรือชื่อ joseki', 'joseki ปกติพูดสั้น สาขาและการต่อสู้ค่อยอธิบายละเอียด', 'ฐานความรู้ช่วยอธิบายและโยงไปสู่การฝึก ไม่แทนการตัดสินของ engine'] },
+    download: { title: 'ดาวน์โหลด LizzieYzy Next - หน้า GitHub สำหรับดาวน์โหลด', description: 'ดาวน์โหลด LizzieYzy Next ที่แนะนำ ส่วน GoAgent เป็น agent ทดลองสำหรับคำอธิบายด้วย AI', eyebrow: 'ดาวน์โหลด', h1: 'ดาวน์โหลด LizzieYzy Next', lead: 'ผู้ใช้ส่วนใหญ่ควรเริ่มจาก LizzieYzy Next เพราะเป็นเครื่องมือทบทวนทั้งเกมที่พร้อมกว่า ส่วน GoAgent เหมาะกับการลองคำอธิบายด้วย AI', primary: 'ดาวน์โหลด LizzieYzy Next จาก GitHub', secondary: 'ลอง GoAgent', options: [['แนะนำก่อน', 'LizzieYzy Next', 'KataGo GUI สำหรับทบทวนทั้งเกมในชีวิตประจำวัน', 'แนะนำ'], ['ผู้ใช้ Windows', 'Windows release', 'เหมาะกับการทบทวนและวิเคราะห์คีฟูบน Windows', 'Windows'], ['ผู้ใช้ macOS', 'macOS release', 'สำหรับ Mac Apple Silicon หรือ Intel', 'macOS'], ['ผู้ใช้ Linux', 'Linux release', 'สำหรับผู้ใช้ Linux ที่ต้องการพื้นที่ทบทวนเกม', 'Linux']], checkTitle: 'ตรวจสอบไฟล์ดาวน์โหลด', checkText: 'ตรวจชื่อโปรเจกต์ เวอร์ชัน และชื่อไฟล์ก่อนดาวน์โหลด แนะนำ LizzieYzy Next ก่อน ส่วน GoAgent คือ agent ทดลอง', checkItems: ['Windows ใช้ PowerShell Get-FileHash', 'macOS ใช้ shasum -a 256', 'ถ้าชื่อไฟล์ เวอร์ชัน หรือ hash ไม่ตรง ให้ดาวน์โหลดใหม่จาก GitHub download page'], whyTitle: 'ทำไมไม่เก็บไฟล์ติดตั้งบนเว็บไซต์?', whyText: 'Cloudflare Pages เหมาะกับเว็บสถิต ไม่เหมาะกับไฟล์ไบนารีขนาดใหญ่ LizzieYzy Next และ GoAgent จึงแจกผ่าน GitHub download page' },
+    docs: { title: 'คู่มือ GoAgent - เริ่มต้นเร็ว', description: 'การติดตั้ง GoAgent, KataGo, LLM, SGF, การอธิบายหมากปัจจุบัน, การทบทวนช่วงเกม และ TTS', eyebrow: 'คู่มือ', h1: 'เริ่มต้นเร็ว', lead: 'คู่มือนี้ช่วยให้เริ่มใช้ GoAgent และเข้าใจการทำงานร่วมกันของ KataGo, LLM, ฐานความรู้ และการตั้งค่าความเป็นส่วนตัว', steps: [['ติดตั้ง GoAgent', 'เลือกไฟล์ติดตั้งที่ตรงกับระบบจาก GitHub download page'], ['ตั้งค่า KataGo', 'GoAgent ใช้ KataGo เป็นเครื่องมือให้หลักฐาน มีการเลือกโมเดล การวินิจฉัย และทดสอบความเร็ว'], ['ตั้งค่า LLM', 'กรอก Base URL, API Key และโมเดลใน Settings'], ['นำเข้า SGF', 'นำเข้า SGF ในเครื่องหรือจัดการจากคลังเกม'], ['อธิบายหมากปัจจุบัน', 'ใช้กระดาน ตัวเลือก PV การจับคู่ความรู้ และข้อมูลผู้เรียน'], ['ทบทวนช่วงเกม', 'เลือกช่วงเพื่อดูการต่อสู้ การเปลี่ยนรูป joseki สาขา สถานการณ์ชีวิตตาย และ endgame'], ['ตั้งค่าผู้เรียนและสไตล์ครู', 'ปรับระดับ อายุ สไตล์การอธิบาย และความหนาแน่นของศัพท์'], ['แผน TTS', 'ค่าเริ่มต้นวางแผนใช้ Kokoro Chinese ONNX แบบออฟไลน์']], qualityTitle: 'หลักการคุณภาพคำอธิบาย', qualityItems: ['KataGo เป็นหลักฐาน LLM ไม่ควรแต่งพิกัด อัตราชนะ PV หรือชื่อ joseki', 'joseki ปกติพูดสั้น สาขาและการต่อสู้ค่อยอธิบายละเอียด', 'ฐานความรู้ช่วยอธิบายและโยงไปสู่การฝึก ไม่แทนการตัดสินของ engine'] },
     privacy: { title: 'ความเป็นส่วนตัวของ GoAgent', description: 'GoAgent เก็บคีฟู โปรไฟล์ผู้เรียน บทสนทนา cache การวิเคราะห์ และการตั้งค่าไว้ในเครื่องเป็นค่าเริ่มต้น', eyebrow: 'ความเป็นส่วนตัว', h1: 'ความเป็นส่วนตัว', lead: 'GoAgent ออกแบบให้คีฟูอยู่ในคอมพิวเตอร์ของผู้ใช้ เว็บไซต์ไม่มี API อัปโหลดคีฟูและไม่มีเซิร์ฟเวอร์รวบรวมคีฟู', sections: [['ข้อมูลในเครื่อง', ['คลังเกม', 'โปรไฟล์ผู้เรียน', 'บทสนทนาครู', 'cache การวิเคราะห์', 'การตั้งค่าแอป']], ['บริการภายนอก', ['ถ้าตั้งค่า LLM API ข้อมูลที่ส่งขึ้นอยู่กับงานที่ผู้ใช้เริ่ม', 'ถ้าตั้งค่า custom TTS API ข้อความอ่านออกเสียงจะถูกส่งไปยังบริการนั้น', 'Kokoro TTS ค่าเริ่มต้นเป็นออฟไลน์']], ['เว็บไซต์', ['goagent.top เป็นเว็บสถิต ไม่มีฐานข้อมูลหรือ API อัปโหลดคีฟู']], ['การลบข้อมูล', ['จะมี UI ล้างข้อมูลในเครื่องที่สมบูรณ์ขึ้น ในตอนนี้จัดการผ่านโฟลเดอร์ข้อมูลแอปได้']]] },
     faq: { title: 'FAQ GoAgent', description: 'คำถามเกี่ยวกับการดาวน์โหลด KataGo, LLM, NVIDIA, TTS และความเป็นส่วนตัว', eyebrow: 'FAQ', h1: 'คำถามที่พบบ่อย', lead: 'คำตอบพื้นฐานเกี่ยวกับดาวน์โหลด ความเป็นส่วนตัว KataGo, LLM และ TTS', items: [['GoAgent คืออะไร?', 'GoAgent คือ AI agent หมากล้อมแบบโอเพนซอร์สและฟรี รวม KataGo ฐานความรู้ LLM หลายรูปแบบ และ quality gate'], ['ต่างจาก AI chat ทั่วไปอย่างไร?', 'GoAgent อธิบายโดยอิงกระดาน หลักฐานจาก KataGo, PV, คะแนน การจับคู่ความรู้ และการตั้งค่าผู้เรียน'], ['ต้องใช้อินเทอร์เน็ตไหม?', 'KataGo และข้อมูลในเครื่องทำงานได้ในเครื่อง แต่ LLM, TTS, ดาวน์โหลดโมเดล และซิงก์เกมต้องใช้อินเทอร์เน็ต'], ['KataGo ทำงานในเครื่องไหม?', 'ใช่ สร้างตัวเลือก อัตราชนะ คะแนน และ PV ในเครื่อง'], ['ต้องมี LLM ไหม?', 'ถ้าต้องการคำอธิบายแบบภาษาคนต้องมี LLM แต่การวิเคราะห์ KataGo ใช้แยกได้'], ['รายงานปัญหาอย่างไร?', 'ใช้ GitHub Issues หรือเข้ากลุ่ม QQ 1030632742']] },
-    changelog: { title: 'อัปเดต GoAgent', description: 'สรุปเวอร์ชันล่าสุดและโรดแมปของ GoAgent', eyebrow: 'อัปเดต', h1: 'สรุปเวอร์ชัน', lead: 'ดูบันทึกเต็มได้ที่ GitHub Releases และ CHANGELOG', entries: [['0.3.x', 'shape recognition, range review, teacher sessions, student settings, source policy, quality evaluation, KataGo telemetry และ UI หลายภาษา'], ['เว็บไซต์', 'เพิ่ม Cloudflare Pages static website, หน้า multilingual, download, privacy, FAQ และ quality checks'], ['ต่อไป', 'TTS, real teaching evaluation, persistent KataGo Engine Pool, auto update และ visual QA']] }
+    changelog: { title: 'อัปเดต GoAgent', description: 'สรุปเวอร์ชันล่าสุดและโรดแมปของ GoAgent', eyebrow: 'อัปเดต', h1: 'สรุปเวอร์ชัน', lead: 'ดูบันทึกเต็มได้ที่ GitHub download page และ CHANGELOG', entries: [['0.3.x', 'shape recognition, range review, teacher sessions, student settings, source policy, quality evaluation, KataGo telemetry และ UI หลายภาษา'], ['เว็บไซต์', 'เพิ่ม Cloudflare Pages static website, หน้า multilingual, download, privacy, FAQ และ quality checks'], ['ต่อไป', 'TTS, real teaching evaluation, persistent KataGo Engine Pool, auto update และ visual QA']] }
   },
   vi: {
-    download: { title: 'Tải LizzieYzy Next - GitHub Releases', description: 'Tải bàn làm việc ôn tập LizzieYzy Next được khuyên dùng. GoAgent là agent cờ vây thử nghiệm.', eyebrow: 'Tải xuống', h1: 'Tải LizzieYzy Next', lead: 'Đa số người dùng nên bắt đầu với LizzieYzy Next: công cụ ôn tập toàn ván trưởng thành hơn. GoAgent vẫn có sẵn như agent thử nghiệm cho lời giải thích AI.', primary: 'Mở LizzieYzy Next Releases', secondary: 'Thử GoAgent', options: [['Khuyên dùng trước', 'LizzieYzy Next', 'KataGo GUI thực dụng cho ôn tập toàn ván hằng ngày.', 'Khuyên dùng'], ['Người dùng Windows', 'Bản Windows', 'Dành cho ôn tập desktop và phân tích kỳ phổ trên Windows.', 'Windows'], ['Người dùng macOS', 'Bản macOS', 'Dành cho Mac Apple Silicon hoặc Intel.', 'macOS'], ['Người dùng Linux', 'Bản Linux', 'Dành cho người muốn bàn làm việc ôn tập trên Linux.', 'Linux']], checkTitle: 'Kiểm tra tệp tải xuống', checkText: 'Hãy kiểm tra tên dự án, phiên bản và tên tệp trước khi tải. LizzieYzy Next là lựa chọn khuyên dùng; GoAgent là agent thử nghiệm.', checkItems: ['Windows: dùng PowerShell Get-FileHash.', 'macOS: dùng shasum -a 256.', 'Nếu tên tệp, phiên bản hoặc hash không khớp, hãy tải lại từ GitHub Releases.'], whyTitle: 'Vì sao không đặt bộ cài trên website?', whyText: 'Cloudflare Pages phù hợp với website tĩnh, không phù hợp để phân phối binary lớn. LizzieYzy Next và GoAgent phát hành qua GitHub Releases.' },
-    docs: { title: 'Hướng dẫn GoAgent - Bắt đầu nhanh', description: 'Cài đặt GoAgent, cấu hình KataGo và LLM, nhập SGF, giải thích nước hiện tại, ôn tập theo đoạn và TTS.', eyebrow: 'Hướng dẫn', h1: 'Bắt đầu nhanh', lead: 'Hướng dẫn ngắn này giúp chạy GoAgent và hiểu cách KataGo, LLM, kho tri thức và quyền riêng tư kết hợp với nhau.', steps: [['Cài GoAgent', 'Tải bộ cài phù hợp từ GitHub Releases.'], ['Cấu hình KataGo', 'GoAgent dùng KataGo làm engine bằng chứng, có chọn model, chẩn đoán và benchmark.'], ['Cấu hình LLM', 'Nhập Base URL, API Key và model trong Settings.'], ['Nhập SGF', 'Nhập SGF cục bộ hoặc quản lý trong thư viện ván cờ.'], ['Giải thích nước hiện tại', 'Dựa trên bàn cờ, nước gợi ý, PV, tri thức và thiết lập học viên.'], ['Ôn tập theo đoạn', 'Chọn một đoạn để xem chiến đấu, chuyển đổi, nhánh joseki, sống chết và quan tử.'], ['Thiết lập học viên và phong cách giáo viên', 'Điều chỉnh trình độ, độ tuổi, phong cách và mật độ thuật ngữ.'], ['Kế hoạch TTS', 'Mặc định dự kiến dùng Kokoro Chinese ONNX offline.']], qualityTitle: 'Nguyên tắc chất lượng giảng giải', qualityItems: ['KataGo là bằng chứng; LLM không được bịa tọa độ, tỉ lệ thắng, PV hoặc tên joseki.', 'Joseki bình thường nói ngắn; nhánh và chiến đấu thì giải thích kỹ hơn.', 'Kho tri thức giúp giải thích và gợi ý luyện tập, không thay thế phán đoán của engine.'] },
+    download: { title: 'Tải LizzieYzy Next - trang tải xuống GitHub', description: 'Tải bàn làm việc ôn tập LizzieYzy Next được khuyên dùng. GoAgent là agent cờ vây thử nghiệm.', eyebrow: 'Tải xuống', h1: 'Tải LizzieYzy Next', lead: 'Đa số người dùng nên bắt đầu với LizzieYzy Next: công cụ ôn tập toàn ván trưởng thành hơn. GoAgent vẫn có sẵn như agent thử nghiệm cho lời giải thích AI.', primary: 'Tải LizzieYzy Next từ GitHub', secondary: 'Thử GoAgent', options: [['Khuyên dùng trước', 'LizzieYzy Next', 'KataGo GUI thực dụng cho ôn tập toàn ván hằng ngày.', 'Khuyên dùng'], ['Người dùng Windows', 'Bản Windows', 'Dành cho ôn tập desktop và phân tích kỳ phổ trên Windows.', 'Windows'], ['Người dùng macOS', 'Bản macOS', 'Dành cho Mac Apple Silicon hoặc Intel.', 'macOS'], ['Người dùng Linux', 'Bản Linux', 'Dành cho người muốn bàn làm việc ôn tập trên Linux.', 'Linux']], checkTitle: 'Kiểm tra tệp tải xuống', checkText: 'Hãy kiểm tra tên dự án, phiên bản và tên tệp trước khi tải. LizzieYzy Next là lựa chọn khuyên dùng; GoAgent là agent thử nghiệm.', checkItems: ['Windows: dùng PowerShell Get-FileHash.', 'macOS: dùng shasum -a 256.', 'Nếu tên tệp, phiên bản hoặc hash không khớp, hãy tải lại từ GitHub download page.'], whyTitle: 'Vì sao không đặt bộ cài trên website?', whyText: 'Cloudflare Pages phù hợp với website tĩnh, không phù hợp để phân phối binary lớn. LizzieYzy Next và GoAgent phát hành qua GitHub download page.' },
+    docs: { title: 'Hướng dẫn GoAgent - Bắt đầu nhanh', description: 'Cài đặt GoAgent, cấu hình KataGo và LLM, nhập SGF, giải thích nước hiện tại, ôn tập theo đoạn và TTS.', eyebrow: 'Hướng dẫn', h1: 'Bắt đầu nhanh', lead: 'Hướng dẫn ngắn này giúp chạy GoAgent và hiểu cách KataGo, LLM, kho tri thức và quyền riêng tư kết hợp với nhau.', steps: [['Cài GoAgent', 'Tải bộ cài phù hợp từ GitHub download page.'], ['Cấu hình KataGo', 'GoAgent dùng KataGo làm engine bằng chứng, có chọn model, chẩn đoán và benchmark.'], ['Cấu hình LLM', 'Nhập Base URL, API Key và model trong Settings.'], ['Nhập SGF', 'Nhập SGF cục bộ hoặc quản lý trong thư viện ván cờ.'], ['Giải thích nước hiện tại', 'Dựa trên bàn cờ, nước gợi ý, PV, tri thức và thiết lập học viên.'], ['Ôn tập theo đoạn', 'Chọn một đoạn để xem chiến đấu, chuyển đổi, nhánh joseki, sống chết và quan tử.'], ['Thiết lập học viên và phong cách giáo viên', 'Điều chỉnh trình độ, độ tuổi, phong cách và mật độ thuật ngữ.'], ['Kế hoạch TTS', 'Mặc định dự kiến dùng Kokoro Chinese ONNX offline.']], qualityTitle: 'Nguyên tắc chất lượng giảng giải', qualityItems: ['KataGo là bằng chứng; LLM không được bịa tọa độ, tỉ lệ thắng, PV hoặc tên joseki.', 'Joseki bình thường nói ngắn; nhánh và chiến đấu thì giải thích kỹ hơn.', 'Kho tri thức giúp giải thích và gợi ý luyện tập, không thay thế phán đoán của engine.'] },
     privacy: { title: 'Quyền riêng tư GoAgent', description: 'GoAgent mặc định lưu kỳ phổ, hồ sơ học viên, hội thoại, cache phân tích và cài đặt trên máy.', eyebrow: 'Riêng tư', h1: 'Quyền riêng tư', lead: 'GoAgent được thiết kế để giữ kỳ phổ trên máy người dùng. Website không có API tải kỳ phổ lên và không có server dự án để thu thập kỳ phổ.', sections: [['Dữ liệu cục bộ', ['Thư viện ván cờ', 'Hồ sơ học viên', 'Hội thoại giáo viên', 'Cache phân tích', 'Cài đặt ứng dụng']], ['Dịch vụ bên thứ ba', ['Nếu cấu hình LLM API, dữ liệu gửi đi phụ thuộc vào tác vụ giáo viên do người dùng khởi tạo.', 'Nếu cấu hình custom TTS API, văn bản đọc sẽ gửi tới dịch vụ đó.', 'Kokoro TTS mặc định là offline.']], ['Website', ['goagent.top là website tĩnh, không có database hoặc API tải kỳ phổ lên.']], ['Xóa dữ liệu', ['Sẽ có giao diện dọn dữ liệu cục bộ đầy đủ hơn; hiện có thể quản lý qua thư mục dữ liệu ứng dụng.']]] },
     faq: { title: 'GoAgent FAQ', description: 'Câu hỏi về tải xuống, KataGo, LLM, NVIDIA, TTS và quyền riêng tư.', eyebrow: 'FAQ', h1: 'Câu hỏi thường gặp', lead: 'Các câu trả lời cơ bản về tải xuống, quyền riêng tư, KataGo, LLM và TTS.', items: [['GoAgent là gì?', 'GoAgent là AI agent cờ vây miễn phí, mã nguồn mở, kết hợp KataGo, kho tri thức, LLM đa phương thức và quality gate.'], ['Khác gì AI chat thông thường?', 'GoAgent giải thích dựa trên bàn cờ, bằng chứng KataGo, PV, điểm, tri thức khớp và thiết lập học viên.'], ['Có cần mạng không?', 'KataGo và dữ liệu cục bộ chạy trên máy. LLM, TTS, tải model và đồng bộ từ xa cần mạng.'], ['KataGo có chạy cục bộ không?', 'Có. Nó tạo nước gợi ý, tỉ lệ thắng, điểm và PV trên máy.'], ['LLM có bắt buộc không?', 'Cần LLM để có lời giải thích tự nhiên. Phân tích KataGo có thể dùng riêng.'], ['Góp ý ở đâu?', 'Dùng GitHub Issues hoặc nhóm QQ 1030632742.']] },
-    changelog: { title: 'Cập nhật GoAgent', description: 'Tóm tắt phiên bản gần đây và lộ trình GoAgent.', eyebrow: 'Cập nhật', h1: 'Tóm tắt phiên bản', lead: 'Xem đầy đủ tại GitHub Releases và CHANGELOG.', entries: [['0.3.x', 'Nhận diện shape, range review, teacher sessions, student settings, source policy, quality evaluation, KataGo telemetry và UI đa ngôn ngữ.'], ['Website', 'Thêm website tĩnh Cloudflare Pages, trang đa ngôn ngữ, download, privacy, FAQ và kiểm tra chất lượng website.'], ['Tiếp theo', 'TTS, real teaching evaluation, persistent KataGo Engine Pool, auto update và visual QA.']] }
+    changelog: { title: 'Cập nhật GoAgent', description: 'Tóm tắt phiên bản gần đây và lộ trình GoAgent.', eyebrow: 'Cập nhật', h1: 'Tóm tắt phiên bản', lead: 'Xem đầy đủ tại GitHub download page và CHANGELOG.', entries: [['0.3.x', 'Nhận diện shape, range review, teacher sessions, student settings, source policy, quality evaluation, KataGo telemetry và UI đa ngôn ngữ.'], ['Website', 'Thêm website tĩnh Cloudflare Pages, trang đa ngôn ngữ, download, privacy, FAQ và kiểm tra chất lượng website.'], ['Tiếp theo', 'TTS, real teaching evaluation, persistent KataGo Engine Pool, auto update và visual QA.']] }
   }
 } as const
 
@@ -291,7 +291,7 @@ const jsonLd = page === 'faq'
               <p>{text}</p>
               <div class="download-meta">
                 <span>{badge}</span>
-                <span>GitHub Releases</span>
+                <span>GitHub</span>
                 <span>SHA256</span>
               </div>
               <a class="button" href={lizzieReleasesUrl}>{data.primary}</a>

@@ -20,18 +20,18 @@ const tools = [
   },
   {
     audience: '官方完整记录',
-    title: 'LizzieYzy Next GitHub Releases',
-    text: '完整发布历史、多平台安装包和校验信息都保留在 GitHub Releases，适合归档、回滚和校验。',
+    title: 'LizzieYzy Next GitHub 下载',
+    text: '完整版本记录、多平台安装包和校验信息都保留在 GitHub 下载页，适合归档、回滚和校验。',
     platforms: ['Windows', 'macOS', 'Linux'],
     href: lizzieReleases,
-    cta: '打开 Releases',
+    cta: '从 GitHub 下载',
     qq: 'LizzieYzy Next QQ 299419120',
     featured: false,
     icon: 'github'
   },
   {
     audience: '实验功能尝鲜',
-    title: 'GoAgent Releases',
+    title: 'GoAgent GitHub 下载',
     text: '实验中的围棋智能体。适合想体验当前手讲解、KataGo 证据解释和 AI 问答工作流的用户。',
     platforms: ['Windows', 'macOS'],
     href: goAgentReleases,
@@ -45,7 +45,7 @@ const tools = [
 <BaseLayout title="下载 LizzieYzy Next" description="首推下载 LizzieYzy Next 专业围棋复盘工作台；GoAgent 作为实验围棋智能体提供尝鲜版本。" pageKey="download">
   <section class="page-hero">
     <h1>下载 LizzieYzy Next</h1>
-    <p class="lead">大多数用户先下载 LizzieYzy Next：国内用户可以优先用百度网盘，GitHub Releases 保留完整版本记录、校验信息和多平台安装包。</p>
+    <p class="lead">大多数用户先下载 LizzieYzy Next：国内用户可以优先用百度网盘，GitHub 下载页保留完整版本记录、校验信息和多平台安装包。</p>
   </section>
   <section class="content-stack">
     <div class="download-list">
@@ -80,7 +80,7 @@ const tools = [
             <p>{tool.text}</p>
             <div class="download-meta">
               {tool.platforms.map((platform) => <span>{platform}</span>)}
-              {tool.featured ? <span>百度网盘</span> : <span>GitHub Releases</span>}
+              {tool.featured ? <span>百度网盘</span> : <span>GitHub 下载</span>}
               {!tool.featured && <span>SHA256</span>}
             </div>
             <p>{tool.qq}</p>
@@ -91,11 +91,11 @@ const tools = [
     </div>
     <article class="notice">
       <h2>校验下载文件</h2>
-      <p>国内下载优先用百度网盘；需要核对版本、文件名或校验值时，请回到 GitHub Releases 查看完整发布记录。首推 LizzieYzy Next；如果你下载的是 GoAgent，请确认自己要试的是实验智能体版本。</p>
+      <p>国内下载优先用百度网盘；需要核对版本、文件名或校验值时，请回到 GitHub 下载页查看完整版本记录。首推 LizzieYzy Next；如果你下载的是 GoAgent，请确认自己要试的是实验智能体版本。</p>
       <ul>
         <li>Windows 可使用 PowerShell 的 Get-FileHash。</li>
         <li>macOS 可使用 shasum -a 256。</li>
-        <li>如果文件名、版本号或校验值不一致，请回到对应项目的 GitHub Releases 重新下载。</li>
+        <li>如果文件名、版本号或校验值不一致，请回到对应项目的 GitHub 下载页重新下载。</li>
       </ul>
     </article>
   </section>

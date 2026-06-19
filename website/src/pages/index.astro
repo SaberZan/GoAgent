@@ -8,59 +8,52 @@ const lizzieReleases = 'https://github.com/wimi321/lizzieyzy-next/releases'
 
 const products = [
   {
-    title: 'GoAgent',
-    label: 'AI 围棋老师',
-    image: '/images/goagent-workbench.jpg',
-    alt: 'GoAgent 围棋讲解工作台',
-    summary: '适合想把一手棋听明白的人。它把棋盘、KataGo 证据、知识库和 AI 老师问答放在一起，帮你理解关键手。',
-    points: ['当前手讲解', 'KataGo 证据链', 'AI 老师问答', 'Windows / macOS'],
-    primary: '下载 GoAgent',
-    secondary: '查看代码',
-    release: goAgentReleases,
-    repo: goAgentGithub
-  },
-  {
     title: 'LizzieYzy Next',
-    label: '专业复盘工作台',
+    label: '首推 · 专业复盘工作台',
     image: '/images/lizzieyzy-next-workbench.jpg',
     alt: 'LizzieYzy Next 全盘分析工作台',
-    summary: '适合想快速看完整盘走势的人。它维护 LizzieYzy 的 KataGo GUI 体验，强化野狐抓谱、快速全盘分析和胜率概览。',
+    summary: '适合绝大多数棋友先安装。打开棋谱，看胜率曲线、目差、候选点和整盘节奏，快速找出真正值得复盘的转折点。',
     points: ['野狐昵称抓谱', '快速全盘分析', '胜率图与底部概览', 'Windows / macOS / Linux'],
     primary: '下载 LizzieYzy Next',
     secondary: '查看代码',
     release: lizzieReleases,
-    repo: lizzieGithub
+    repo: lizzieGithub,
+    featured: true
+  },
+  {
+    title: 'GoAgent',
+    label: '实验项目 · 围棋智能体',
+    image: '/images/goagent-workbench.jpg',
+    alt: 'GoAgent 围棋讲解工作台',
+    summary: '适合愿意尝鲜的用户。它尝试把棋盘、KataGo 证据、知识库和 AI 问答放在一起，让关键手能被讲成更自然的话。',
+    points: ['当前手讲解实验', 'KataGo 证据链', 'AI 问答工作流', 'Windows / macOS'],
+    primary: '试用 GoAgent',
+    secondary: '查看代码',
+    release: goAgentReleases,
+    repo: goAgentGithub,
+    featured: false
   }
 ]
 
 const workflow = [
-  ['导入棋谱', '从本地 SGF、野狐公开棋谱或已有棋谱库开始，不需要先理解引擎参数。'],
-  ['看清走势', '用 LizzieYzy Next 先扫完整盘胜率、目差和问题手分布，快速定位转折点。'],
-  ['听懂关键手', '回到 GoAgent 问当前手：为什么亏、好点在哪里、下一盘先看什么。']
+  ['下载 LizzieYzy Next', '先用成熟的 KataGo 复盘工作台打开棋谱，不需要先理解引擎参数。'],
+  ['看清整盘走势', '通过胜率、目差、候选点和底部概览，快速定位真正改变局面的几手棋。'],
+  ['需要讲解再试 GoAgent', '如果想让 AI 用自然语言解释关键手，再尝试 GoAgent 这个实验围棋智能体。']
 ]
 
 const downloads = [
-  ['GoAgent Releases', '开源免费的 AI 围棋老师，优先下载 Windows 或 macOS 桌面版。', goAgentReleases, 'GoAgent QQ 1030632742'],
-  ['LizzieYzy Next Releases', '持续维护的 KataGo 复盘 GUI，提供 Windows、macOS、Linux 多平台发布包。', lizzieReleases, 'LizzieYzy Next QQ 299419120']
+  ['LizzieYzy Next Releases', '首推下载。持续维护的 KataGo 复盘 GUI，提供 Windows、macOS、Linux 多平台发布包。', lizzieReleases, 'LizzieYzy Next QQ 299419120'],
+  ['GoAgent Releases', '实验围棋智能体，适合想体验 AI 讲棋工作流的用户。', goAgentReleases, 'GoAgent QQ 1030632742']
 ]
 
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'WebSite',
-  name: 'GoAgent',
-  alternateName: '围棋 AI 工具箱',
+  name: 'LizzieYzy Next',
+  alternateName: '专业围棋复盘工作台',
   url: 'https://goagent.top/',
-  description: 'goagent.top 是 GoAgent 和 LizzieYzy Next 共用的围棋 AI 工具官网。',
+  description: 'LizzieYzy Next 是面向棋友的专业 KataGo 复盘工作台；GoAgent 是实验中的围棋智能体。',
   hasPart: [
-    {
-      '@type': 'SoftwareApplication',
-      name: 'GoAgent',
-      applicationCategory: 'EducationalApplication',
-      operatingSystem: 'Windows, macOS',
-      url: goAgentGithub,
-      downloadUrl: goAgentReleases,
-      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }
-    },
     {
       '@type': 'SoftwareApplication',
       name: 'LizzieYzy Next',
@@ -69,29 +62,38 @@ const jsonLd = {
       url: lizzieGithub,
       downloadUrl: lizzieReleases,
       offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }
+    },
+    {
+      '@type': 'SoftwareApplication',
+      name: 'GoAgent',
+      applicationCategory: 'EducationalApplication',
+      operatingSystem: 'Windows, macOS',
+      url: goAgentGithub,
+      downloadUrl: goAgentReleases,
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' }
     }
   ]
 }
 ---
 <BaseLayout
-  title="GoAgent - 围棋 AI 工具箱"
-  description="goagent.top 是 GoAgent 和 LizzieYzy Next 共用官网：一款把关键手讲清楚，一款把整盘复盘看清楚。"
+  title="LizzieYzy Next - 专业围棋复盘工作台"
+  description="LizzieYzy Next 是首推的专业 KataGo 复盘工作台，适合棋友快速看清整盘走势；GoAgent 是实验中的围棋智能体。"
   pageKey="home"
   jsonLd={jsonLd}
 >
   <section class="home-hero">
     <div class="hero-copy">
-      <h1>一站找到好用的围棋 AI 工具</h1>
+      <h1>先把一盘棋复盘清楚</h1>
       <p class="lead">
-        GoAgent 负责把棋讲明白；LizzieYzy Next 负责把整盘复盘看清楚。两款开源桌面工具，共用一个官网。
+        首推 LizzieYzy Next：给棋友用的专业 KataGo 复盘工作台。下载后导入棋谱，先看清胜率、目差、候选点和整盘节奏；想尝试 AI 讲棋，再试 GoAgent。
       </p>
       <div class="button-row">
-        <a class="button primary" href={goAgentReleases}>下载 GoAgent</a>
-        <a class="button" href={lizzieReleases}>下载 LizzieYzy Next</a>
-        <a class="button subtle" href="#products">先看区别</a>
+        <a class="button primary" href={lizzieReleases}>下载 LizzieYzy Next</a>
+        <a class="button" href="#products">选择适合你的工具</a>
+        <a class="button subtle" href={goAgentReleases}>试用 GoAgent</a>
       </div>
       <div class="trust-row" aria-label="官网要点">
-        <span>开源免费</span>
+        <span>首推复盘工具</span>
         <span>KataGo 分析</span>
         <span>Windows / macOS / Linux</span>
       </div>
@@ -103,12 +105,12 @@ const jsonLd = {
 
   <section id="products" class="section-block product-section">
     <div class="section-head centered">
-      <h2>两款工具，相辅相成</h2>
-      <p>想让 AI 老师讲清楚，用 GoAgent；想快速看完整盘走势，用 LizzieYzy Next。</p>
+      <h2>大多数用户，先选 LizzieYzy Next</h2>
+      <p>你要的是稳定复盘和快速定位问题手；等你想尝试自然语言讲棋，再把 GoAgent 当作实验工具探索。</p>
     </div>
     <div class="product-grid">
       {products.map((product) => (
-        <article class="product-panel">
+        <article class={`product-panel ${product.featured ? 'featured' : ''}`}>
           <img src={product.image} alt={product.alt} width="1536" height="1152" loading="lazy" decoding="async" />
           <div class="product-copy">
             <p class="product-label">{product.label}</p>
@@ -130,8 +132,8 @@ const jsonLd = {
   <section id="workflow" class="section-block workflow-section">
     <div class="section-head">
       <div>
-        <h2>从棋谱到复盘，只走三步</h2>
-        <p>普通用户不需要先懂引擎参数：先下载、导入棋谱，再看图和解释。</p>
+        <h2>普通棋友的正确打开方式</h2>
+        <p>先完成一次清晰的全盘复盘，再决定要不要加上 AI 讲解。</p>
       </div>
     </div>
     <div class="workflow-line">
@@ -148,7 +150,7 @@ const jsonLd = {
   <section id="download" class="section-block download-section">
     <div class="section-head centered">
       <h2>免费下载</h2>
-      <p>官网保持轻量，安装包统一放在 GitHub Releases，方便校验、回滚和追踪版本。</p>
+      <p>首推 LizzieYzy Next。安装包统一放在 GitHub Releases，方便校验、回滚和追踪版本。</p>
     </div>
     <div class="download-list">
       {downloads.map(([title, text, href, note]) => (

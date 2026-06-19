@@ -9,184 +9,188 @@ const lizzieReleases = 'https://github.com/wimi321/lizzieyzy-next/releases'
 const locales = {
   'zh-hant': {
     lang: 'zh-Hant',
-    title: 'GoAgent - 圍棋 AI 工具箱',
-    description: 'goagent.top 是 GoAgent 和 LizzieYzy Next 共用官網：一款把關鍵手講清楚，一款把整盤復盤看清楚。',
-    h1: '一站找到好用的圍棋 AI 工具',
-    lead: 'GoAgent 負責把棋講明白；LizzieYzy Next 負責把整盤復盤看清楚。兩款開源桌面工具，共用一個官網。',
-    trust: ['開源免費', 'KataGo 分析', 'Windows / macOS / Linux'],
-    firstCta: '下載 GoAgent',
-    secondCta: '下載 LizzieYzy Next',
-    differenceCta: '先看區別',
-    productsTitle: '兩款工具，相輔相成',
-    productsLead: '想讓 AI 老師講清楚，用 GoAgent；想快速看完整盤走勢，用 LizzieYzy Next。',
+    title: 'LizzieYzy Next - 專業圍棋復盤工作台',
+    description: 'LizzieYzy Next 是首推的專業 KataGo 復盤工作台；GoAgent 是實驗中的圍棋智能體。',
+    h1: '先把一盤棋復盤清楚',
+    lead: '首推 LizzieYzy Next：給棋友日常使用的專業 KataGo 復盤工作台。先看清勝率、目差、候選點和整盤節奏；想嘗試 AI 講棋，再試 GoAgent。',
+    trust: ['首推復盤工具', 'KataGo 分析', 'Windows / macOS / Linux'],
+    firstCta: '下載 LizzieYzy Next',
+    secondCta: '試用 GoAgent',
+    differenceCta: '選擇適合你的工具',
+    productsTitle: '大多數用戶，先選 LizzieYzy Next',
+    productsLead: '你要的是穩定復盤和快速定位問題手；等你想嘗試自然語言講棋，再把 GoAgent 當作實驗工具探索。',
     products: [
       {
-        title: 'GoAgent',
-        label: 'AI 圍棋老師',
-        image: '/images/goagent-workbench.jpg',
-        alt: 'GoAgent 圍棋講解工作台',
-        summary: '適合想把一手棋聽明白的人。它把棋盤、KataGo 證據、知識庫和 AI 老師問答放在一起。',
-        points: ['當前手講解', 'KataGo 證據鏈', 'AI 老師問答', 'Windows / macOS'],
-        primary: '下載 GoAgent',
-        secondary: '查看代碼',
-        release: goAgentReleases,
-        repo: goAgentGithub
-      },
-      {
         title: 'LizzieYzy Next',
-        label: '專業復盤工作台',
+        label: '首推 · 專業復盤工作台',
         image: '/images/lizzieyzy-next-workbench.jpg',
         alt: 'LizzieYzy Next 全盤分析工作台',
-        summary: '適合想快速看完整盤走勢的人。它強化野狐抓譜、快速全盤分析和勝率概覽。',
+        summary: '適合大多數棋友先安裝。打開棋譜，看勝率曲線、目差、候選點和整盤節奏。',
         points: ['野狐暱稱抓譜', '快速全盤分析', '勝率圖與底部概覽', 'Windows / macOS / Linux'],
         primary: '下載 LizzieYzy Next',
         secondary: '查看代碼',
         release: lizzieReleases,
-        repo: lizzieGithub
+        repo: lizzieGithub,
+        featured: true
+      },
+      {
+        title: 'GoAgent',
+        label: '實驗項目 · 圍棋智能體',
+        image: '/images/goagent-workbench.jpg',
+        alt: 'GoAgent 圍棋講解工作台',
+        summary: '適合願意嘗鮮的用戶。它嘗試把棋盤、KataGo 證據、知識庫和 AI 問答放在一起。',
+        points: ['當前手講解實驗', 'KataGo 證據鏈', 'AI 問答工作流', 'Windows / macOS'],
+        primary: '試用 GoAgent',
+        secondary: '查看代碼',
+        release: goAgentReleases,
+        repo: goAgentGithub,
+        featured: false
       }
     ],
-    workflowTitle: '從棋譜到復盤，只走三步',
-    workflowLead: '普通用戶不需要先懂引擎參數：先下載、導入棋譜，再看圖和解釋。',
-    workflow: [['導入棋譜', '從本地 SGF、野狐公開棋譜或已有棋譜庫開始。'], ['看清走勢', '用 LizzieYzy Next 先掃完整盤勝率、目差和問題手分布。'], ['聽懂關鍵手', '回到 GoAgent 問當前手：為什麼虧、好點在哪裡。']],
+    workflowTitle: '普通棋友的正確打開方式',
+    workflowLead: '先完成一次清晰的全盤復盤，再決定要不要加上 AI 講解。',
+    workflow: [['下載 LizzieYzy Next', '先用成熟的 KataGo 復盤工作台打開棋譜。'], ['看清整盤走勢', '用勝率、目差、候選點和底部概覽定位轉折點。'], ['需要講解再試 GoAgent', '如果想用自然語言解釋關鍵手，再嘗試這個實驗圍棋智能體。']],
     downloadTitle: '免費下載',
-    downloadLead: '安裝包統一放在 GitHub Releases，方便校驗、回滾和追蹤版本。',
+    downloadLead: '首推 LizzieYzy Next。安裝包統一放在 GitHub Releases，方便校驗、回滾和追蹤版本。',
     openReleases: '打開 Releases'
   },
   en: {
     lang: 'en',
-    title: 'GoAgent - Go AI Toolkit',
-    description: 'goagent.top is the shared website for GoAgent and LizzieYzy Next: one explains key moves, the other makes whole-game review easier to read.',
-    h1: 'One place for practical Go AI tools',
-    lead: 'GoAgent explains the move; LizzieYzy Next makes the whole game readable. Two open-source desktop tools, one official website.',
-    trust: ['Open-source and free', 'KataGo analysis', 'Windows / macOS / Linux'],
-    firstCta: 'Download GoAgent',
-    secondCta: 'Download LizzieYzy Next',
-    differenceCta: 'Compare products',
-    productsTitle: 'Two tools that work together',
-    productsLead: 'Use GoAgent when you want an AI teacher. Use LizzieYzy Next when you want to scan the whole-game review quickly.',
+    title: 'LizzieYzy Next - Professional Go Review Workbench',
+    description: 'LizzieYzy Next is the recommended KataGo review workbench. GoAgent is an experimental Go agent for AI move explanations.',
+    h1: 'Review the whole game clearly first',
+    lead: 'Start with LizzieYzy Next: a professional KataGo review workbench for Go players. Read winrate, score lead, candidate moves, and game rhythm first; try GoAgent later if you want experimental AI explanations.',
+    trust: ['Recommended review tool', 'KataGo analysis', 'Windows / macOS / Linux'],
+    firstCta: 'Download LizzieYzy Next',
+    secondCta: 'Try GoAgent',
+    differenceCta: 'Choose your tool',
+    productsTitle: 'Most players should start with LizzieYzy Next',
+    productsLead: 'Use the stable review workbench to find the real turning points first. GoAgent is for experimenting with natural-language move explanations.',
     products: [
       {
-        title: 'GoAgent',
-        label: 'AI Go teacher',
-        image: '/images/goagent-workbench.jpg',
-        alt: 'GoAgent teaching workbench',
-        summary: 'For players who want a move explained clearly. It combines the board, KataGo evidence, local knowledge, and AI teacher Q&A.',
-        points: ['Current-move explanation', 'KataGo evidence chain', 'AI teacher Q&A', 'Windows / macOS'],
-        primary: 'Download GoAgent',
-        secondary: 'View source',
-        release: goAgentReleases,
-        repo: goAgentGithub
-      },
-      {
         title: 'LizzieYzy Next',
-        label: 'Review workbench',
+        label: 'Recommended review workbench',
         image: '/images/lizzieyzy-next-workbench.jpg',
         alt: 'LizzieYzy Next whole-game analysis workbench',
-        summary: 'For players who want the full-game picture fast. It keeps the LizzieYzy KataGo GUI alive with Fox fetching and clearer analysis views.',
+        summary: 'The first install for most players. Open a game record, inspect winrate, score lead, candidate moves, and the whole-game rhythm.',
         points: ['Fox nickname fetching', 'Fast full-game analysis', 'Winrate graph and overview strip', 'Windows / macOS / Linux'],
         primary: 'Download LizzieYzy Next',
         secondary: 'View source',
         release: lizzieReleases,
-        repo: lizzieGithub
+        repo: lizzieGithub,
+        featured: true
+      },
+      {
+        title: 'GoAgent',
+        label: 'Experimental Go agent',
+        image: '/images/goagent-workbench.jpg',
+        alt: 'GoAgent teaching workbench',
+        summary: 'For users who want to try the AI explanation workflow. It experiments with board state, KataGo evidence, knowledge cards, and Q&A.',
+        points: ['Move explanation experiment', 'KataGo evidence chain', 'AI Q&A workflow', 'Windows / macOS'],
+        primary: 'Try GoAgent',
+        secondary: 'View source',
+        release: goAgentReleases,
+        repo: goAgentGithub,
+        featured: false
       }
     ],
-    workflowTitle: 'From game record to review in three steps',
-    workflowLead: 'You do not need to understand engine parameters first: download, import a game, then read the graph and explanation.',
-    workflow: [['Import a game', 'Start from local SGF, public Fox games, or your existing game library.'], ['Read the trend', 'Use LizzieYzy Next to scan winrate, score, and mistake distribution.'], ['Understand key moves', 'Ask GoAgent why the move lost value and what to check next.']],
+    workflowTitle: 'The practical path for everyday players',
+    workflowLead: 'Complete a clear whole-game review first, then decide whether you need AI narration.',
+    workflow: [['Download LizzieYzy Next', 'Use the mature KataGo review workbench to open your game record.'], ['Find the turning points', 'Use winrate, score lead, candidate moves, and the overview strip to locate the few moves that matter.'], ['Try GoAgent for explanations', 'When you want natural-language reasoning, explore the experimental Go agent.']],
     downloadTitle: 'Download free',
-    downloadLead: 'Installers are hosted on GitHub Releases for verification, rollback, and version tracking.',
+    downloadLead: 'LizzieYzy Next is the recommended download. Installers are hosted on GitHub Releases for verification, rollback, and version tracking.',
     openReleases: 'Open Releases'
   },
   ja: {
     lang: 'ja',
-    title: 'GoAgent - 囲碁 AI ツールキット',
-    description: 'GoAgent と LizzieYzy Next の共通サイト。一手の説明と一局全体の復盤をつなぎます。',
-    h1: '使いやすい囲碁 AI ツールを一つの場所に',
-    lead: 'GoAgent は一手を説明し、LizzieYzy Next は一局全体を読みやすくします。二つのオープンソースデスクトップツールを同じサイトで案内します。',
-    trust: ['オープンソース', 'KataGo 分析', 'Windows / macOS / Linux'],
-    firstCta: 'GoAgent をダウンロード',
-    secondCta: 'LizzieYzy Next をダウンロード',
-    differenceCta: '違いを見る',
-    productsTitle: '二つのツールを使い分ける',
-    productsLead: 'AI 先生に説明してほしい時は GoAgent。全体の流れを素早く見たい時は LizzieYzy Next。',
+    title: 'LizzieYzy Next - 囲碁復盤ワークベンチ',
+    description: 'LizzieYzy Next は推奨の KataGo 復盤ワークベンチ。GoAgent は AI 解説を試す実験的な囲碁エージェントです。',
+    h1: 'まず一局全体を読みやすく復盤',
+    lead: 'まずは LizzieYzy Next。棋譜を開き、勝率、目差、候補手、一局の流れを確認します。AI に説明させたい場合は、実験的な GoAgent を試せます。',
+    trust: ['推奨復盤ツール', 'KataGo 分析', 'Windows / macOS / Linux'],
+    firstCta: 'LizzieYzy Next をダウンロード',
+    secondCta: 'GoAgent を試す',
+    differenceCta: 'ツールを選ぶ',
+    productsTitle: '多くのユーザーは LizzieYzy Next から',
+    productsLead: 'まず安定した全局復盤で転換点を見つけ、自然言語の解説を試したい時に GoAgent を使います。',
     products: [
-      { title: 'GoAgent', label: 'AI 囲碁先生', image: '/images/goagent-workbench.jpg', alt: 'GoAgent teaching workbench', summary: '盤面、KataGo の根拠、知識ベース、AI 先生の質問応答を一つにまとめます。', points: ['現在手の解説', 'KataGo 根拠', 'AI 先生 Q&A', 'Windows / macOS'], primary: 'GoAgent をダウンロード', secondary: 'コードを見る', release: goAgentReleases, repo: goAgentGithub },
-      { title: 'LizzieYzy Next', label: '復盤ワークベンチ', image: '/images/lizzieyzy-next-workbench.jpg', alt: 'LizzieYzy Next analysis workbench', summary: '野狐棋譜取得、高速な全局分析、勝率グラフと概要で流れを読みやすくします。', points: ['野狐ニックネーム取得', '高速全局分析', '勝率グラフと概要', 'Windows / macOS / Linux'], primary: 'LizzieYzy Next をダウンロード', secondary: 'コードを見る', release: lizzieReleases, repo: lizzieGithub }
+      { title: 'LizzieYzy Next', label: '推奨 · 復盤ワークベンチ', image: '/images/lizzieyzy-next-workbench.jpg', alt: 'LizzieYzy Next analysis workbench', summary: '多くの棋士に最初に勧めたいツールです。勝率、目差、候補手、全局の流れを素早く確認できます。', points: ['野狐ニックネーム取得', '高速全局分析', '勝率グラフと概要', 'Windows / macOS / Linux'], primary: 'LizzieYzy Next をダウンロード', secondary: 'コードを見る', release: lizzieReleases, repo: lizzieGithub, featured: true },
+      { title: 'GoAgent', label: '実験プロジェクト · 囲碁エージェント', image: '/images/goagent-workbench.jpg', alt: 'GoAgent teaching workbench', summary: 'AI 解説ワークフローを試したいユーザー向けです。盤面、KataGo 根拠、知識カード、Q&A を組み合わせます。', points: ['一手解説の実験', 'KataGo 根拠', 'AI Q&A', 'Windows / macOS'], primary: 'GoAgent を試す', secondary: 'コードを見る', release: goAgentReleases, repo: goAgentGithub, featured: false }
     ],
-    workflowTitle: '棋譜から復盤まで三ステップ',
-    workflowLead: 'まずダウンロードし、棋譜を読み込み、グラフと説明を見るだけです。',
-    workflow: [['棋譜を読み込む', 'SGF や公開棋譜から始めます。'], ['流れを見る', 'LizzieYzy Next で勝率と問題手を素早く確認します。'], ['一手を理解する', 'GoAgent に理由と次に見る点を聞きます。']],
+    workflowTitle: '普通の棋士の使い方',
+    workflowLead: 'まず全局を明確に復盤し、その後で AI 解説が必要か判断します。',
+    workflow: [['LizzieYzy Next を入手', '成熟した KataGo 復盤ワークベンチで棋譜を開きます。'], ['転換点を見る', '勝率、目差、候補手、概要で重要な数手を見つけます。'], ['必要なら GoAgent', '自然言語の理由づけを試したい時に実験エージェントを使います。']],
     downloadTitle: '無料ダウンロード',
-    downloadLead: 'インストーラは GitHub Releases で配布します。',
+    downloadLead: '推奨は LizzieYzy Next です。インストーラは GitHub Releases で配布します。',
     openReleases: 'Releases を開く'
   },
   ko: {
     lang: 'ko',
-    title: 'GoAgent - 바둑 AI 툴킷',
-    description: 'GoAgent와 LizzieYzy Next를 함께 소개하는 공식 사이트입니다.',
-    h1: '실용적인 바둑 AI 도구를 한곳에서',
-    lead: 'GoAgent는 핵심 수를 설명하고, LizzieYzy Next는 전체 판의 흐름을 보기 쉽게 만듭니다.',
-    trust: ['오픈소스', 'KataGo 분석', 'Windows / macOS / Linux'],
-    firstCta: 'GoAgent 다운로드',
-    secondCta: 'LizzieYzy Next 다운로드',
-    differenceCta: '차이 보기',
-    productsTitle: '함께 쓰기 좋은 두 도구',
-    productsLead: '설명이 필요하면 GoAgent, 전체 복기 흐름을 빠르게 보고 싶으면 LizzieYzy Next.',
+    title: 'LizzieYzy Next - 바둑 복기 워크벤치',
+    description: 'LizzieYzy Next는 추천 KataGo 복기 워크벤치입니다. GoAgent는 AI 수 설명을 실험하는 바둑 에이전트입니다.',
+    h1: '먼저 한 판 전체를 선명하게 복기하세요',
+    lead: '대부분의 사용자는 LizzieYzy Next부터 시작하면 됩니다. 승률, 집 차이, 후보 수, 판 전체의 흐름을 먼저 보고, AI 설명을 원할 때 GoAgent를 시험하세요.',
+    trust: ['추천 복기 도구', 'KataGo 분석', 'Windows / macOS / Linux'],
+    firstCta: 'LizzieYzy Next 다운로드',
+    secondCta: 'GoAgent 시험하기',
+    differenceCta: '도구 선택',
+    productsTitle: '대부분은 LizzieYzy Next부터',
+    productsLead: '안정적인 전판 복기로 전환점을 먼저 찾고, 자연어 설명은 GoAgent에서 실험해 보세요.',
     products: [
-      { title: 'GoAgent', label: 'AI 바둑 선생님', image: '/images/goagent-workbench.jpg', alt: 'GoAgent workbench', summary: '바둑판, KataGo 근거, 지식 베이스, AI Q&A를 한곳에 모읍니다.', points: ['현재 수 설명', 'KataGo 근거', 'AI Q&A', 'Windows / macOS'], primary: 'GoAgent 다운로드', secondary: '소스 보기', release: goAgentReleases, repo: goAgentGithub },
-      { title: 'LizzieYzy Next', label: '복기 워크벤치', image: '/images/lizzieyzy-next-workbench.jpg', alt: 'LizzieYzy Next workbench', summary: 'Fox 기보 가져오기, 빠른 전판 분석, 승률 그래프와 개요를 강화합니다.', points: ['Fox 닉네임 가져오기', '빠른 전판 분석', '승률 그래프와 개요', 'Windows / macOS / Linux'], primary: 'LizzieYzy Next 다운로드', secondary: '소스 보기', release: lizzieReleases, repo: lizzieGithub }
+      { title: 'LizzieYzy Next', label: '추천 · 복기 워크벤치', image: '/images/lizzieyzy-next-workbench.jpg', alt: 'LizzieYzy Next workbench', summary: '대부분의 바둑 사용자가 먼저 설치할 도구입니다. 승률, 집 차이, 후보 수와 전체 흐름을 빠르게 확인합니다.', points: ['Fox 닉네임 가져오기', '빠른 전판 분석', '승률 그래프와 개요', 'Windows / macOS / Linux'], primary: 'LizzieYzy Next 다운로드', secondary: '소스 보기', release: lizzieReleases, repo: lizzieGithub, featured: true },
+      { title: 'GoAgent', label: '실험 프로젝트 · 바둑 에이전트', image: '/images/goagent-workbench.jpg', alt: 'GoAgent workbench', summary: 'AI 설명 워크플로를 시험하고 싶은 사용자를 위한 실험 도구입니다. 바둑판, KataGo 근거, 지식 카드와 Q&A를 결합합니다.', points: ['현재 수 설명 실험', 'KataGo 근거', 'AI Q&A', 'Windows / macOS'], primary: 'GoAgent 시험하기', secondary: '소스 보기', release: goAgentReleases, repo: goAgentGithub, featured: false }
     ],
-    workflowTitle: '기보에서 복기까지 세 단계',
-    workflowLead: '먼저 다운로드하고, 기보를 불러오고, 그래프와 설명을 읽습니다.',
-    workflow: [['기보 불러오기', 'SGF 또는 공개 기보에서 시작합니다.'], ['흐름 보기', 'LizzieYzy Next로 승률과 문제 수 분포를 봅니다.'], ['핵심 수 이해', 'GoAgent에 이유와 다음 체크 포인트를 묻습니다.']],
+    workflowTitle: '일상 사용자의 추천 흐름',
+    workflowLead: '전판 복기를 먼저 끝내고, 필요할 때 AI 설명을 추가하세요.',
+    workflow: [['LizzieYzy Next 다운로드', '성숙한 KataGo 복기 워크벤치로 기보를 엽니다.'], ['전환점 찾기', '승률, 집 차이, 후보 수와 overview로 중요한 수를 찾습니다.'], ['필요하면 GoAgent', '자연어 설명을 원할 때 실험 에이전트를 사용합니다.']],
     downloadTitle: '무료 다운로드',
-    downloadLead: '설치 파일은 GitHub Releases에서 제공합니다.',
+    downloadLead: '추천 다운로드는 LizzieYzy Next입니다. 설치 파일은 GitHub Releases에서 제공합니다.',
     openReleases: 'Releases 열기'
   },
   th: {
     lang: 'th',
-    title: 'GoAgent - ชุดเครื่องมือ AI หมากล้อม',
-    description: 'เว็บไซต์รวม GoAgent และ LizzieYzy Next สำหรับการเรียนและทบทวนหมากล้อม',
-    h1: 'เครื่องมือ AI หมากล้อมที่ใช้ได้จริงในที่เดียว',
-    lead: 'GoAgent อธิบายหมากสำคัญ ส่วน LizzieYzy Next ช่วยอ่านภาพรวมทั้งเกมให้ชัดขึ้น',
-    trust: ['โอเพนซอร์ส', 'KataGo analysis', 'Windows / macOS / Linux'],
-    firstCta: 'ดาวน์โหลด GoAgent',
-    secondCta: 'ดาวน์โหลด LizzieYzy Next',
-    differenceCta: 'ดูความต่าง',
-    productsTitle: 'สองเครื่องมือที่เสริมกัน',
-    productsLead: 'ต้องการครู AI ใช้ GoAgent; ต้องการดูภาพรวมทั้งเกมเร็ว ใช้ LizzieYzy Next.',
+    title: 'LizzieYzy Next - พื้นที่ทบทวนหมากล้อม',
+    description: 'LizzieYzy Next คือเครื่องมือทบทวน KataGo ที่แนะนำ ส่วน GoAgent เป็น Go agent ทดลองสำหรับคำอธิบายด้วย AI',
+    h1: 'ดูภาพรวมทั้งเกมให้ชัดก่อน',
+    lead: 'เริ่มจาก LizzieYzy Next สำหรับทบทวนเกมด้วย KataGo ดูกราฟชนะ คะแนน หมากแนะนำ และจังหวะทั้งเกมก่อน ถ้าอยากลองคำอธิบายด้วย AI ค่อยใช้ GoAgent',
+    trust: ['เครื่องมือแนะนำ', 'KataGo analysis', 'Windows / macOS / Linux'],
+    firstCta: 'ดาวน์โหลด LizzieYzy Next',
+    secondCta: 'ลอง GoAgent',
+    differenceCta: 'เลือกเครื่องมือ',
+    productsTitle: 'ผู้ใช้ส่วนใหญ่ควรเริ่มที่ LizzieYzy Next',
+    productsLead: 'ใช้เครื่องมือทบทวนที่เสถียรก่อน แล้วค่อยลอง GoAgent เมื่ออยากได้คำอธิบายภาษาคน',
     products: [
-      { title: 'GoAgent', label: 'ครู AI หมากล้อม', image: '/images/goagent-workbench.jpg', alt: 'GoAgent workbench', summary: 'รวมกระดาน หลักฐานจาก KataGo ฐานความรู้ และ Q&A ของครู AI', points: ['อธิบายหมากปัจจุบัน', 'หลักฐาน KataGo', 'ถามตอบ AI', 'Windows / macOS'], primary: 'ดาวน์โหลด GoAgent', secondary: 'ดูโค้ด', release: goAgentReleases, repo: goAgentGithub },
-      { title: 'LizzieYzy Next', label: 'พื้นที่ทบทวนเกม', image: '/images/lizzieyzy-next-workbench.jpg', alt: 'LizzieYzy Next workbench', summary: 'เน้นการดึงเกม Fox, วิเคราะห์ทั้งเกมเร็ว และอ่านกราฟชนะได้ง่าย', points: ['ดึงเกมด้วยชื่อเล่น Fox', 'วิเคราะห์ทั้งเกมเร็ว', 'กราฟและ overview', 'Windows / macOS / Linux'], primary: 'ดาวน์โหลด LizzieYzy Next', secondary: 'ดูโค้ด', release: lizzieReleases, repo: lizzieGithub }
+      { title: 'LizzieYzy Next', label: 'แนะนำ · พื้นที่ทบทวนเกม', image: '/images/lizzieyzy-next-workbench.jpg', alt: 'LizzieYzy Next workbench', summary: 'เหมาะสำหรับผู้เล่นส่วนใหญ่ก่อน ดูกราฟชนะ คะแนน หมากแนะนำ และภาพรวมเกมได้เร็ว', points: ['ดึงเกมด้วยชื่อเล่น Fox', 'วิเคราะห์ทั้งเกมเร็ว', 'กราฟและ overview', 'Windows / macOS / Linux'], primary: 'ดาวน์โหลด LizzieYzy Next', secondary: 'ดูโค้ด', release: lizzieReleases, repo: lizzieGithub, featured: true },
+      { title: 'GoAgent', label: 'โปรเจกต์ทดลอง · Go agent', image: '/images/goagent-workbench.jpg', alt: 'GoAgent workbench', summary: 'เหมาะสำหรับคนที่อยากลอง workflow คำอธิบายด้วย AI รวมกระดาน หลักฐาน KataGo และ Q&A', points: ['ทดลองอธิบายหมาก', 'หลักฐาน KataGo', 'ถามตอบ AI', 'Windows / macOS'], primary: 'ลอง GoAgent', secondary: 'ดูโค้ด', release: goAgentReleases, repo: goAgentGithub, featured: false }
     ],
-    workflowTitle: 'จากคีฟูถึงการทบทวนในสามขั้น',
-    workflowLead: 'ดาวน์โหลด นำเข้าคีฟู แล้วอ่านกราฟและคำอธิบาย',
-    workflow: [['นำเข้าคีฟู', 'เริ่มจาก SGF หรือเกมสาธารณะ'], ['ดูภาพรวม', 'ใช้ LizzieYzy Next ดูแนวโน้มและจุดพลาด'], ['เข้าใจหมากสำคัญ', 'ถาม GoAgent ว่าทำไมจุดนี้สำคัญ']],
+    workflowTitle: 'วิธีเริ่มที่เหมาะกับผู้เล่นทั่วไป',
+    workflowLead: 'ทบทวนทั้งเกมให้ชัดก่อน แล้วค่อยเพิ่มคำอธิบาย AI ถ้าต้องการ',
+    workflow: [['ดาวน์โหลด LizzieYzy Next', 'เปิดคีฟูด้วยเครื่องมือทบทวน KataGo ที่พร้อมใช้งาน'], ['หา turning point', 'ใช้กราฟชนะ คะแนน หมากแนะนำ และ overview เพื่อหาจุดสำคัญ'], ['ลอง GoAgent เมื่อจำเป็น', 'ถ้าอยากได้คำอธิบายภาษาคน ให้ลอง agent ทดลองนี้']],
     downloadTitle: 'ดาวน์โหลดฟรี',
-    downloadLead: 'ไฟล์ติดตั้งอยู่บน GitHub Releases',
+    downloadLead: 'แนะนำให้ดาวน์โหลด LizzieYzy Next ก่อน ไฟล์ติดตั้งอยู่บน GitHub Releases',
     openReleases: 'เปิด Releases'
   },
   vi: {
     lang: 'vi',
-    title: 'GoAgent - Bộ công cụ AI cờ vây',
-    description: 'Website chung cho GoAgent và LizzieYzy Next.',
-    h1: 'Một nơi cho các công cụ AI cờ vây thực dụng',
-    lead: 'GoAgent giải thích nước quan trọng; LizzieYzy Next giúp đọc toàn bộ ván rõ hơn.',
-    trust: ['Mã nguồn mở', 'Phân tích KataGo', 'Windows / macOS / Linux'],
-    firstCta: 'Tải GoAgent',
-    secondCta: 'Tải LizzieYzy Next',
-    differenceCta: 'Xem khác biệt',
-    productsTitle: 'Hai công cụ bổ trợ cho nhau',
-    productsLead: 'Muốn giáo viên AI giải thích thì dùng GoAgent; muốn xem nhanh toàn ván thì dùng LizzieYzy Next.',
+    title: 'LizzieYzy Next - Bàn làm việc ôn tập cờ vây',
+    description: 'LizzieYzy Next là bàn làm việc KataGo được khuyên dùng. GoAgent là agent cờ vây thử nghiệm cho giải thích bằng AI.',
+    h1: 'Trước hết hãy ôn tập rõ toàn ván',
+    lead: 'Hãy bắt đầu với LizzieYzy Next: bàn làm việc KataGo dành cho người chơi cờ vây. Đọc tỉ lệ thắng, điểm, nước gợi ý và nhịp toàn ván trước; nếu muốn lời giải thích AI, hãy thử GoAgent.',
+    trust: ['Công cụ ôn tập khuyên dùng', 'Phân tích KataGo', 'Windows / macOS / Linux'],
+    firstCta: 'Tải LizzieYzy Next',
+    secondCta: 'Thử GoAgent',
+    differenceCta: 'Chọn công cụ',
+    productsTitle: 'Đa số người dùng nên bắt đầu với LizzieYzy Next',
+    productsLead: 'Dùng bàn làm việc ôn tập ổn định để tìm bước ngoặt trước. GoAgent dành cho thử nghiệm lời giải thích bằng ngôn ngữ tự nhiên.',
     products: [
-      { title: 'GoAgent', label: 'Giáo viên AI cờ vây', image: '/images/goagent-workbench.jpg', alt: 'GoAgent workbench', summary: 'Kết hợp bàn cờ, bằng chứng KataGo, tri thức và hỏi đáp AI.', points: ['Giải thích nước hiện tại', 'Bằng chứng KataGo', 'Hỏi đáp AI', 'Windows / macOS'], primary: 'Tải GoAgent', secondary: 'Xem mã nguồn', release: goAgentReleases, repo: goAgentGithub },
-      { title: 'LizzieYzy Next', label: 'Bàn làm việc ôn tập', image: '/images/lizzieyzy-next-workbench.jpg', alt: 'LizzieYzy Next workbench', summary: 'Tập trung vào lấy kỳ phổ Fox, phân tích nhanh toàn ván và biểu đồ dễ đọc.', points: ['Lấy kỳ phổ bằng nickname Fox', 'Phân tích toàn ván nhanh', 'Biểu đồ và overview', 'Windows / macOS / Linux'], primary: 'Tải LizzieYzy Next', secondary: 'Xem mã nguồn', release: lizzieReleases, repo: lizzieGithub }
+      { title: 'LizzieYzy Next', label: 'Khuyên dùng · Bàn làm việc ôn tập', image: '/images/lizzieyzy-next-workbench.jpg', alt: 'LizzieYzy Next workbench', summary: 'Công cụ nên cài trước cho đa số người chơi. Xem nhanh tỉ lệ thắng, điểm, nước gợi ý và nhịp toàn ván.', points: ['Lấy kỳ phổ bằng nickname Fox', 'Phân tích toàn ván nhanh', 'Biểu đồ và overview', 'Windows / macOS / Linux'], primary: 'Tải LizzieYzy Next', secondary: 'Xem mã nguồn', release: lizzieReleases, repo: lizzieGithub, featured: true },
+      { title: 'GoAgent', label: 'Dự án thử nghiệm · Go agent', image: '/images/goagent-workbench.jpg', alt: 'GoAgent workbench', summary: 'Dành cho người muốn thử workflow giải thích AI, kết hợp bàn cờ, bằng chứng KataGo, tri thức và hỏi đáp.', points: ['Thử nghiệm giải thích nước đi', 'Bằng chứng KataGo', 'Hỏi đáp AI', 'Windows / macOS'], primary: 'Thử GoAgent', secondary: 'Xem mã nguồn', release: goAgentReleases, repo: goAgentGithub, featured: false }
     ],
-    workflowTitle: 'Từ kỳ phổ tới ôn tập trong ba bước',
-    workflowLead: 'Tải xuống, nhập kỳ phổ, rồi đọc biểu đồ và lời giải thích.',
-    workflow: [['Nhập kỳ phổ', 'Bắt đầu từ SGF hoặc kỳ phổ công khai.'], ['Đọc xu hướng', 'Dùng LizzieYzy Next xem tỉ lệ thắng và lỗi lớn.'], ['Hiểu nước then chốt', 'Hỏi GoAgent vì sao nước đó quan trọng.']],
+    workflowTitle: 'Cách bắt đầu cho người chơi hằng ngày',
+    workflowLead: 'Hoàn tất một lượt ôn tập toàn ván rõ ràng trước, rồi quyết định có cần lời giải thích AI không.',
+    workflow: [['Tải LizzieYzy Next', 'Mở kỳ phổ bằng bàn làm việc KataGo trưởng thành.'], ['Tìm bước ngoặt', 'Dùng tỉ lệ thắng, điểm, nước gợi ý và overview để tìm vài nước quan trọng.'], ['Thử GoAgent nếu cần', 'Khi muốn lý giải bằng ngôn ngữ tự nhiên, hãy thử agent cờ vây thử nghiệm.']],
     downloadTitle: 'Tải miễn phí',
-    downloadLead: 'Bộ cài nằm trên GitHub Releases.',
+    downloadLead: 'LizzieYzy Next là bản tải khuyên dùng. Bộ cài nằm trên GitHub Releases.',
     openReleases: 'Mở Releases'
   }
 }
@@ -204,8 +208,8 @@ const page = locales[locale] ?? locales.en
       <h1>{page.h1}</h1>
       <p class="lead">{page.lead}</p>
       <div class="button-row">
-        <a class="button primary" href={goAgentReleases}>{page.firstCta}</a>
-        <a class="button" href={lizzieReleases}>{page.secondCta}</a>
+        <a class="button primary" href={lizzieReleases}>{page.firstCta}</a>
+        <a class="button" href={goAgentReleases}>{page.secondCta}</a>
         <a class="button subtle" href="#products">{page.differenceCta}</a>
       </div>
       <div class="trust-row" aria-label="Website highlights">
@@ -224,7 +228,7 @@ const page = locales[locale] ?? locales.en
     </div>
     <div class="product-grid">
       {page.products.map((product) => (
-        <article class="product-panel">
+        <article class={`product-panel ${product.featured ? 'featured' : ''}`}>
           <img src={product.image} alt={product.alt} width="1536" height="1152" loading="lazy" decoding="async" />
           <div class="product-copy">
             <p class="product-label">{product.label}</p>
@@ -267,17 +271,17 @@ const page = locales[locale] ?? locales.en
     <div class="download-list">
       <article class="download-row">
         <div>
-          <h3>GoAgent Releases</h3>
-          <p>GoAgent QQ 1030632742</p>
-        </div>
-        <a class="button primary" href={goAgentReleases}>{page.openReleases}</a>
-      </article>
-      <article class="download-row">
-        <div>
           <h3>LizzieYzy Next Releases</h3>
           <p>LizzieYzy Next QQ 299419120</p>
         </div>
         <a class="button primary" href={lizzieReleases}>{page.openReleases}</a>
+      </article>
+      <article class="download-row">
+        <div>
+          <h3>GoAgent Releases</h3>
+          <p>GoAgent QQ 1030632742</p>
+        </div>
+        <a class="button primary" href={goAgentReleases}>{page.openReleases}</a>
       </article>
     </div>
   </section>

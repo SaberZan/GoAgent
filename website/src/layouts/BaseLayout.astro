@@ -11,8 +11,8 @@ interface Props {
 }
 
 const {
-  title = 'GoAgent - 围棋 AI 工具箱',
-  description = 'goagent.top 是 GoAgent 和 LizzieYzy Next 共用官网：一款把关键手讲清楚，一款把整盘复盘看清楚。',
+  title = 'LizzieYzy Next - 专业围棋复盘工作台',
+  description = 'LizzieYzy Next 是首推的专业 KataGo 复盘工作台；GoAgent 是实验中的围棋智能体。',
   canonical = new URL(Astro.url.pathname, 'https://goagent.top').toString(),
   lang = 'zh-CN',
   pageKey = 'home',
@@ -56,70 +56,77 @@ function localizedPath(locale: keyof typeof localeSlugs, key: NonNullable<Props[
 const copyByLang = {
   'zh-CN': {
     skip: '跳到主要内容',
-    brandSub: '围棋 AI 工具箱',
+    brand: 'LizzieYzy Next',
+    brandSub: '专业围棋复盘',
     nav: { products: '产品', workflow: '工作流', download: '下载', docs: '文档', faq: 'FAQ' },
-    cta: '免费下载',
-    footer: 'GoAgent 把关键手讲清楚；LizzieYzy Next 把整盘复盘看清楚。两个开源桌面工具，共用一个官网。',
+    cta: '下载首推版',
+    footer: '首推 LizzieYzy Next 做稳定全盘复盘；GoAgent 作为实验围棋智能体，探索 AI 讲棋的新工作流。',
     community: 'GoAgent QQ 1030632742 · LizzieYzy Next QQ 299419120',
     privacy: '隐私',
     copyright: 'GoAgent and LizzieYzy Next contributors'
   },
   'zh-Hant': {
     skip: '跳到主要內容',
-    brandSub: '圍棋 AI 工具箱',
+    brand: 'LizzieYzy Next',
+    brandSub: '專業圍棋復盤',
     nav: { products: '產品', workflow: '工作流', download: '下載', docs: '文檔', faq: 'FAQ' },
-    cta: '免費下載',
-    footer: 'GoAgent 把關鍵手講清楚；LizzieYzy Next 把整盤復盤看清楚。兩個開源桌面工具，共用一個官網。',
+    cta: '下載首推版',
+    footer: '首推 LizzieYzy Next 做穩定全盤復盤；GoAgent 是實驗中的圍棋智能體，探索 AI 講棋工作流。',
     community: 'GoAgent QQ 1030632742 · LizzieYzy Next QQ 299419120',
     privacy: '隱私',
     copyright: 'GoAgent and LizzieYzy Next contributors'
   },
   en: {
     skip: 'Skip to content',
-    brandSub: 'Go AI toolkit',
+    brand: 'LizzieYzy Next',
+    brandSub: 'Go review workbench',
     nav: { products: 'Products', workflow: 'Workflow', download: 'Download', docs: 'Guide', faq: 'FAQ' },
-    cta: 'Download free',
-    footer: 'GoAgent explains key moves clearly; LizzieYzy Next makes the whole-game review easier to read. Two open-source desktop tools, one website.',
+    cta: 'Download recommended',
+    footer: 'Start with LizzieYzy Next for stable whole-game review. GoAgent is an experimental Go agent for AI move explanations.',
     community: 'GoAgent QQ 1030632742 · LizzieYzy Next QQ 299419120',
     privacy: 'Privacy',
     copyright: 'GoAgent and LizzieYzy Next contributors'
   },
   ja: {
     skip: '本文へ移動',
-    brandSub: '囲碁 AI ツールキット',
+    brand: 'LizzieYzy Next',
+    brandSub: '囲碁復盤ワークベンチ',
     nav: { products: 'プロダクト', workflow: '流れ', download: 'ダウンロード', docs: 'ガイド', faq: 'FAQ' },
-    cta: '無料ダウンロード',
-    footer: 'GoAgent は重要な一手を説明し、LizzieYzy Next は一局全体を読みやすくします。',
+    cta: '推奨版を入手',
+    footer: 'まず LizzieYzy Next で一局全体を安定して復盤。GoAgent は AI 解説を試す実験的な囲碁エージェントです。',
     community: 'GoAgent QQ 1030632742 · LizzieYzy Next QQ 299419120',
     privacy: 'プライバシー',
     copyright: 'GoAgent and LizzieYzy Next contributors'
   },
   ko: {
     skip: '본문으로 이동',
-    brandSub: '바둑 AI 툴킷',
+    brand: 'LizzieYzy Next',
+    brandSub: '바둑 복기 워크벤치',
     nav: { products: '제품', workflow: '흐름', download: '다운로드', docs: '가이드', faq: 'FAQ' },
-    cta: '무료 다운로드',
-    footer: 'GoAgent는 핵심 수를 설명하고, LizzieYzy Next는 전체 판 복기를 보기 쉽게 만듭니다.',
+    cta: '추천판 다운로드',
+    footer: '먼저 LizzieYzy Next로 안정적인 전판 복기를 시작하세요. GoAgent는 AI 수 설명을 실험하는 바둑 에이전트입니다.',
     community: 'GoAgent QQ 1030632742 · LizzieYzy Next QQ 299419120',
     privacy: '개인정보',
     copyright: 'GoAgent and LizzieYzy Next contributors'
   },
   th: {
     skip: 'ไปยังเนื้อหา',
-    brandSub: 'ชุดเครื่องมือ AI หมากล้อม',
+    brand: 'LizzieYzy Next',
+    brandSub: 'พื้นที่ทบทวนหมากล้อม',
     nav: { products: 'ผลิตภัณฑ์', workflow: 'เวิร์กโฟลว์', download: 'ดาวน์โหลด', docs: 'คู่มือ', faq: 'FAQ' },
-    cta: 'ดาวน์โหลดฟรี',
-    footer: 'GoAgent อธิบายหมากสำคัญ ส่วน LizzieYzy Next ช่วยอ่านภาพรวมทั้งเกมให้ชัดขึ้น',
+    cta: 'ดาวน์โหลดตัวแนะนำ',
+    footer: 'เริ่มด้วย LizzieYzy Next สำหรับการทบทวนทั้งเกมที่เสถียร ส่วน GoAgent เป็น agent ทดลองสำหรับคำอธิบายด้วย AI',
     community: 'GoAgent QQ 1030632742 · LizzieYzy Next QQ 299419120',
     privacy: 'ความเป็นส่วนตัว',
     copyright: 'GoAgent and LizzieYzy Next contributors'
   },
   vi: {
     skip: 'Chuyển tới nội dung',
-    brandSub: 'Bộ công cụ AI cờ vây',
+    brand: 'LizzieYzy Next',
+    brandSub: 'Bàn làm việc ôn tập cờ vây',
     nav: { products: 'Sản phẩm', workflow: 'Quy trình', download: 'Tải xuống', docs: 'Hướng dẫn', faq: 'FAQ' },
-    cta: 'Tải miễn phí',
-    footer: 'GoAgent giải thích nước quan trọng; LizzieYzy Next giúp đọc toàn bộ ván rõ hơn.',
+    cta: 'Tải bản khuyên dùng',
+    footer: 'Hãy bắt đầu với LizzieYzy Next để ôn tập toàn ván ổn định. GoAgent là agent cờ vây thử nghiệm cho giải thích bằng AI.',
     community: 'GoAgent QQ 1030632742 · LizzieYzy Next QQ 299419120',
     privacy: 'Riêng tư',
     copyright: 'GoAgent and LizzieYzy Next contributors'
@@ -188,9 +195,9 @@ const alternateItems = [
     <a class="skip-link" href="#content">{copy.skip}</a>
     <div class="site-shell">
       <header class="site-header">
-        <a class="brand" href={homeHref} aria-label="GoAgent home">
+        <a class="brand" href={homeHref} aria-label="LizzieYzy Next home">
           <img src="/logo.svg" alt="" width="36" height="36" />
-          <span>GoAgent</span>
+          <span>{copy.brand}</span>
           <small>{copy.brandSub}</small>
         </a>
         <nav aria-label="Primary">
@@ -208,15 +215,15 @@ const alternateItems = [
       </main>
       <footer class="site-footer">
         <div>
-          <strong>GoAgent</strong>
+          <strong>{copy.brand}</strong>
           <p>{copy.footer}</p>
           <p class="community-line">{copy.community}</p>
         </div>
         <div class="footer-links">
-          <a href={goAgentUrl}>GoAgent GitHub</a>
           <a href={lizzieUrl}>LizzieYzy Next GitHub</a>
-          <a href={goAgentReleases}>GoAgent Releases</a>
           <a href={lizzieReleases}>LizzieYzy Next Releases</a>
+          <a href={goAgentUrl}>GoAgent GitHub</a>
+          <a href={goAgentReleases}>GoAgent Releases</a>
           <a href={goAgentIssues}>Issues</a>
           <a href={localizedPath(siteLang, 'privacy')}>{copy.privacy}</a>
         </div>

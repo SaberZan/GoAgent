@@ -50,8 +50,11 @@ const deployment = read('website/DEPLOYMENT.md')
 const sitemap = read('website/public/sitemap.xml')
 const manifest = read('website/public/site.webmanifest')
 
-if (!index.includes('GoAgent')) fail('homepage must contain GoAgent')
-if (!index.includes('https://github.com/wimi321/GoAgent/releases')) fail('homepage must link GitHub Releases')
+if (!index.includes('LizzieYzy Next')) fail('homepage must contain LizzieYzy Next')
+if (!index.includes('首推')) fail('homepage must present LizzieYzy Next as the recommended product')
+if (!index.includes('实验围棋智能体')) fail('homepage must position GoAgent as an experimental Go agent')
+if (!index.includes('https://github.com/wimi321/lizzieyzy-next/releases')) fail('homepage must link LizzieYzy Next Releases')
+if (!index.includes('https://github.com/wimi321/GoAgent/releases')) fail('homepage must still link GoAgent Releases')
 if (!index.includes('QQ 1030632742')) fail('homepage must expose QQ community')
 if (index.includes('Trust')) fail('homepage should not include Trust section')
 for (const keyword of ['本地', 'LLM', 'TTS']) {
@@ -73,7 +76,7 @@ for (const keyword of [
 ]) {
   if (!sitemap.includes(keyword)) fail(`sitemap.xml must contain ${keyword}`)
 }
-if (!manifest.includes('"name": "GoAgent"')) fail('site.webmanifest must name GoAgent')
+if (!manifest.includes('"name": "LizzieYzy Next"')) fail('site.webmanifest must name LizzieYzy Next')
 
 for (const path of walk(join(websiteRoot, 'public'))) {
   if (/\.(exe|dmg|zip|tar\.gz)$/i.test(path)) fail(`website public must not contain installer/archive: ${path}`)

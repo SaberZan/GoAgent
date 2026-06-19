@@ -4,13 +4,12 @@ import BaseLayout from '../layouts/BaseLayout.astro'
 const goAgentReleases = 'https://github.com/wimi321/GoAgent/releases'
 const lizzieReleases = 'https://github.com/wimi321/lizzieyzy-next/releases'
 const lizzieBaidu = 'https://pan.baidu.com/s/1wthaL8YwGMxy_u0U7Mabpw?pwd=3i8w'
-const lizzieBaiduCode = '3i8w'
 
 const tools = [
   {
     audience: '推荐先点这个',
     title: 'LizzieYzy Next 百度网盘',
-    text: `国内用户先点这个，提取码 ${lizzieBaiduCode}。大多数棋友下载后就能开始复盘。`,
+    text: '国内用户优先用百度网盘下载，大多数棋友下载后就能开始复盘。',
     platforms: ['Windows', 'macOS', 'Linux'],
     href: lizzieBaidu,
     cta: '百度网盘下载',
@@ -92,7 +91,7 @@ const tools = [
       <h2>下载小提示</h2>
       <p>普通用户不用研究太多。先装 LizzieYzy Next；百度网盘打不开，再点 GitHub；想试 AI 讲棋，再下载 GoAgent。</p>
       <ul>
-        <li>国内用户优先用百度网盘，提取码 {lizzieBaiduCode}。</li>
+        <li>国内用户优先用百度网盘下载。</li>
         <li>GitHub 是备用下载入口，百度网盘打不开时再用。</li>
         <li>GoAgent 是实验功能，只想稳定复盘可以先不用下载。</li>
       </ul>

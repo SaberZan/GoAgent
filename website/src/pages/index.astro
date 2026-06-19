@@ -6,7 +6,6 @@ const goAgentReleases = 'https://github.com/wimi321/GoAgent/releases'
 const lizzieGithub = 'https://github.com/wimi321/lizzieyzy-next'
 const lizzieReleases = 'https://github.com/wimi321/lizzieyzy-next/releases'
 const lizzieBaidu = 'https://pan.baidu.com/s/1wthaL8YwGMxy_u0U7Mabpw?pwd=3i8w'
-const lizzieBaiduCode = '3i8w'
 
 const products = [
   {
@@ -46,9 +45,9 @@ const workflow = [
 const downloads = [
   {
     title: '推荐：LizzieYzy Next 百度网盘',
-    text: `国内用户先点这个，提取码 ${lizzieBaiduCode}。大多数棋友下载后就能开始复盘。`,
+    text: '国内用户优先用百度网盘下载，大多数棋友下载后就能开始复盘。',
     href: lizzieBaidu,
-    note: `提取码 ${lizzieBaiduCode}`,
+    note: '国内优先',
     cta: '百度网盘下载',
     label: '推荐先点这个',
     icon: 'cloud',
@@ -118,7 +117,7 @@ const jsonLd = {
         <span>先下载 <strong>LizzieYzy Next</strong></span>
       </h1>
       <p class="lead">
-        不会选也没关系。大多数棋友直接安装 LizzieYzy Next，用它看胜率、目差和关键失误；想尝试 AI 讲棋时，再试 GoAgent。
+        大多数棋友直接安装 LizzieYzy Next，用它看胜率、目差和关键失误；想尝试 AI 讲棋时，再试 GoAgent。
       </p>
       <div class="button-row hero-actions" aria-label="下载入口">
         <a class="button primary" href={lizzieBaidu}>
@@ -152,7 +151,7 @@ const jsonLd = {
           <path d="M12 3 19 6v5c0 4.5-2.8 8-7 10-4.2-2-7-5.5-7-10V6l7-3Z" />
           <path d="m8.8 12 2.1 2.1 4.4-4.7" />
         </svg>
-        <span>国内用户点第一个，提取码 <strong>{lizzieBaiduCode}</strong>；百度网盘打不开，再用 GitHub。</span>
+        <span>国内用户优先用百度网盘下载。</span>
       </p>
     </div>
   </section>

@@ -229,7 +229,7 @@ const page = locales[locale] ?? locales.en
     <div class="product-grid">
       {page.products.map((product) => (
         <article class={`product-panel ${product.featured ? 'featured' : ''}`}>
-          <img src={product.image} alt={product.alt} width="1536" height="1152" loading="lazy" decoding="async" />
+          <img src={product.image} alt={product.alt} width="1536" height="1152" loading="eager" decoding="async" />
           <div class="product-copy">
             <p class="product-label">{product.label}</p>
             <h3>{product.title}</h3>

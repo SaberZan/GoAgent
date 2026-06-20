@@ -431,7 +431,7 @@ h3 {
   stroke-linejoin: round;
 }
 
-.hero-actions .button:nth-child(2) svg {
+.hero-actions .button svg.github-icon {
   fill: currentColor;
   stroke: none;
 }

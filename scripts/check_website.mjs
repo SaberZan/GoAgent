@@ -103,13 +103,24 @@ for (const keyword of ['官网首页更简单', '多语言页面同步更新', '
 for (const keyword of [
   'homeCopy',
   'Review Go games?',
-  'China download (Baidu)',
   'GitHub download',
   'home-proof-strip',
   'hero-actions',
-  'Tải tại Trung Quốc (Baidu)'
+  'Choose the package for Windows, macOS, or Linux on GitHub.',
+  'Tải từ GitHub'
 ]) {
   if (!localizedHome.includes(keyword)) fail(`localized homepage must use the simplified homepage system: ${keyword}`)
+}
+for (const forbidden of [
+  'lizzieBaidu',
+  'baiduCta',
+  'pan.baidu.com',
+  'China download (Baidu)',
+  'Tải tại Trung Quốc (Baidu)',
+  '百度網盤',
+  'Baidu Netdisk'
+]) {
+  if (localizedHome.includes(forbidden)) fail(`localized homepage must not expose Baidu Netdisk download: ${forbidden}`)
 }
 if (localizedHome.includes('<figure class="hero-art">')) fail('localized homepage must not render the old hero-art layout')
 for (const keyword of [

@@ -74,9 +74,10 @@ if (!index.includes('LizzieYzy Next')) fail('homepage must contain LizzieYzy Nex
 if (!index.includes('想复盘围棋')) fail('homepage must use the simple Go review hero headline')
 if (!index.includes('首推')) fail('homepage must present LizzieYzy Next as the recommended product')
 if (!index.includes('实验围棋智能体')) fail('homepage must position GoAgent as an experimental Go agent')
-for (const keyword of ['KataGo 官方 README', '免费开源', '解压即用', '快速复盘']) {
+for (const keyword of ['KataGo 官方推荐', '免费开源', '解压即用', '快速复盘']) {
   if (!index.includes(keyword)) fail(`homepage must focus LizzieYzy Next on the new core value prop: ${keyword}`)
 }
+if (index.includes('README')) fail('homepage should say official recommendation instead of README wording')
 if (!index.includes('https://pan.baidu.com/s/1wthaL8YwGMxy_u0U7Mabpw?pwd=3i8w')) fail('homepage must link LizzieYzy Next Baidu Netdisk')
 if (!index.includes('国内下载（百度网盘）')) fail('homepage hero must expose the domestic Baidu download button')
 if (!index.includes('国内用户优先用百度网盘下载')) fail('homepage hero must explain Baidu Netdisk as the domestic priority')
@@ -109,7 +110,7 @@ for (const keyword of [
   'GitHub download',
   'home-proof-strip',
   'hero-actions',
-  'Listed in KataGo README',
+  'Officially recommended by KataGo',
   'Free, open source, unzip-and-run',
   'Choose the package for Windows, macOS, or Linux on GitHub.',
   'Tải từ GitHub'
@@ -128,6 +129,7 @@ for (const forbidden of [
   if (localizedHome.includes(forbidden)) fail(`localized homepage must not expose Baidu Netdisk download: ${forbidden}`)
 }
 if (localizedHome.includes('<figure class="hero-art">')) fail('localized homepage must not render the old hero-art layout')
+if (localizedHome.includes('README')) fail('localized homepage should say official recommendation instead of README wording')
 for (const keyword of [
   'simpleDownloads',
   'Download LizzieYzy Next first',

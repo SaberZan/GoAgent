@@ -107,6 +107,7 @@ export interface AppSettings {
   zhiziClientBin: string
   zhiziUsername: string
   zhiziToken: string
+  zhiziGpuType: string
   zhiziExtraArgs: string
   zhiziUseWhenLocalSlow: boolean
   pythonBin: string
@@ -192,6 +193,11 @@ export interface ZhiziCloudConnectionTestResult {
   visits?: number
   winrate?: number
   scoreMean?: number
+  tokenValid?: boolean
+  isMembership?: boolean
+  membershipExpiresAt?: string
+  hasConnectAccount?: boolean
+  connectUsernameMasked?: string
   dashboard?: DashboardData
 }
 
@@ -1147,6 +1153,17 @@ export interface AnalyzePositionProgress {
   trialBranchHash?: string
   analysis: KataGoMoveAnalysis
   isFinal: boolean
+}
+
+export interface AnalyzePositionSearchProgress {
+  runId?: string
+  gameId: string
+  moveNumber: number
+  trialBranchHash?: string
+  queryId?: string
+  visits: number
+  visitsPerSecond: number
+  isDuringSearch: boolean
 }
 
 export interface AnalyzeGameQuickRequest {

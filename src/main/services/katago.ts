@@ -95,6 +95,12 @@ interface QueryBatchOptions {
   group?: KataGoAnalysisGroup
   replaceGroup?: boolean
   resolvePartialAfterMs?: number
+  onSearchProgress?: (progress: {
+    id?: string
+    visits: number
+    visitsPerSecond: number
+    isDuringSearch: boolean
+  }) => void
 }
 
 interface ActiveKataGoProcess {
@@ -557,7 +563,8 @@ async function queryKataGoBatch(
       group: options.group,
       timeoutMs: Math.max(240_000, queries.length * 9000),
       resolvePartialAfterMs: options.resolvePartialAfterMs,
-      onResponse: onResponse as ((response: Record<string, unknown>) => void) | undefined
+      onResponse: onResponse as ((response: Record<string, unknown>) => void) | undefined,
+      onSearchProgress: options.onSearchProgress
     })
     return results as Map<string, KataGoResponse>
   }
@@ -1030,7 +1037,13 @@ export async function analyzePositionWithProgress(
   moveNumber: number,
   maxVisits = 500,
   onProgress?: (analysis: KataGoMoveAnalysis, isFinal: boolean) => void,
-  reportDuringSearchEvery = 0.2
+  reportDuringSearchEvery = 0.2,
+  onSearchProgress?: (progress: {
+    id?: string
+    visits: number
+    visitsPerSecond: number
+    isDuringSearch: boolean
+  }) => void
 ): Promise<KataGoMoveAnalysis> {
   maxVisits = effectiveVisitsForSpeedMode(maxVisits, 'position')
   const indexedGame = findGame(gameId)
@@ -1121,7 +1134,8 @@ export async function analyzePositionWithProgress(
     }, {
       runId: `${gameId}-live-${moveNumber}`,
       group: 'live',
-      replaceGroup: true
+      replaceGroup: true,
+      onSearchProgress
     })
   } catch (error) {
     if (String(error).includes('已取消')) {
@@ -1159,6 +1173,12 @@ export async function analyzeTrialPositionWithProgress(
     runId?: string
     group?: KataGoAnalysisGroup
     reportDuringSearchEvery?: number
+    onSearchProgress?: (progress: {
+      id?: string
+      visits: number
+      visitsPerSecond: number
+      isDuringSearch: boolean
+    }) => void
   },
   onProgress?: (analysis: KataGoMoveAnalysis, isFinal: boolean) => void
 ): Promise<KataGoMoveAnalysis> {
@@ -1285,7 +1305,8 @@ export async function analyzeTrialPositionWithProgress(
       runId: input.runId,
       group: input.group ?? 'trial',
       replaceGroup: false,
-      resolvePartialAfterMs: 1200
+      resolvePartialAfterMs: 1200,
+      onSearchProgress: input.onSearchProgress
     })
   } catch (error) {
     if ((String(error).includes('已取消') || String(error).includes('KataGo 分析超时')) && latestBefore?.rootInfo && latestAfter?.rootInfo) {

@@ -46,6 +46,7 @@ const defaults: AppSettings = {
   zhiziClientBin: '',
   zhiziUsername: '',
   zhiziToken: '',
+  zhiziGpuType: 'vip-share',
   zhiziExtraArgs: '',
   zhiziUseWhenLocalSlow: false,
   pythonBin: defaultPythonBin(),

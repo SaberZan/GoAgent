@@ -1,6 +1,6 @@
 {
   "name": "goagent",
-  "version": "0.4.13",
+  "version": "0.4.14",
   "description": "Agentic AI teacher for Go / Weiqi / Baduk, powered by KataGo and multimodal LLMs.",
   "main": "out/main/index.js",
   "type": "module",
@@ -16,10 +16,11 @@
   },
   "packageManager": "pnpm@10.30.3",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "node scripts/start_dev_app.mjs",
+    "dev:vite": "electron-vite dev",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
-    "preview": "electron-vite preview",
+    "preview": "node scripts/start_dev_app.mjs --skip-build",
     "lint": "pnpm typecheck",
     "test": "node --test tests/*.test.mjs",
     "check": "pnpm test && pnpm typecheck && pnpm build",

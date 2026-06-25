@@ -40,6 +40,12 @@ export interface RuntimeAnalyzePositionRequest {
 export interface RuntimeAnalyzePositionStreamRequest extends RuntimeAnalyzePositionRequest {
   reportDuringSearchEvery?: number
   onProgress?: (analysis: KataGoMoveAnalysis, isFinal: boolean) => void
+  onSearchProgress?: (progress: {
+    id?: string
+    visits: number
+    visitsPerSecond: number
+    isDuringSearch: boolean
+  }) => void
 }
 
 export interface RuntimeAnalyzeGameQuickRequest {
@@ -108,6 +114,7 @@ function runtimeFingerprints(): { modelFingerprint: string; configFingerprint: s
       settings.ikatagoUsername,
       settings.ikatagoExtraArgs,
       settings.zhiziClientBin,
+      settings.zhiziGpuType,
       settings.zhiziExtraArgs,
       settings.zhiziToken ? 'zhizi-token-configured' : 'zhizi-token-empty'
     ].join('\n')),
@@ -294,7 +301,8 @@ export async function analyzePositionWithProgressRuntime(input: RuntimeAnalyzePo
       const progressCache: AnalysisCacheLookupResult = { status: 'miss', reason: isFinal ? lookup.reason : 'streaming-progress' }
       input.onProgress?.(attachRuntimeAnalysisEvidence({ analysis, profile, cache: progressCache, cacheKey }), isFinal)
     },
-    input.reportDuringSearchEvery ?? profile.reportDuringSearchEvery
+    input.reportDuringSearchEvery ?? profile.reportDuringSearchEvery,
+    input.onSearchProgress
   )
   const enriched = attachRuntimeAnalysisEvidence({ analysis: final, profile, cache: lookup, cacheKey })
   const written = writeAnalysisCache(keyInput, enriched, lookup.entry)

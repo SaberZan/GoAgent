@@ -188,6 +188,8 @@ test('Workbench reuses cache for automatic analysis but manual analysis refreshe
   assert.match(app, /type RememberEvaluationOptions = \{\s+force\?: boolean\s+\}/)
   assert.match(app, /function mergeEvaluations/)
   assert.match(app, /function hasCompleteEvaluationGraph/)
+  assert.match(app, /if \(forceManualRefresh\) \{\s+await cancelKataGoWork\(\{ group: 'quick' \}\)\s+\}/)
+  assert.match(app, /warmupEvaluationGraph\(gameId, defaultMoveNumber, retryAttempt \+ 1\)/)
   assert.match(app, /loadStoredEvaluations\(cacheKey\)/)
   assert.match(app, /persistStoredEvaluations\(cacheKey, cached\)/)
   assert.match(app, /cachedAnalysisForGameMove\(gameId, targetMove\)/)

@@ -5,6 +5,7 @@ import type {
   AnalyzeGameQuickProgress,
   AnalyzePositionRequest,
   AnalyzePositionProgress,
+  AnalyzePositionSearchProgress,
   AnalyzeTrialPositionRequest,
   DashboardData,
   FoxSyncResponse,
@@ -85,6 +86,11 @@ const api = {
     const listener = (_event: Electron.IpcRendererEvent, payload: AnalyzePositionProgress): void => handler(payload)
     ipcRenderer.on('katago:analyze-position-progress', listener)
     return () => ipcRenderer.removeListener('katago:analyze-position-progress', listener)
+  },
+  onAnalyzePositionSearchProgress: (handler: (payload: AnalyzePositionSearchProgress) => void): (() => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, payload: AnalyzePositionSearchProgress): void => handler(payload)
+    ipcRenderer.on('katago:analyze-position-search-progress', listener)
+    return () => ipcRenderer.removeListener('katago:analyze-position-search-progress', listener)
   },
   onAnalyzeGameQuickProgress: (handler: (payload: AnalyzeGameQuickProgress) => void): (() => void) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: AnalyzeGameQuickProgress): void => handler(payload)

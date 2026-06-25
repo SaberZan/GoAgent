@@ -30,7 +30,7 @@ import {
 } from './services/studentProfile'
 import { archiveTeacherSession, createTeacherSession, deleteTeacherSession, getActiveTeacherSession, listTeacherSessions, updateTeacherSessionMessages } from './services/teacherSession'
 import { clearTtsCache, inspectTtsAssets, listTtsVoices, synthesizeTts, testTtsSettings } from './services/tts'
-import { loginZhiziCloudByCode, loginZhiziCloudByPassword, sendZhiziCloudLoginCode } from './services/zhiziCloudAuth'
+import { getZhiziCloudAccountStatus, loginZhiziCloudByCode, loginZhiziCloudByPassword, sendZhiziCloudLoginCode } from './services/zhiziCloudAuth'
 import { queryZhiziGtpAnalysisBatch } from './services/zhiziGtpEngine'
 
 let mainWindow: BrowserWindow | null = null
@@ -111,7 +111,7 @@ function requestTeacherBoardImages(event: IpcMainInvokeEvent, request: TeacherBo
 function humanizeZhiziConnectionError(error: unknown): string {
   const text = error instanceof Error ? error.message : String(error)
   if (/not_enough_credit|余额不足|not enough credit|没有可用算力/i.test(text)) {
-    return '智子云 token 有效，但远程 worker 分配失败：当前账号没有可用算力或额度不足。请在智子云确认套餐/余额后重试。'
+    return '智子云登录有效，但远程 worker 返回 not_enough_credit。请在智子官方 App 确认远程算力权益已经开通，并且已同步到当前连接账号；普通会员有效不一定代表远程 GPU worker 已可分配。'
   }
   if (/invalid_status|NoSuchKey|ssh\.json|colab/i.test(text)) {
     return '智子云远程平台没有找到当前账号的可用 worker 配置。请确认该账号已开通对应远程算力。'
@@ -421,6 +421,15 @@ app.whenReady().then(() => {
           moveNumber: payload.moveNumber,
           analysis,
           isFinal
+        }),
+        onSearchProgress: (progress) => safeSendToRenderer(event, 'katago:analyze-position-search-progress', {
+          runId: payload.runId,
+          gameId: payload.gameId,
+          moveNumber: payload.moveNumber,
+          queryId: progress.id,
+          visits: progress.visits,
+          visitsPerSecond: progress.visitsPerSecond,
+          isDuringSearch: progress.isDuringSearch
         })
       }))
     } catch (error) {
@@ -444,7 +453,16 @@ app.whenReady().then(() => {
         maxVisits: payload.maxVisits,
         runId: payload.runId,
         group,
-        reportDuringSearchEvery: payload.reportDuringSearchEvery ?? 0.25
+        reportDuringSearchEvery: payload.reportDuringSearchEvery ?? 0.25,
+        onSearchProgress: (progress) => safeSendToRenderer(event, 'katago:analyze-position-search-progress', {
+          runId: payload.runId,
+          gameId: payload.gameId,
+          moveNumber: payload.baseMoveNumber + payload.trialMoves.length,
+          queryId: progress.id,
+          visits: progress.visits,
+          visitsPerSecond: progress.visitsPerSecond,
+          isDuringSearch: progress.isDuringSearch
+        })
       }, (analysis, isFinal) => safeSendToRenderer(event, 'katago:analyze-position-progress', {
         runId: payload.runId,
         gameId: payload.gameId,
@@ -570,6 +588,14 @@ app.whenReady().then(() => {
         message: '智子云未登录：请先用账号密码或短信验证码登录。'
       }
     }
+    const accountStatus = await getZhiziCloudAccountStatus(settings.zhiziToken)
+    if (!accountStatus.tokenValid) {
+      return {
+        ok: false,
+        message: '智子云 token 已失效，请重新登录。',
+        ...accountStatus
+      }
+    }
     try {
       const results = await queryZhiziGtpAnalysisBatch({
         settings: {
@@ -611,12 +637,14 @@ app.whenReady().then(() => {
         topMove: typeof best.move === 'string' ? best.move : undefined,
         visits: typeof best.visits === 'number' ? best.visits : undefined,
         winrate: typeof best.winrate === 'number' ? best.winrate : undefined,
-        scoreMean: typeof best.scoreMean === 'number' ? best.scoreMean : typeof best.scoreLead === 'number' ? best.scoreLead : undefined
+        scoreMean: typeof best.scoreMean === 'number' ? best.scoreMean : typeof best.scoreLead === 'number' ? best.scoreLead : undefined,
+        ...accountStatus
       }
     } catch (error) {
       return {
         ok: false,
-        message: humanizeZhiziConnectionError(error)
+        message: humanizeZhiziConnectionError(error),
+        ...accountStatus
       }
     }
   })

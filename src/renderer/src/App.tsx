@@ -103,6 +103,7 @@ const emptyDashboard: DashboardData = {
     zhiziClientBin: '',
     zhiziUsername: '',
     zhiziToken: '',
+    zhiziGpuType: 'vip-share',
     zhiziExtraArgs: '',
     zhiziUseWhenLocalSlow: false,
     pythonBin: 'python',
@@ -454,7 +455,7 @@ function kataGoRuntimeErrorMessage(error: unknown): string {
     return ''
   }
   if (/not_enough_credit|余额不足|没有可用算力|not enough credit/i.test(text)) {
-    return '智子云余额不足或当前没有可用算力，请在智子云确认额度后重试。'
+    return '智子云远程 worker 返回额度不足或不可分配。请在智子官方 App 确认连接账号/GPU 算力额度已经开通并同步；普通会员有效不一定代表远程 worker 已可用。'
   }
   if (/智子云未登录|Zhizi Cloud Login Required/i.test(text)) {
     return '智子云未登录：请先在设置里用账号密码或短信验证码登录智子云。'
@@ -1266,7 +1267,7 @@ export function App(): ReactElement {
     }
   }
 
-  async function warmupEvaluationGraph(gameId: string, defaultMoveNumber: number): Promise<void> {
+  async function warmupEvaluationGraph(gameId: string, defaultMoveNumber: number, retryAttempt = 0): Promise<void> {
     const runId = crypto.randomUUID()
     const cacheKey = analysisCacheKeyForGame(gameId)
     graphRunId.current = runId
@@ -1305,7 +1306,25 @@ export function App(): ReactElement {
     } catch (cause) {
       if (graphRunId.current === runId) {
         const message = String(cause)
-        if (!/cancel|取消|replaced|停止/i.test(message)) {
+        if (isAnalysisCancellationMessage(message)) {
+          const shouldRetry =
+            retryAttempt < 1 &&
+            selectedGameIdRef.current === gameId &&
+            !teacherBusyRef.current &&
+            !hasCompleteEvaluationGraph(cachedEvaluationsForGame(gameId), defaultMoveNumber)
+          if (shouldRetry) {
+            window.setTimeout(() => {
+              if (
+                graphRunId.current === runId &&
+                selectedGameIdRef.current === gameId &&
+                !teacherBusyRef.current &&
+                !hasCompleteEvaluationGraph(cachedEvaluationsForGame(gameId), defaultMoveNumber)
+              ) {
+                void warmupEvaluationGraph(gameId, defaultMoveNumber, retryAttempt + 1)
+              }
+            }, 600)
+          }
+        } else {
           setError(t('graphFailed', { error: message }))
         }
       }
@@ -1483,6 +1502,7 @@ export function App(): ReactElement {
         zhiziClientBin: String(formData.get('zhiziClientBin') ?? dashboard.settings.zhiziClientBin),
         zhiziUsername: String(formData.get('zhiziUsername') ?? dashboard.settings.zhiziUsername),
         zhiziToken: String(formData.get('zhiziToken') ?? ''),
+        zhiziGpuType: String(formData.get('zhiziGpuType') ?? dashboard.settings.zhiziGpuType ?? 'vip-share'),
         zhiziExtraArgs: String(formData.get('zhiziExtraArgs') ?? dashboard.settings.zhiziExtraArgs),
         zhiziUseWhenLocalSlow: formData.get('zhiziUseWhenLocalSlow') === 'on',
         reviewLanguage: normalizeUiLocale(String(formData.get('reviewLanguage') ?? dashboard.settings.reviewLanguage)),
@@ -1864,7 +1884,7 @@ export function App(): ReactElement {
       status: `试下分析 · ${nextBranch.moves[nextBranch.moves.length - 1]?.gtp}`,
       visits: 0,
       bestVisits: 0,
-      visitsPerSecond: dashboard.settings.katagoBenchmarkVisitsPerSecond,
+      visitsPerSecond: 0,
       targetMoveNumber: nextBranch.baseMoveNumber + nextBranch.moves.length,
       round: 0
     }))
@@ -2095,6 +2115,7 @@ export function App(): ReactElement {
     }
     const targetMove = Math.max(0, Math.min(targetRecord.moves.length, Math.round(options.moveNumber ?? moveNumber)))
     if (
+      !forceManualRefresh &&
       liveAnalysis.running &&
       liveAnalysis.targetMoveNumber === targetMove &&
       selectedGameIdRef.current === gameId
@@ -2129,8 +2150,7 @@ export function App(): ReactElement {
     const cachedVisitSeed = forceManualRefresh ? 0 : candidateVisitsTotal(cachedAnalysis)
     let lastVisitSample = 0
     let lastEffectiveVisitSample = 0
-    const benchmarkSpeed = dashboard.settings.katagoBenchmarkVisitsPerSecond
-    let lastSpeedSample = benchmarkSpeed
+    let lastSpeedSample = 0
     liveAnalysisRunId.current = runId
     setError('')
     setMoveNumber(targetMove)
@@ -2140,11 +2160,13 @@ export function App(): ReactElement {
       status: `连接分析引擎 · 第 ${targetMove} 手`,
       visits: cachedVisitSeed,
       bestVisits: forceManualRefresh ? 0 : candidateBestVisits(cachedAnalysis),
-      visitsPerSecond: benchmarkSpeed,
+      visitsPerSecond: 0,
       targetMoveNumber: targetMove,
       round: 0
     })
-    await cancelKataGoWork({ group: 'quick' })
+    if (forceManualRefresh) {
+      await cancelKataGoWork({ group: 'quick' })
+    }
     await cancelKataGoWork({ group: 'live' })
     if (liveAnalysisRunId.current !== runId || selectedGameIdRef.current !== gameId) {
       return
@@ -2157,6 +2179,33 @@ export function App(): ReactElement {
     }))
 
     if (typeof window.goagent.analyzePositionStream === 'function') {
+      const disposeSearchProgress = window.goagent.onAnalyzePositionSearchProgress((progress) => {
+        if (
+          liveAnalysisRunId.current !== runId ||
+          progress.runId !== runId ||
+          progress.gameId !== gameId ||
+          progress.moveNumber !== targetMove ||
+          selectedGameIdRef.current !== gameId
+        ) {
+          return
+        }
+        const rawSpeed = Number(progress.visitsPerSecond)
+        if (Number.isFinite(rawSpeed) && rawSpeed > 0) {
+          lastSpeedSample = lastSpeedSample > 0
+            ? (lastSpeedSample * 0.65) + (rawSpeed * 0.35)
+            : rawSpeed
+        }
+        setLiveAnalysis((current) => ({
+          ...current,
+          running: current.running || progress.isDuringSearch,
+          status: progress.isDuringSearch
+            ? `实时搜索 ${formatVisits(Math.max(current.visits, progress.visits))}`
+            : current.status,
+          visits: Math.max(current.visits, progress.visits),
+          visitsPerSecond: lastSpeedSample || current.visitsPerSecond,
+          targetMoveNumber: targetMove
+        }))
+      })
       const disposeProgress = window.goagent.onAnalyzePositionProgress((progress) => {
         if (
           liveAnalysisRunId.current !== runId ||
@@ -2178,7 +2227,9 @@ export function App(): ReactElement {
         const sampleSeconds = Math.max(0.1, (sampledAt - lastSampleAt) / 1000)
         const visitsDelta = Math.max(0, progressVisits - lastVisitSample)
         const measuredSpeed = visitsDelta > 0 ? visitsDelta / sampleSeconds : lastSpeedSample
-        lastSpeedSample = measuredSpeed > 0 ? Math.max(lastSpeedSample, measuredSpeed) : lastSpeedSample
+        lastSpeedSample = measuredSpeed > 0
+          ? (lastSpeedSample > 0 ? (lastSpeedSample * 0.65) + (measuredSpeed * 0.35) : measuredSpeed)
+          : lastSpeedSample
         const visitsPerSecond = lastSpeedSample || measuredSpeed
         lastVisitSample = Math.max(lastVisitSample, progressVisits)
         lastSampleAt = sampledAt
@@ -2218,6 +2269,8 @@ export function App(): ReactElement {
           : (preferAnalysis(cachedAnalysisForGameMove(gameId, targetMove), finalAnalysis) ?? finalAnalysis)
         const totalVisits = candidateVisitsTotal(displayedFinal)
         const bestVisits = candidateBestVisits(displayedFinal)
+        const elapsedSeconds = Math.max(0.1, (Date.now() - startedAt) / 1000)
+        const finalSpeed = lastSpeedSample || (totalVisits / elapsedSeconds)
         rememberEvaluation(finalAnalysis, { force: forceManualRefresh })
         if (moveNumberRef.current === targetMove) {
           setAnalysis((current) => forceManualRefresh ? finalAnalysis : preferAnalysis(current, finalAnalysis))
@@ -2228,6 +2281,7 @@ export function App(): ReactElement {
           status: `已完成 ${formatVisits(totalVisits)}`,
           visits: totalVisits,
           bestVisits,
+          visitsPerSecond: finalSpeed,
           targetMoveNumber: targetMove
         }))
         if (!hasCompleteEvaluationGraph(cachedEvaluationsForGame(gameId), targetRecord.moves.length)) {
@@ -2295,6 +2349,7 @@ export function App(): ReactElement {
         }
       } finally {
         disposeProgress()
+        disposeSearchProgress()
       }
       return
     }
@@ -2333,7 +2388,7 @@ export function App(): ReactElement {
         const visitsDelta = Math.max(0, effectiveVisits - lastEffectiveVisitSample)
         const visitsPerSecond = visitsDelta > 0
           ? visitsDelta / sampleSeconds
-          : (benchmarkSpeed || totalVisits / Math.max(0.1, (Date.now() - startedAt) / 1000))
+          : (totalVisits / Math.max(0.1, (Date.now() - startedAt) / 1000))
         lastVisitSample = progressVisits
         lastEffectiveVisitSample = effectiveVisits
         lastSampleAt = sampledAt
@@ -4189,6 +4244,8 @@ function TeacherPanel({
   )
 }
 
+type SettingsPageId = 'ai' | 'katago' | 'remote' | 'voice' | 'general' | 'about'
+
 function SettingsDrawer({
   dashboard,
   katagoAssets,
@@ -4242,6 +4299,7 @@ function SettingsDrawer({
   const [zhiziLoginMessage, setZhiziLoginMessage] = useState('')
   const [zhiziTestBusy, setZhiziTestBusy] = useState(false)
   const [zhiziTestMessage, setZhiziTestMessage] = useState('')
+  const [activeSettingsPage, setActiveSettingsPage] = useState<SettingsPageId>('ai')
   const [autoSaveBusy, setAutoSaveBusy] = useState(false)
   const [autoSaveTick, setAutoSaveTick] = useState(0)
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -4412,6 +4470,10 @@ function SettingsDrawer({
       setZhiziLoginMessage('请输入智子云账号和密码。')
       return
     }
+    if (/^zz[-_]/i.test(phone)) {
+      setZhiziLoginMessage('zz- 开头的是智子云连接账号，不能直接登录 GoAgent。请填写智子云主账号手机号或邮箱；连接账号需先在智子官方账号体系里绑定。')
+      return
+    }
     setZhiziLoginBusy(true)
     try {
       const result = await window.goagent.loginZhiziCloudPassword({ phone, password })
@@ -4433,7 +4495,11 @@ function SettingsDrawer({
     setZhiziLoginMessage('')
     const phone = zhiziUsernameInput.trim()
     if (!phone) {
-      setZhiziLoginMessage('请输入智子云手机号。')
+      setZhiziLoginMessage('请输入智子云手机号。短信验证码只支持手机号登录。')
+      return
+    }
+    if (!/^\+?\d{6,20}$/.test(phone)) {
+      setZhiziLoginMessage('短信验证码只支持手机号登录。邮箱请使用密码登录，zz- 连接账号不能直接登录 GoAgent。')
       return
     }
     setZhiziCodeBusy(true)
@@ -4454,7 +4520,11 @@ function SettingsDrawer({
     const phone = zhiziUsernameInput.trim()
     const verificationCode = zhiziLoginCode.trim()
     if (!phone || !verificationCode) {
-      setZhiziLoginMessage('请输入智子云手机号和短信验证码。')
+      setZhiziLoginMessage('请输入智子云手机号和短信验证码。短信验证码只支持手机号登录。')
+      return
+    }
+    if (!/^\+?\d{6,20}$/.test(phone)) {
+      setZhiziLoginMessage('短信验证码只支持手机号登录。邮箱请使用密码登录，zz- 连接账号不能直接登录 GoAgent。')
       return
     }
     setZhiziLoginBusy(true)
@@ -4513,7 +4583,12 @@ function SettingsDrawer({
       const detail = result.ok && result.topMove
         ? `首选 ${result.topMove}${typeof result.visits === 'number' ? ` · ${result.visits} visits` : ''}`
         : ''
-      setZhiziTestMessage(`${result.message}${detail ? `（${detail}）` : ''}`)
+      const accountDetail = [
+        result.tokenValid ? '主账号 token 有效' : '',
+        result.isMembership ? `会员有效${result.membershipExpiresAt ? `至 ${new Date(result.membershipExpiresAt).toLocaleDateString()}` : ''}` : '未检测到会员状态',
+        result.hasConnectAccount ? `连接账号 ${result.connectUsernameMasked || '已绑定'}` : '未绑定连接账号'
+      ].filter(Boolean).join(' · ')
+      setZhiziTestMessage(`${result.message}${detail ? `（${detail}）` : ''}${accountDetail ? `\n${accountDetail}` : ''}`)
     } catch (cause) {
       setZhiziTestMessage(`智子云连接检测失败：${String(cause).replace(/^Error:\s*/, '')}`)
     } finally {
@@ -4533,19 +4608,103 @@ function SettingsDrawer({
   const zhiziReady = /Zhizi Cloud Direct Ready|智子云直连/i.test(zhiziRawStatus)
     || (zhiziEnabled && dashboard.systemProfile.katagoReady && /智子|Zhizi/i.test(zhiziRawStatus))
   const zhiziNeedsLogin = /Zhizi Cloud Login Required|智子云需登录|智子云未登录/i.test(zhiziRawStatus)
-  const zhiziStatusLabel = zhiziReady ? '已连接' : zhiziEnabled && zhiziNeedsLogin ? '需登录' : zhiziEnabled ? '连接中' : '未启用'
+  const zhiziStatusLabel = zhiziReady ? '已启用' : zhiziEnabled && zhiziNeedsLogin ? '需登录' : zhiziEnabled ? '待检测' : '未启用'
   const zhiziStatusClassName = zhiziReady ? 'settings-status-chip is-ready' : zhiziNeedsLogin ? 'settings-status-chip is-warning' : 'settings-status-chip'
+  const llmReady = dashboard.systemProfile.hasLlmApiKey
+  const katagoReady = Boolean(katagoAssets?.ready || dashboard.systemProfile.katagoReady)
+  const voiceReady = dashboard.settings.ttsEnabled
+  const settingsPages: Array<{
+    id: SettingsPageId
+    icon: string
+    title: string
+    subtitle: string
+    summary: string
+    status: string
+    statusClassName: string
+  }> = [
+    {
+      id: 'ai',
+      icon: 'AI',
+      title: 'AI 模型',
+      subtitle: '大模型连接与选择',
+      summary: '连接用于看棋盘图、解释 KataGo 证据和回答问题的多模态模型。',
+      status: llmReady ? t('ready') : t('pendingConfig'),
+      statusClassName: llmReady ? 'settings-status-chip is-ready' : 'settings-status-chip'
+    },
+    {
+      id: 'katago',
+      icon: '棋',
+      title: 'KataGo 引擎',
+      subtitle: '本地权重、测速与分析',
+      summary: '管理本地分析引擎、官方权重下载和一键测速。',
+      status: katagoReady ? t('ready') : t('pendingConfig'),
+      statusClassName: katagoReady ? 'settings-status-chip is-ready' : 'settings-status-chip'
+    },
+    {
+      id: 'remote',
+      icon: '云',
+      title: '智子云算力',
+      subtitle: '远程 KataGo 算力',
+      summary: '默认使用本机分析。只有手动启用智子云时，当前局面才会发送到远程算力。',
+      status: zhiziStatusLabel,
+      statusClassName: zhiziStatusClassName
+    },
+    {
+      id: 'voice',
+      icon: '声',
+      title: '语音朗读',
+      subtitle: 'TTS、音色与播放',
+      summary: '选择离线或云端语音，让老师讲解可以自然播放。',
+      status: voiceReady ? t('ready') : t('pendingConfig'),
+      statusClassName: voiceReady ? 'settings-status-chip is-ready' : 'settings-status-chip'
+    },
+    {
+      id: 'general',
+      icon: '语',
+      title: '棋谱与语言',
+      subtitle: '语言、保存与本地数据',
+      summary: '设置界面语言和复盘讲解语言，保留本地优先的使用方式。',
+      status: t('ready'),
+      statusClassName: 'settings-status-chip is-ready'
+    },
+    {
+      id: 'about',
+      icon: 'i',
+      title: '关于',
+      subtitle: '版本、开源与支持',
+      summary: '查看 GoAgent 的项目定位、开源信息和用户反馈入口。',
+      status: 'GoAgent',
+      statusClassName: 'settings-status-chip is-ready'
+    }
+  ]
+  const activePage = settingsPages.find((page) => page.id === activeSettingsPage) ?? settingsPages[0]
 
   return (
     <div className="settings-drawer">
-      <aside className="settings-drawer__nav" aria-label="Settings sections">
-        <a href="#settings-ai"><span>⌘</span><strong>AI 模型</strong><small>Base URL · Key · Model</small></a>
-        <a href="#settings-katago"><span>●</span><strong>KataGo</strong><small>权重 · 测速 · 引擎</small></a>
-        <a href="#settings-remote"><span>◇</span><strong>智子云算力</strong><small>登录 · 远程分析</small></a>
-        <a href="#settings-voice"><span>♪</span><strong>语音</strong><small>TTS · 音色 · 播放</small></a>
-        <a href="#settings-general"><span>◎</span><strong>通用</strong><small>语言 · 自动保存</small></a>
+      <aside className="settings-drawer__nav" aria-label="设置分类">
+        {settingsPages.map((page) => (
+          <button
+            key={page.id}
+            type="button"
+            className={`settings-nav-button${activeSettingsPage === page.id ? ' is-active' : ''}`}
+            aria-current={activeSettingsPage === page.id ? 'page' : undefined}
+            onClick={() => setActiveSettingsPage(page.id)}
+          >
+            <span className="settings-nav-icon" aria-hidden="true">{page.icon}</span>
+            <strong>{page.title}</strong>
+            <small>{page.subtitle}</small>
+          </button>
+        ))}
       </aside>
       <div className="settings-drawer__content">
+        <header className="settings-page-hero">
+          <span className="settings-page-hero__icon" aria-hidden="true">{activePage.icon}</span>
+          <div>
+            <h3>{activePage.title}</h3>
+            <p>{activePage.summary}</p>
+          </div>
+          <span className={activePage.statusClassName}>{activePage.status}</span>
+        </header>
         <form
           className="settings-drawer__form"
           onSubmit={(event) => {
@@ -4553,11 +4712,11 @@ function SettingsDrawer({
             onSave(event.currentTarget)
           }}
         >
-      <section id="settings-ai" className="settings-section settings-section-llm">
+      <section id="settings-ai" className="settings-section settings-section-llm" hidden={activeSettingsPage !== 'ai'}>
         <header className="settings-section__head">
           <div>
             <h3>多模态大模型</h3>
-            <p>用于围棋老师对话、看棋盘图和解释 KataGo 证据。普通用户只需要填兼容 API 和模型。</p>
+            <p>用于围棋老师对话、看棋盘图和解释 KataGo 证据。填写服务地址、访问密钥并选择模型即可。</p>
           </div>
           <span className={dashboard.systemProfile.hasLlmApiKey ? 'settings-status-chip is-ready' : 'settings-status-chip'}>{dashboard.systemProfile.hasLlmApiKey ? t('ready') : t('pendingConfig')}</span>
         </header>
@@ -4659,7 +4818,7 @@ function SettingsDrawer({
         {llmTestMessage ? <div className="test-message">{llmTestMessage}</div> : null}
       </section>
 
-      <section id="settings-katago" className="settings-section settings-section-katago">
+      <section id="settings-katago" className="settings-section settings-section-katago" hidden={activeSettingsPage !== 'katago'}>
         <header className="settings-section__head">
           <div>
             <h3>KataGo 分析</h3>
@@ -4713,7 +4872,7 @@ function SettingsDrawer({
         />
       </section>
 
-      <section id="settings-remote" className="settings-section settings-section-analysis-engine">
+      <section id="settings-remote" className="settings-section settings-section-analysis-engine" hidden={activeSettingsPage !== 'remote'}>
         <header className="settings-section__head">
           <div>
             <h3>智子云远程算力</h3>
@@ -4760,6 +4919,20 @@ function SettingsDrawer({
               <option value="deep">精读</option>
             </select>
           </label>
+          <label>
+            <span>智子云算力类型</span>
+            <select
+              name="zhiziGpuType"
+              value={dashboard.settings.zhiziGpuType || 'vip-share'}
+              onChange={(event) => autoSave({ zhiziGpuType: event.target.value }, 0)}
+            >
+              <option value="vip-share">VIP 共享引擎 · 包月权益，不额外按时扣费</option>
+              <option value="1x">独享 1x · 按算力和时间计费</option>
+              <option value="3x">独享 3x · 更快，按算力和时间计费</option>
+              <option value="6x">独享 6x · 深度分析，按算力和时间计费</option>
+            </select>
+            <small>管理员说明：VIP 用户请选择 VIP 共享引擎；1x / 3x / 6x 属于独享 worker，会按时间和算力扣费。</small>
+          </label>
         </div>
         <div className="zhizi-connection-actions">
           <button
@@ -4791,14 +4964,14 @@ function SettingsDrawer({
         {zhiziTestMessage ? <div className="test-message">{zhiziTestMessage}</div> : null}
         <div className="settings-subsection zhizi-login-panel">
           <h4>登录智子云</h4>
-          <p>推荐使用账号密码或短信验证码登录。登录成功后会保存本地 token；后续只启动 GoAgent 即可。</p>
+          <p>请使用智子云主账号手机号或邮箱登录。zz- 开头的是连接账号，不能直接换取 GoAgent 远程算力 token。</p>
           <label>
-            <span>智子云账号</span>
+            <span>智子云主账号</span>
             <input
               name="zhiziUsername"
               value={zhiziUsernameInput}
-              placeholder="手机号"
-              inputMode="tel"
+              placeholder="手机号 / 邮箱"
+              inputMode="text"
               autoCapitalize="off"
               autoCorrect="off"
               spellCheck={false}
@@ -4829,7 +5002,7 @@ function SettingsDrawer({
             >
               {zhiziLoginBusy ? '正在登录智子云...' : '登录并连接智子云'}
             </button>
-            <small>密码只用于本次登录。如果提示密码不正确，可以改用下面的短信验证码登录。</small>
+            <small>密码只用于本次登录。手机号和邮箱可登录；zz- 连接账号需要先在智子官方账号体系里绑定。</small>
           </div>
           <label>
             <span>短信验证码</span>
@@ -4881,7 +5054,7 @@ function SettingsDrawer({
         <details className="settings-advanced">
           <summary>高级兼容选项</summary>
           <div className="settings-advanced__body">
-            <p>普通用户不需要填写这里。只有在账号登录不可用、或需要兼容旧智子连接器时才使用。</p>
+            <p>通常不需要填写这里。只有在账号登录不可用、或需要兼容旧智子连接器时才使用。</p>
             <div className="llm-api-key-field">
               <label>
                 <span>Token（可选）</span>
@@ -4916,12 +5089,13 @@ function SettingsDrawer({
               <input
                 name="zhiziExtraArgs"
                 defaultValue={dashboard.settings.zhiziExtraArgs}
-                placeholder="例如 --platform all；留空使用默认远程配置"
+                placeholder="通常留空；如需覆盖官方参数，请谨慎填写"
                 autoCapitalize="off"
                 autoCorrect="off"
                 spellCheck={false}
                 onBlur={(event) => autoSave({ zhiziExtraArgs: event.target.value }, 0)}
               />
+              <small>算力类型请优先用上面的下拉框选择，避免把 VIP 共享误写成独享计费参数。</small>
             </label>
             <label className="settings-inline-toggle">
               <input
@@ -4935,7 +5109,7 @@ function SettingsDrawer({
           </div>
         </details>
       </section>
-      <section id="settings-general" className="settings-section settings-section-language">
+      <section id="settings-general" className="settings-section settings-section-language" hidden={activeSettingsPage !== 'general'}>
         <header className="settings-section__head">
           <div>
             <h3>{t('languageLabel')}</h3>
@@ -4958,7 +5132,7 @@ function SettingsDrawer({
         </label>
       </section>
         </form>
-        <section id="settings-voice" className="settings-section settings-section-voice">
+        <section id="settings-voice" className="settings-section settings-section-voice" hidden={activeSettingsPage !== 'voice'}>
           <header className="settings-section__head">
             <div>
               <h3>语音讲解</h3>
@@ -4971,6 +5145,32 @@ function SettingsDrawer({
             busy={busy !== ''}
             onSave={(next) => void saveTtsSettings(next)}
           />
+        </section>
+        <section id="settings-about" className="settings-section settings-section-about" hidden={activeSettingsPage !== 'about'}>
+          <header className="settings-section__head">
+            <div>
+              <h3>关于 GoAgent</h3>
+              <p>GoAgent 是开源、免费的围棋智能体：KataGo 负责事实分析，AI 老师负责把局面讲清楚。</p>
+            </div>
+            <span className="settings-status-chip is-ready">MIT</span>
+          </header>
+          <div className="settings-about-grid">
+            <article>
+              <span>产品定位</span>
+              <strong>围棋智能体</strong>
+              <p>能调用棋谱、棋盘截图、KataGo、知识库和语音工具，帮助用户复盘与学习。</p>
+            </article>
+            <article>
+              <span>默认隐私</span>
+              <strong>本地优先</strong>
+              <p>棋谱、缓存和学生画像默认保存在本机；只有你配置并使用外部服务时才发送对应内容。</p>
+            </article>
+            <article>
+              <span>反馈建议</span>
+              <strong>GitHub Issues</strong>
+              <p>如果遇到安装、分析、语音或远程算力问题，可以在项目页提交问题和复现步骤。</p>
+            </article>
+          </div>
         </section>
       </div>
     </div>
@@ -5125,7 +5325,9 @@ function BoardContextBar({
     : (analysis ? t('analysisSearched', { visits: formatVisits(totalVisits) }) : t('analysisWaiting'))
   const speedLabel = isCurrentLiveTarget && liveAnalysis.visitsPerSecond > 0
     ? formatSearchSpeed(liveAnalysis.visitsPerSecond)
-    : '—'
+    : isCurrentLiveTarget && liveAnalysis.running
+      ? t('speedMeasuring')
+      : '—'
   return (
     <div className="board-contextbar">
       <div className="board-contextbar__identity">

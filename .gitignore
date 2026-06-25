@@ -4,6 +4,8 @@ dist
 website/.astro
 release
 .release
+.dev-release
+.dev-cache
 .DS_Store
 *.log
 .goagent

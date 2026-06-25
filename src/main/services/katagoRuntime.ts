@@ -194,7 +194,7 @@ function platformCompatibleBinaryPath(path: string): boolean {
 }
 
 function firstExistingBinary(paths: string[]): string {
-  return unique(paths).find((path) => platformCompatibleBinaryPath(path) && existsSync(path)) ?? ''
+  return unique(paths).find((path) => !isAsarPath(path) && platformCompatibleBinaryPath(path) && existsSync(path)) ?? ''
 }
 
 function globModelFiles(directory: string, pattern: RegExp): string[] {
@@ -221,6 +221,11 @@ function readJson(path: string): Record<string, unknown> | null {
   } catch {
     return null
   }
+}
+
+function isAsarPath(path: string): boolean {
+  const normalized = path.replace(/\\/g, '/')
+  return normalized.includes('/app.asar/') || normalized.endsWith('/app.asar')
 }
 
 function bundledMetadata(root: string): BundledAssetMetadata {
@@ -250,15 +255,19 @@ export function getKataGoModelPreset(id?: string): KataGoModelPreset {
 }
 
 function resourceRoots(): string[] {
-  const roots = [
-    join(process.cwd(), 'data', 'katago'),
-    join(__dirname, '../../data/katago'),
-    join(appHome, 'katago')
-  ]
+  const roots = [join(appHome, 'katago')]
   if (process.resourcesPath) {
-    roots.push(join(process.resourcesPath, 'data', 'katago'), join(process.resourcesPath, 'katago'))
+    roots.push(
+      join(process.resourcesPath, 'data', 'katago'),
+      join(process.resourcesPath, 'app.asar.unpacked', 'data', 'katago'),
+      join(process.resourcesPath, 'katago')
+    )
   }
-  return unique(roots)
+  roots.push(
+    join(process.cwd(), 'data', 'katago'),
+    join(__dirname, '../../data/katago')
+  )
+  return unique(roots).filter((root) => !isAsarPath(root))
 }
 
 function pathKatago(): string {

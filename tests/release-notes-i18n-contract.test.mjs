@@ -15,10 +15,24 @@ test('release notes include multilingual download guidance', () => {
 
 test('release notes list standard and NVIDIA artifacts', () => {
   for (const asset of [
+    `GoAgent-${packageJson.version}-mac-arm64.dmg`,
+    `GoAgent-${packageJson.version}-mac-x64.dmg`,
     `GoAgent-${packageJson.version}-win-x64-portable.zip`,
     `GoAgent-${packageJson.version}-win-x64.exe`,
+    `GoAgent-${packageJson.version}-win-x64-nvidia.exe`,
     `GoAgent-${packageJson.version}-win-x64-nvidia-portable.7z.001`
   ]) {
     assert.ok(notes.includes(asset), `missing ${asset}`)
+  }
+})
+
+test('release notes do not list retired Lite artifacts', () => {
+  for (const asset of [
+    `GoAgent-${packageJson.version}-mac-arm64-lite.dmg`,
+    `GoAgent-${packageJson.version}-mac-x64-lite.dmg`,
+    `GoAgent-${packageJson.version}-win-x64-lite.exe`,
+    `GoAgent-${packageJson.version}-win-x64-lite-portable.zip`
+  ]) {
+    assert.equal(notes.includes(asset), false, `must not advertise ${asset}`)
   }
 })

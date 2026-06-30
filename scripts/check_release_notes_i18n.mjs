@@ -28,8 +28,7 @@ const requiredAssets = [
   `GoAgent-${version}-win-x64-portable.zip`,
   `GoAgent-${version}-win-x64.exe`,
   `GoAgent-${version}-win-x64-nvidia.exe`,
-  `GoAgent-${version}-win-x64-nvidia-portable.7z.001`,
-  'SHA256SUMS.txt'
+  `GoAgent-${version}-win-x64-nvidia-portable.7z.001`
 ]
 const forbiddenAssets = [
   `GoAgent-${version}-mac-arm64-lite.dmg`,
@@ -67,6 +66,13 @@ for (const section of requiredSections) {
 }
 for (const asset of requiredAssets) {
   if (!body.includes(asset)) failures.push(`missing asset mention: ${asset}`)
+  const url = `https://github.com/wimi321/GoAgent/releases/download/${tag}/${asset}`
+  if (!body.includes(`[${asset}](${url})`)) failures.push(`missing clickable download link: ${asset}`)
+}
+if (!body.includes('OpenCL')) failures.push('missing OpenCL edition label')
+if (!body.includes('CUDA')) failures.push('missing CUDA edition label')
+if (body.includes('| SHA256SUMS.txt |') || body.includes('| Checksums |') || body.includes('| 校验文件 |') || body.includes('| 校驗檔 |')) {
+  failures.push('recommended download tables must not advertise checksum files')
 }
 for (const asset of forbiddenAssets) {
   if (body.includes(asset)) failures.push(`release notes must not advertise retired Lite asset: ${asset}`)

@@ -59,8 +59,6 @@ test('Windows release workflow smoke-starts packaged apps before upload', () => 
   assert.equal(packageJson.scripts['smoke:windows-packaged'], 'node scripts/smoke_windows_packaged_app.mjs')
   assert.match(workflow, /Smoke packaged Windows app/)
   assert.match(workflow, /smoke_windows_packaged_app\.mjs --mode=full --require-katago/)
-  assert.match(workflow, /Smoke Lite packaged Windows app/)
-  assert.match(workflow, /smoke_windows_packaged_app\.mjs --mode=lite --allow-missing-katago/)
   assert.match(workflow, /Smoke NVIDIA packaged Windows app/)
   assert.match(workflow, /smoke_windows_packaged_app\.mjs --mode=nvidia --require-katago/)
   assert.match(smoke, /window\.goagent\.getDiagnostics\(\)/)

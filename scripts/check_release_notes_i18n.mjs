@@ -31,6 +31,12 @@ const requiredAssets = [
   `GoAgent-${version}-win-x64-nvidia-portable.7z.001`,
   'SHA256SUMS.txt'
 ]
+const forbiddenAssets = [
+  `GoAgent-${version}-mac-arm64-lite.dmg`,
+  `GoAgent-${version}-mac-x64-lite.dmg`,
+  `GoAgent-${version}-win-x64-lite.exe`,
+  `GoAgent-${version}-win-x64-lite-portable.zip`
+]
 const requiredTopics = [
   'grounded shape recognition engine',
   'local pattern matcher',
@@ -61,6 +67,9 @@ for (const section of requiredSections) {
 }
 for (const asset of requiredAssets) {
   if (!body.includes(asset)) failures.push(`missing asset mention: ${asset}`)
+}
+for (const asset of forbiddenAssets) {
+  if (body.includes(asset)) failures.push(`release notes must not advertise retired Lite asset: ${asset}`)
 }
 for (const topic of requiredTopics) {
   if (!body.toLowerCase().includes(topic.toLowerCase())) failures.push(`missing release topic: ${topic}`)

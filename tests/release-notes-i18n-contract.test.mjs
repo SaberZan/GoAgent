@@ -23,7 +23,18 @@ test('release notes list standard and NVIDIA artifacts', () => {
     `GoAgent-${packageJson.version}-win-x64-nvidia-portable.7z.001`
   ]) {
     assert.ok(notes.includes(asset), `missing ${asset}`)
+    const url = `https://github.com/wimi321/GoAgent/releases/download/v${packageJson.version}/${asset}`
+    assert.ok(notes.includes(`[${asset}](${url})`), `missing clickable link for ${asset}`)
   }
+})
+
+test('release notes label Windows editions as OpenCL and CUDA without checksum clutter', () => {
+  assert.match(notes, /OpenCL/)
+  assert.match(notes, /CUDA/)
+  assert.doesNotMatch(notes, /\| SHA256SUMS\.txt \|/)
+  assert.doesNotMatch(notes, /\| Checksums \|/)
+  assert.doesNotMatch(notes, /\| 校验文件 \|/)
+  assert.doesNotMatch(notes, /\| 校驗檔 \|/)
 })
 
 test('release notes do not list retired Lite artifacts', () => {

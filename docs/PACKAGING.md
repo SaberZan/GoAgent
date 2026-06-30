@@ -28,8 +28,8 @@ git push origin v0.2.0-beta.1
 The workflow builds on native runners:
 
 - macOS: DMG and ZIP.
-- Windows: x64 NSIS installer and x64 portable ZIP.
-- Windows NVIDIA: x64 NSIS installer and x64 portable 7z archive with a dedicated NVIDIA KataGo runtime directory.
+- Windows Standard (OpenCL): x64 NSIS installer and x64 portable ZIP.
+- Windows NVIDIA (CUDA): x64 NSIS installer and x64 portable 7z archive with a dedicated NVIDIA KataGo runtime directory.
 - Linux: AppImage, DEB, and tar.gz.
 
 GoAgent no longer publishes Lite packages. Public releases should only expose full Standard packages and the Windows NVIDIA edition so users do not accidentally download a package that starts without a bundled KataGo runtime.

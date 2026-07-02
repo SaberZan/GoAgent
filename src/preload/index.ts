@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import electron from './electron'
 import type {
   AppSettings,
   AnalyzeGameQuickRequest,
@@ -55,6 +55,8 @@ import type {
 import type { DiagnosticsReport } from '@main/services/diagnostics/types'
 import type { AnalysisSchedulerStats } from '@main/services/analysis/scheduler'
 import type { KnowledgeSearchQuery, KnowledgeSearchResult } from '@main/services/knowledge/schema'
+
+const { contextBridge, ipcRenderer } = electron
 
 export type DesktopCommand =
   | 'open-command-palette'

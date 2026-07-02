@@ -1,8 +1,10 @@
-import { app } from 'electron'
+import electron from '@main/lib/electron'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { KataGoMoveAnalysis, KnowledgeMatch, KnowledgePacket } from '@main/lib/types'
 import { recognizeJosekiPatterns, type RecognizedJosekiPattern } from './josekiRecognizer'
+
+const { app } = electron
 
 export type MotifConfidence = 'strong' | 'medium' | 'weak'
 export type MotifPhase = 'opening' | 'middlegame' | 'endgame' | 'any'

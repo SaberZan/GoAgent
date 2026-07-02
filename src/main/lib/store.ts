@@ -1,10 +1,12 @@
 import Store from 'electron-store'
-import { app } from 'electron'
+import electron from './electron'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from 'node:crypto'
 import { BRAND_DATA_DIR } from '@shared/brand'
 import type { AppSettings, LibraryGame } from './types'
+
+const { app } = electron
 
 export const legacyElectronUserData = app.getPath('userData')
 export const appHome = process.env.GOAGENT_APP_HOME || join(app.getPath('home'), BRAND_DATA_DIR)

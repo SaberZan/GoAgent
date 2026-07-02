@@ -1,4 +1,5 @@
-import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell, type ContextMenuParams, type IpcMainEvent, type IpcMainInvokeEvent, type MenuItemConstructorOptions } from 'electron'
+import type { BrowserWindow as BrowserWindowType, ContextMenuParams, IpcMainEvent, IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron'
+import electron from './lib/electron'
 import { isAbsolute, relative, resolve, join } from 'node:path'
 import { appHome, findGame, getGames, getIkatagoPassword, getSettings, getTtsCustomApiKey, getTtsVolcengineAccessToken, getTtsVolcengineApiKey, getZhiziToken, hasIkatagoPassword, hasLlmApiKey, hasTtsCustomApiKey, hasTtsVolcengineAccessToken, hasTtsVolcengineApiKey, hasZhiziToken, replaceSettings, setSettings, upsertGames } from './lib/store'
 import { BRAND_NAME } from '@shared/brand'
@@ -33,7 +34,9 @@ import { clearTtsCache, inspectTtsAssets, listTtsVoices, synthesizeTts, testTtsS
 import { getZhiziCloudAccountStatus, loginZhiziCloudByCode, loginZhiziCloudByPassword, sendZhiziCloudLoginCode } from './services/zhiziCloudAuth'
 import { queryZhiziGtpAnalysisBatch } from './services/zhiziGtpEngine'
 
-let mainWindow: BrowserWindow | null = null
+const { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, shell } = electron
+
+let mainWindow: BrowserWindowType | null = null
 type DesktopCommand =
   | 'open-command-palette'
   | 'open-settings'
@@ -134,7 +137,7 @@ function humanizeZhiziConnectionError(error: unknown): string {
   return `智子云连接检测失败：${text.slice(0, 320)}`
 }
 
-function attachTextEditingContextMenu(window: BrowserWindow): void {
+function attachTextEditingContextMenu(window: BrowserWindowType): void {
   window.webContents.on('context-menu', (_event, params: ContextMenuParams) => {
     const hasSelection = params.selectionText.trim().length > 0
     const isEditable = params.isEditable

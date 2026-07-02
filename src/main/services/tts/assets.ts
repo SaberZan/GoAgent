@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { app } from 'electron'
+import electron from '@main/lib/electron'
 import type { AppSettings, TtsAssetStatus, TtsVoice } from '@main/lib/types'
+
+const { app } = electron
 
 interface KokoroManifest {
   id: string

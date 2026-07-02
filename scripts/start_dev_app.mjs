@@ -2,18 +2,26 @@
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const root = resolve(new URL('..', import.meta.url).pathname)
+const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const args = new Set(process.argv.slice(2))
 const skipBuild = args.has('--skip-build')
 const devOutputDir = join(root, '.dev-release')
 const builderCacheDir = join(root, '.dev-cache', 'electron-builder')
+const electronViteCli = join(root, 'node_modules', 'electron-vite', 'bin', 'electron-vite.js')
+
+function cleanElectronEnv(env = process.env) {
+  const next = { ...env }
+  delete next.ELECTRON_RUN_AS_NODE
+  return next
+}
 
 function run(command, commandArgs, options = {}) {
   const result = spawnSync(command, commandArgs, {
     cwd: root,
     stdio: 'inherit',
-    env: process.env,
+    env: cleanElectronEnv(),
     ...options
   })
   if (result.error) {
@@ -63,7 +71,7 @@ if (process.platform === 'darwin') {
       ],
       {
         env: {
-          ...process.env,
+          ...cleanElectronEnv(),
           ELECTRON_BUILDER_CACHE: builderCacheDir
         }
       }
@@ -77,5 +85,5 @@ if (process.platform === 'darwin') {
   run('open', ['-n', appPath])
   console.log(`GoAgent dev app launched from ${appPath}`)
 } else {
-  run('pnpm', ['exec', 'electron-vite', skipBuild ? 'preview' : 'dev'])
+  run(process.execPath, [electronViteCli, skipBuild ? 'preview' : 'dev'])
 }

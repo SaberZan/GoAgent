@@ -1,8 +1,10 @@
-import { app } from 'electron'
+import electron from '@main/lib/electron'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { loadBundledJosekiSgfCards } from './josekiSgfDatabase'
 import { recognizeJosekiTrie } from './josekiTrie'
+
+const { app } = electron
 
 export type JosekiConfidence = 'strong' | 'medium' | 'weak'
 export type JosekiCorner = 'SW' | 'SE' | 'NW' | 'NE'

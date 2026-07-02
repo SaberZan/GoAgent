@@ -1,4 +1,4 @@
-import { app } from 'electron'
+import electron from '@main/lib/electron'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { CoachUserLevel, GameMove, KnowledgeMatch, KnowledgePacket } from '@main/lib/types'
@@ -11,6 +11,8 @@ import {
 } from './knowledge/patterns'
 import { formatKnowledgeMatchForPrompt, searchKnowledgeMatchEngine, type BoardSnapshotStone, type LocalWindow } from './knowledge/matchEngine'
 import { recognizedShapesToKnowledgePackets, recognizeShapes } from './knowledge/shapeRecognitionEngine'
+
+const { app } = electron
 
 interface KnowledgeEntry {
   id: string

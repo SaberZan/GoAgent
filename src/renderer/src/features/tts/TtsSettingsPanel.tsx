@@ -65,6 +65,18 @@ function voiceOptionLabel(voice: TtsVoice, provider: TtsProviderId): string {
   return voice.label || voice.id
 }
 
+const TTS_TEST_TIMEOUT_MS = 90_000
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), timeoutMs)
+  })
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer)
+  })
+}
+
 interface SecretFieldProps {
   name: string
   label: string
@@ -236,9 +248,13 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
     setTesting(true)
     setMessage('')
     try {
-      const result = await window.goagent.testTtsSettings({})
+      const result = await withTimeout(
+        window.goagent.testTtsSettings({}),
+        TTS_TEST_TIMEOUT_MS,
+        '内置语音测试超时。首次运行需要初始化 Python 运行环境和加载 Kokoro 模型；如果一直卡住，请检查 Python 3.10-3.13、misaki[zh] 依赖和本地语音资源。'
+      )
       const audio = new Audio(result.audioDataUrl)
-      await audio.play()
+      await withTimeout(audio.play(), 10_000, '音频已生成，但浏览器播放超时。请检查系统输出设备或手动重试。')
       setMessage(`测试成功：${result.provider}${result.cached ? ' · 已使用缓存' : ''}`)
     } catch (cause) {
       setMessage(`测试失败：${String(cause)}`)
@@ -473,7 +489,11 @@ export function TtsSettingsPanel({ settings, busy = false, onSave }: TtsSettings
           <details open>
             <summary>自定义 API</summary>
             <div className="ga-tts-grid">
-              <label><span>Base URL / Endpoint</span><input name="ttsCustomBaseUrl" defaultValue={settings.ttsCustomBaseUrl} placeholder="https://example.com/v1" /></label>
+              <label>
+                <span>Base URL / Endpoint</span>
+                <input name="ttsCustomBaseUrl" defaultValue={settings.ttsCustomBaseUrl} placeholder="https://example.com/v1 或 https://example.com/v1/audio/speech" />
+                {selectedProvider === 'custom-openai-compatible' ? <small className="ga-tts-field-note">OpenAI-compatible 会调用 /audio/speech；如果服务商给的是完整地址，也可以直接粘贴。</small> : null}
+              </label>
               <SecretField
                 name="ttsCustomApiKey"
                 label="API Key"

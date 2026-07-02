@@ -16,6 +16,20 @@ from contextlib import redirect_stdout
 from typing import Any
 
 
+def configure_stdio() -> None:
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            try:
+                reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
+
+
+configure_stdio()
+
+
 COORD_LETTER_SPEECH = {
     "A": "诶",
     "B": "比",

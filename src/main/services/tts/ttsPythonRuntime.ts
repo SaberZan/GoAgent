@@ -4,8 +4,10 @@ import { join } from 'node:path'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 import { devNull } from 'node:os'
-import { app } from 'electron'
+import electron from '@main/lib/electron'
 import { appHome } from '@main/lib/store'
+
+const { app } = electron
 
 const execFileAsync = promisify(execFile)
 

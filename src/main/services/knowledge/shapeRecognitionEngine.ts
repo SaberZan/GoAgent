@@ -1,10 +1,12 @@
-import { app } from 'electron'
+import electron from '@main/lib/electron'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { GameMove, KnowledgePacket } from '@main/lib/types'
 import { extractKataGoShapeFeatures } from './katagoShapeFeatures'
 import { findLocalPatternMatches, type ShapePatternCard } from './localPatternMatcher'
 import type { BoardSnapshotStone, LocalWindow } from './matchEngine'
+
+const { app } = electron
 
 export type ShapeRecognitionConfidence = 'strong' | 'medium' | 'weak'
 

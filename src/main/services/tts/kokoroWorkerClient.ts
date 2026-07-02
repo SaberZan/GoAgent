@@ -2,9 +2,11 @@ import { randomUUID } from 'node:crypto'
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { createInterface } from 'node:readline'
 import { join } from 'node:path'
-import { app } from 'electron'
+import electron from '@main/lib/electron'
 import type { AppSettings } from '@main/lib/types'
 import { materializeTtsScript } from './ttsPythonRuntime'
+
+const { app } = electron
 
 interface KokoroWorkerVoice {
   id: string
@@ -51,6 +53,11 @@ function rejectAll(error: Error): void {
   pending.clear()
 }
 
+function formatWorkerError(error: unknown): Error {
+  const message = error instanceof Error ? error.message : String(error)
+  return new Error(`Kokoro TTS 后台进程错误：${message}`)
+}
+
 async function ensureWorker(): Promise<ChildProcessWithoutNullStreams> {
   if (worker && !worker.killed) return worker
   if (workerReady) return workerReady
@@ -89,7 +96,10 @@ async function ensureWorker(): Promise<ChildProcessWithoutNullStreams> {
         console.warn(`[tts-worker] non-json stdout: ${trimmed}`)
         return
       }
-      if (!response.id) return
+      if (!response.id) {
+        if (response.ok === false) rejectAll(formatWorkerError(response.error || 'unknown worker error'))
+        return
+      }
       const request = pending.get(response.id)
       if (!request) return
       pending.delete(response.id)

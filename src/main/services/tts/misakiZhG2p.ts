@@ -26,6 +26,11 @@ function runG2pScript(pythonPath: string, scriptPath: string, text: string): Pro
   return new Promise((resolve, reject) => {
     const child = spawn(pythonPath, [scriptPath], {
       windowsHide: true,
+      env: {
+        ...process.env,
+        PYTHONIOENCODING: 'utf-8',
+        PYTHONUTF8: '1'
+      },
       stdio: ['pipe', 'pipe', 'pipe']
     })
     const stdout: Buffer[] = []
